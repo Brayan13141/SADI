@@ -1,0 +1,127 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SADI - Ingreso</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Estilos base -->
+    <link rel="stylesheet" href="{% static 'css/estiloBase.css' %}">
+
+    <style>
+        body {
+            background-color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        h1.page-title {
+            text-align: center;
+            font-size: 1rem;
+            margin-bottom: 50px;
+            color: var(--bs-dark);
+            font-weight: 500;
+        }
+
+        .welcome-text {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--bs-success);
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: var(--bs-dark);
+            margin-bottom: 25px;
+        }
+
+        .form-control {
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .btn-custom {
+            background-color: var(--bs-success);
+            border: none;
+            color: white;
+            font-weight: 500;
+            border-radius: 20px;
+            padding: 10px;
+            width: 100%;
+            box-shadow: 0 4px 4px rgba(0,0,0,0.2);
+        }
+
+        .btn-custom:hover {
+            background-color: var(--bs-info);
+        }
+
+        .login-box {
+            max-width: 350px;
+            width: 100%;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+     <h1> Sistema de Gestión del Desempeño Institucional (SADI) </h1>
+    
+    <div class="login-box">
+        <h2 class="welcome-text">¡Bienvenido de nuevo!</h2>
+        <p class="subtitle">Contacta al equipo para poder ingresar a la página</p>
+
+       <form method="POST" action="{% url 'account_login' %}">
+    {% csrf_token %}
+    
+    <!-- Errores generales (como credenciales inválidas) -->
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {% for error in form.non_field_errors %}
+                {{ error }}
+            {% endfor %}
+        </div>
+    {% endif %}
+    <div class="form-group">
+        <input 
+            class="form-control {% if form.login.errors %}is-invalid{% endif %}" 
+            name="login" 
+            placeholder="Usuario o correo" 
+            value="{{ form.login.value|default:'' }}"
+            required>
+        {% for error in form.login.errors %}
+            <div class="invalid-feedback">{{ error }}</div>
+        {% endfor %}
+    </div>
+
+    <div class="form-group">
+        <input 
+            type="password" 
+            class="form-control {% if form.password.errors %}is-invalid{% endif %}" 
+            name="password" 
+            placeholder="Contraseña" 
+            required>
+        {% for error in form.password.errors %}
+            <div class="invalid-feedback">{{ error }}</div>
+        {% endfor %}
+    </div>
+
+    <button type="submit" class="btn btn-custom">Ingresar</button>
+</form>
+    
+
+
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
