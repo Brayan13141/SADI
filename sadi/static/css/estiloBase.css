@@ -1,0 +1,109 @@
+/* static/css/estiloBase.css */
+:root {
+    --bs-primary: #09a43c; /* 25,48,71 193047*/
+    --bs-secondary: #eccb4f; /* 236,203,79 */
+    --bs-success: #09a43c; /* 9,164,60 */
+    --bs-info: #487a49; /* 72,122,73 */
+    --bs-warning: #a18c46; /* 161,140,70 */
+    --bs-light: #f8f9fa;
+    --bs-dark: #212529;
+    --bs-gray: #7c849c; /* 124,132,156 */
+    --oficial-gob: #611232;
+}
+.divnavbarSADI {
+    font-size: xx-large !important;
+}
+.navbarSadi {
+    display: flex !important;
+    align-items: center !important;
+    padding: 50px 0 0 0 !important;
+    height: 22vh !important;
+}
+.txtpanelP {
+    width: max-content;
+    display: flex;
+    align-items: start;
+}
+.containernavbarSADI {
+    display: flex !important;
+    width: 100%;
+    align-items: center !important;
+    justify-content: space-around !important;
+    height: auto !important;
+}
+
+.navbarGob {
+    padding: 0;
+    background-color: var(--oficial-gob) !important;
+}
+.btn-primary {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+.btn-primary:hover {
+    background-color: #14253a;
+    border-color: #14253a;
+}
+
+.bg-primary {
+    background-color: var(--bs-primary) !important;
+}
+.text-primary {
+    color: var(--bs-primary) !important;
+}
+.bg-secondary {
+    background-color: var(--bs-secondary) !important;
+}
+.text-secondary {
+    color: var(--bs-secondary) !important;
+}
+.bg-success {
+    background-color: var(--bs-success) !important;
+}
+.text-success {
+    color: var(--bs-success) !important;
+}
+.bg-info {
+    background-color: var(--bs-info) !important;
+}
+.text-info {
+    color: var(--bs-info) !important;
+}
+.bg-warning {
+    background-color: var(--bs-warning) !important;
+}
+.text-warning {
+    color: var(--bs-warning) !important;
+}
+.bg-gray {
+    background-color: var(--bs-gray) !important;
+}
+.text-gray {
+    color: var(--bs-gray) !important;
+}
+.text-black {
+    color: var(--bs-dark) !important;
+}
+
+/* Estilos adicionales */
+.card-shadow {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+}
+.gobOptions {
+    display: flex !important;
+    flex-direction: row;
+    align-items: center;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+@media (max-width: 768px) {
+    .gobOptions {
+        flex-direction: row !important; /* Horizontal en móvil también */
+    }
+}
+.gobOptions li {
+    float: none !important; /* Anula posibles floats */
+    display: block; /* Elimina estilos de lista vertical */
+    margin-right: 20px;
+}
