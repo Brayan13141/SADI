@@ -3,9 +3,7 @@ from simple_history.models import HistoricalRecords
 
 
 class Departamento(models.Model):
-    nombre = models.CharField(max_length=150)
-    departamento_superior = models.CharField(max_length=150)
-
+    nombre = models.CharField(max_length=100)
     history = HistoricalRecords()
 
     def __str__(self):

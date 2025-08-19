@@ -15,3 +15,16 @@ class ProgramaEstrategico(models.Model):
 
     def __str__(self):
         return f"{self.clave} - {self.nombre}"
+
+
+class Ciclo(models.Model):
+    fecha_inicio = models.DateField()
+    fecha_fin = models.DateField()
+    duracion = models.IntegerField(blank=True, null=True)
+    programa = models.ForeignKey(
+        ProgramaEstrategico, on_delete=models.CASCADE, related_name="ciclos"
+    )
+    history = HistoricalRecords()
+
+    def __str__(self):
+        return f"{self.programa.nombre} ({self.fecha_inicio} - {self.fecha_fin})"
