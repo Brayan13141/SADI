@@ -35,6 +35,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # REST_FRAMEWORK
+    "rest_framework",
     # Django AllAuth
     "django.contrib.sites",
     "allauth",
@@ -51,7 +53,6 @@ INSTALLED_APPS = [
     "metas",
     "actividades",
     "riesgos",
-    "bitacora",
 ]
 
 MIDDLEWARE = [
@@ -63,14 +64,26 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "simple_history.middleware.HistoryRequestMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework.authentication.BasicAuthentication",
+        "rest_framework.authentication.TokenAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+}
+
 
 ROOT_URLCONF = "sadi.urls"
 
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -97,25 +110,22 @@ AUTHENTICATION_BACKENDS = (
     "django.contrib.auth.backends.ModelBackend",
     "allauth.account.auth_backends.AuthenticationBackend",
 )
-
+# CONFIGURACIONES PARA DJANGO ALLAUTH
 SITE_ID = 1
-ACCOUNT_AUTHENTICATION_METHOD = "username"
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_EMAIL_VERIFICATION = "none"
-LOGIN_REDIRECT_URL = "/"
+ACCOUNT_LOGIN_METHODS = {"username", "email"}  # Permite usuario o email
+ACCOUNT_UNIQUE_EMAIL = True  # Evita correos duplicados
+ACCOUNT_SIGNUP_FIELDS = [
+    "username*",
+    "email*",
+    "password1*",
+    "password2*",
+]  # Campos obligatorios
+LOGIN_URL = "/accounts/login/"
+LOGIN_REDIRECT_URL = "dashboard"
+ACCOUNT_LOGOUT_REDIRECT_URL = "/accounts/login/"
+
 
 WSGI_APPLICATION = "sadi.wsgi.application"
-
-
-# Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
-}
 
 
 # Password validation
@@ -139,20 +149,18 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
-
-LANGUAGE_CODE = "en-us"
-
-TIME_ZONE = "UTC"
-
+# CONFIGURACION PARA EL LENGUAJE Y LA ZONA HORARIA
+LANGUAGE_CODE = "es"
+TIME_ZONE = "America/Mexico_City"  # o la que corresponda
 USE_I18N = True
-
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = "static/"
+# settings.py
+STATIC_URL = "/static/"
+STATICFILES_DIRS = [BASE_DIR / "static"]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
