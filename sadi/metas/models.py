@@ -1,6 +1,6 @@
 from django.db import models
 from proyectos.models import Proyecto
-from usuarios.models import Usuario
+from programas.models import ProgramaEstrategico
 from departamentos.models import Departamento
 from simple_history.models import HistoricalRecords
 
@@ -15,11 +15,13 @@ class Meta(models.Model):
     )
     indicador = models.TextField()
     unidadMedida = models.TextField()
+    porcentages = models.BooleanField(default=False)
+    activa = models.BooleanField(default=False)
     metodoCalculo = models.TextField()
-    lineBase = models.DecimalField(
+    lineabase = models.DecimalField(
         max_digits=11, decimal_places=4, blank=True, null=True
     )
-    metaCumplir = models.DecimalField(
+    metacumplir = models.DecimalField(
         max_digits=11, decimal_places=4, blank=True, null=True
     )
     variableB = models.DecimalField(
@@ -44,8 +46,8 @@ class AvanceMeta(models.Model):
 class MetaComprometida(models.Model):
     valor = models.DecimalField(max_digits=11, decimal_places=4, blank=True, null=True)
     meta = models.ForeignKey(Meta, on_delete=models.RESTRICT)
-    departamento = models.ForeignKey(
-        Departamento, on_delete=models.RESTRICT, null=True, blank=True
+    programa = models.ForeignKey(
+        ProgramaEstrategico, on_delete=models.RESTRICT, null=True, blank=True
     )
 
     history = HistoricalRecords()

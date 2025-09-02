@@ -8,7 +8,7 @@ class Usuario(AbstractUser):
     ROLE_CHOICES = [
         ("ADMIN", "Administrador"),
         ("APOYO", "Apoyo"),
-        ("RESPONSABLE", "Responsable"),
+        ("DOCENTE", "Docente"),
         ("INVITADO", "Invitado"),
     ]
 
