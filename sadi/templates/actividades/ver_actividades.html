@@ -1,0 +1,40 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+  <h3>Actividades de la meta: {{ meta.nombre }}</h3>
+  <a href="{% url 'tabla_seguimiento' %}" class="btn btn-secondary mb-3">← Volver</a>
+  <a href="{% url 'agregar_actividad' meta.id %}" class="btn btn-success mb-3">➕ Agregar actividad</a>
+
+  {% if actividades %}
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Descripción</th>
+          <th>Responsable</th>
+          <th>Fecha de registro</th>
+          <th>Fecha de finalización</th>
+          <th>Evidencia</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for act in actividades %}
+          <tr>
+            <td>{{ act.descripcion }}</td>
+            <td>{{ act.responsable }}</td>
+            <td>{{ act.fecha_inicio|date:"d/m/Y" }}</td>
+            <td>{{ act.fecha_fin|date:"d/m/Y" }}</td>
+            <td>{{ act.evidencia }}</td>
+            <td>
+              </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="text-muted">No hay actividades registradas.</p>
+  {% endif %}
+</div>
+{% endblock %}

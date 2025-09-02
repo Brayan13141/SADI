@@ -1,0 +1,199 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Proyectos{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css"/>
+<style>
+    #proyectosTable th, #proyectosTable td {
+        font-size: 0.85rem;
+        white-space: nowrap;
+        vertical-align: middle;
+        text-align: center;
+    }
+    .btn-sm { font-size: 0.75rem; padding: 0.25rem 0.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+            <h6 class="mb-0">Gestión de Proyectos</h6>
+            <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#modalCrear">
+                + Agregar Proyecto
+            </button>
+        </div>
+
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="proyectosTable" class="table table-striped table-hover table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Clave</th>
+                            <th>Nombre</th>
+                            <th>Objetivo</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for proyecto in proyectos %}
+                        <tr>
+                            <td>{{ proyecto.id }}</td>
+                            <td class="fw-semibold">{{ proyecto.clave }}</td>
+                            <td class="text-start">{{ proyecto.nombre|truncatewords:10 }}</td>
+                            <td>{{ proyecto.objetivo.descripcion|truncatewords:5 }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary btn-editar" 
+                                        data-id="{{ proyecto.id }}"
+                                        data-clave="{{ proyecto.clave }}"
+                                        data-nombre="{{ proyecto.nombre }}"
+                                        data-objetivo_id="{{ proyecto.objetivo.id }}">
+                                    Editar
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" 
+                                        data-bs-target="#modalEliminar{{ proyecto.id }}">
+                                    Eliminar
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- Modal Eliminar -->
+                        <div class="modal fade" id="modalEliminar{{ proyecto.id }}" tabindex="-1">
+                          <div class="modal-dialog">
+                            <div class="modal-content">
+                              <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="proyecto_id" value="{{ proyecto.id }}">
+                                <input type="hidden" name="eliminar_proyecto" value="1">
+                                <div class="modal-header">
+                                  <h5 class="modal-title">Eliminar Proyecto</h5>
+                                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                  ¿Seguro que deseas eliminar el proyecto <strong>{{ proyecto.clave }} - {{ proyecto.nombre|truncatewords:5 }}</strong>?
+                                </div>
+                                <div class="modal-footer">
+                                  <button type="submit" class="btn btn-danger">Eliminar</button>
+                                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                </div>
+                              </form>
+                            </div>
+                          </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar (Único para todos los registros) -->
+<div class="modal fade" id="modalEditar" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="post" id="formEditar">
+        {% csrf_token %}
+        <input type="hidden" name="proyecto_id" id="proyecto_id">
+        <input type="hidden" name="editar_proyecto" value="1">
+        <div class="modal-header">
+          <h5 class="modal-title">Editar Proyecto</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="id_clave" class="form-label">Clave</label>
+              <input type="text" class="form-control" id="id_clave" name="clave" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="id_objetivo" class="form-label">Objetivo</label>
+              <select class="form-select" id="id_objetivo" name="objetivo" required>
+                <option value="">Seleccione un objetivo</option>
+                {% for objetivo in form.objetivo.field.queryset %}
+                <option value="{{ objetivo.id }}">{{ objetivo.descripcion|truncatewords:5 }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-12 mb-3">
+              <label for="id_nombre" class="form-label">Nombre</label>
+              <textarea class="form-control" id="id_nombre" name="nombre" rows="3" required></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Guardar</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Crear -->
+<div class="modal fade" id="modalCrear" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="crear_proyecto" value="1">
+        <div class="modal-header">
+          <h5 class="modal-title">Agregar Proyecto</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          {{ form.as_p }}
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Guardar</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script>
+$(document).ready(function () {
+    // Inicializar DataTable
+    $('#proyectosTable').DataTable({
+        scrollX: true,
+        autoWidth: false,
+        paging: true,
+        searching: true,
+        info: true,
+        pageLength: 5,
+        lengthMenu: [5, 10, 20],
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json',
+        }
+    });
+    
+    // Manejar clic en botón Editar
+    $('.btn-editar').on('click', function() {
+        // Obtener datos del botón
+        var proyectoId = $(this).data('id');
+        var clave = $(this).data('clave');
+        var nombre = $(this).data('nombre');
+        var objetivoId = $(this).data('objetivo_id');
+        
+        // Llenar el formulario con los datos del proyecto
+        $('#proyecto_id').val(proyectoId);
+        $('#id_clave').val(clave);
+        $('#id_nombre').val(nombre);
+        $('#id_objetivo').val(objetivoId);
+        
+        // Mostrar el modal de edición
+        $('#modalEditar').modal('show');
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,433 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Programas{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css"/>
+<style>
+    #programasTable th, #programasTable td {
+        font-size: 0.85rem;
+        white-space: nowrap;
+        vertical-align: middle;
+        text-align: center;
+    }
+    .btn-sm { font-size: 0.75rem; padding: 0.25rem 0.5rem; }
+    .text-error { color: #dc3545; font-size: 0.8rem; }
+    .field-error {
+        color: #dc3545;
+        font-size: 0.875em;
+        margin-top: 0.25rem;
+    }
+    .is-invalid {
+        border-color: #dc3545;
+    }
+    .action-buttons {
+        display: flex;
+        gap: 0.3rem;
+        justify-content: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+            <h6 class="mb-0">Gestión de Programas Estratégicos</h6>
+            <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#modalCrear">
+                + Agregar Programa
+            </button>
+        </div>
+
+        <div class="card-body">
+            <!-- Mensajes de Django -->
+            {% if messages %}
+            <div class="mb-3">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="table-responsive">
+                <table id="programasTable" class="table table-striped table-hover table-bordered table-sm">
+                    <!-- Tabla sin cambios -->
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Clave</th>
+                            <th>Nombre</th>
+                            <th>Nombre Corto</th>
+                            <th>Estado</th>
+                            <th>Fecha Inicio</th>
+                            <th>Fecha Fin</th>
+                            <th>Duración</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for programa in programas %}
+                        <tr>
+                            <td>{{ programa.id }}</td>
+                            <td>{{ programa.clave }}</td>
+                            <td class="fw-semibold text-start">{{ programa.nombre }}</td>
+                            <td>{{ programa.nombre_corto }}</td>
+                            <td>
+                                {% if programa.estado %}
+                                    <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactivo</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ programa.fecha_inicio }}</td>
+                            <td>{{ programa.fecha_fin }}</td>
+                            <td>{{ programa.duracion }} Años</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn btn-sm btn-outline-primary btn-editar"
+                                            data-id="{{ programa.id }}"
+                                            data-clave="{{ programa.clave }}"
+                                            data-nombre="{{ programa.nombre }}"
+                                            data-nombre_corto="{{ programa.nombre_corto }}"
+                                            data-estado="{{ programa.estado|yesno:'True,False' }}"
+                                            data-fecha_inicio="{{ programa.fecha_inicio|date:'Y-m-d' }}"
+                                            data-fecha_fin="{{ programa.fecha_fin|date:'Y-m-d' }}"
+                                            data-duracion="{{ programa.duracion }}">
+                                        Editar
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" 
+                                            data-bs-target="#modalEliminar{{ programa.id }}">
+                                        Eliminar
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Modal Eliminar (sin cambios) -->
+                        <div class="modal fade" id="modalEliminar{{ programa.id }}" tabindex="-1">
+                          <div class="modal-dialog">
+                            <div class="modal-content">
+                              <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="programa_id" value="{{ programa.id }}">
+                                <input type="hidden" name="eliminar_programa" value="1">
+                                <div class="modal-header">
+                                  <h5 class="modal-title">Eliminar Programa</h5>
+                                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                  ¿Seguro que deseas eliminar el programa <strong>{{ programa.nombre }}</strong>?
+                                </div>
+                                <div class="modal-footer">
+                                  <button type="submit" class="btn btn-danger">Eliminar</button>
+                                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                </div>
+                              </form>
+                            </div>
+                          </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear -->
+<div class="modal fade" id="modalCrear" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" id="formCrear" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="crear_programa" value="1">
+        <div class="modal-header">
+          <h5 class="modal-title">Agregar Programa</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="erroresCrear" class="alert alert-danger d-none"></div>
+          
+          <div class="mb-3">
+            <label class="form-label">Clave</label>
+            <input type="text" class="form-control" name="clave" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Nombre</label>
+            <input type="text" class="form-control" name="nombre" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Nombre Corto</label>
+            <input type="text" class="form-control" name="nombre_corto" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Estado</label>
+            <select class="form-select" name="estado" required>
+              <option value="True">Activo</option>
+              <option value="False">Inactivo</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Fecha Inicio</label>
+            <input type="date" class="form-control" name="fecha_inicio" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Fecha Fin</label>
+            <input type="date" class="form-control" name="fecha_fin" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Duración (Años)</label>
+            <input type="number" class="form-control" name="duracion" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Guardar</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar -->
+<div class="modal fade" id="modalEditar" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" id="formEditar" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="programa_id" id="programa_id">
+        <input type="hidden" name="editar_programa" value="1">
+        <div class="modal-header">
+          <h5 class="modal-title">Editar Programa</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="erroresEditar" class="alert alert-danger d-none"></div>
+          
+          <div class="mb-3">
+            <label class="form-label">Clave</label>
+            <input type="text" class="form-control" id="id_clave_editar" name="clave" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Nombre</label>
+            <input type="text" class="form-control" id="id_nombre_editar" name="nombre" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Nombre Corto</label>
+            <input type="text" class="form-control" id="id_nombre_corto_editar" name="nombre_corto" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Estado</label>
+            <select class="form-select" id="id_estado_editar" name="estado" required>
+              <option value="True">Activo</option>
+              <option value="False">Inactivo</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Fecha Inicio</label>
+            <input type="date" class="form-control" id="id_fecha_inicio_editar" name="fecha_inicio" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Fecha Fin</label>
+            <input type="date" class="form-control" id="id_fecha_fin_editar" name="fecha_fin" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Duración (Años)</label>
+            <input type="number" class="form-control" id="id_duracion_editar" name="duracion" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Guardar cambios</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script>
+$(document).ready(function () {
+    $('#programasTable').DataTable({
+        scrollX: true,
+        autoWidth: false,
+        paging: true,
+        searching: true,
+        info: true,
+        pageLength: 5,
+        lengthMenu: [5, 10, 20],
+        language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' }
+    });
+
+    // Llenar modal de editar con datos del programa
+    $('.btn-editar').on('click', function() {
+        var id = $(this).data('id');
+        var clave = $(this).data('clave');
+        var nombre = $(this).data('nombre');
+        var nombre_corto = $(this).data('nombre_corto');
+        var estado = $(this).data('estado');
+        var fecha_inicio = $(this).data('fecha_inicio');
+        var fecha_fin = $(this).data('fecha_fin');
+        var duracion = $(this).data('duracion');
+
+        $('#programa_id').val(id);
+        $('#id_clave_editar').val(clave);
+        $('#id_nombre_editar').val(nombre);
+        $('#id_nombre_corto_editar').val(nombre_corto);
+        $('#id_estado_editar').val(estado.toString());
+        $('#id_fecha_inicio_editar').val(fecha_inicio);
+        $('#id_fecha_fin_editar').val(fecha_fin);
+        $('#id_duracion_editar').val(duracion);
+
+        // Limpiar errores previos
+        $('#erroresEditar').addClass('d-none').empty();
+        $('#formEditar input, #formEditar select').removeClass('is-invalid');
+
+        $('#modalEditar').modal('show');
+    });
+
+    // Validación del formulario de creación
+    $('#formCrear').on('submit', function(e) {
+        // Limpiar errores previos
+        $('#erroresCrear').addClass('d-none').empty();
+        $('input, select', this).removeClass('is-invalid');
+
+        let errores = [];
+        let camposInvalidos = [];
+
+        // Validar campos obligatorios
+        if (!$('[name="clave"]', this).val().trim()) {
+            errores.push('El campo Clave es obligatorio.');
+            camposInvalidos.push($('[name="clave"]', this));
+        }
+        if (!$('[name="nombre"]', this).val().trim()) {
+            errores.push('El campo Nombre es obligatorio.');
+            camposInvalidos.push($('[name="nombre"]', this));
+        }
+        if (!$('[name="nombre_corto"]', this).val().trim()) {
+            errores.push('El campo Nombre Corto es obligatorio.');
+            camposInvalidos.push($('[name="nombre_corto"]', this));
+        }
+        if (!$('[name="fecha_inicio"]', this).val()) {
+            errores.push('El campo Fecha Inicio es obligatorio.');
+            camposInvalidos.push($('[name="fecha_inicio"]', this));
+        }
+        if (!$('[name="fecha_fin"]', this).val()) {
+            errores.push('El campo Fecha Fin es obligatorio.');
+            camposInvalidos.push($('[name="fecha_fin"]', this));
+        }
+        if (!$('[name="duracion"]', this).val()) {
+            errores.push('El campo Duración es obligatorio.');
+            camposInvalidos.push($('[name="duracion"]', this));
+        }
+
+        // Validar que fecha fin sea posterior a fecha inicio
+        if ($('[name="fecha_inicio"]', this).val() && $('[name="fecha_fin"]', this).val()) {
+            var fechaInicio = new Date($('[name="fecha_inicio"]', this).val());
+            var fechaFin = new Date($('[name="fecha_fin"]', this).val());
+            
+            if (fechaFin <= fechaInicio) {
+                errores.push('La fecha fin debe ser posterior a la fecha inicio.');
+                camposInvalidos.push($('[name="fecha_fin"]', this));
+            }
+        }
+
+        if (errores.length > 0) {
+            e.preventDefault();
+
+            // Aplicar clase is-invalid a los campos con error
+            camposInvalidos.forEach(function(campo) {
+                campo.addClass('is-invalid');
+            });
+
+            $('#erroresCrear')
+                .removeClass('d-none')
+                .html('<ul><li>' + errores.join('</li><li>') + '</li></ul>');
+        }
+    });
+
+    // Validación del formulario de edición
+    $('#formEditar').on('submit', function(e) {
+        // Limpiar errores previos
+        $('#erroresEditar').addClass('d-none').empty();
+        $('input, select', this).removeClass('is-invalid');
+
+        let errores = [];
+        let camposInvalidos = [];
+
+        // Validar campos obligatorios
+        if (!$('#id_clave_editar').val().trim()) {
+            errores.push('El campo Clave es obligatorio.');
+            camposInvalidos.push($('#id_clave_editar'));
+        }
+        if (!$('#id_nombre_editar').val().trim()) {
+            errores.push('El campo Nombre es obligatorio.');
+            camposInvalidos.push($('#id_nombre_editar'));
+        }
+        if (!$('#id_nombre_corto_editar').val().trim()) {
+            errores.push('El campo Nombre Corto es obligatorio.');
+            camposInvalidos.push($('#id_nombre_corto_editar'));
+        }
+        if (!$('#id_fecha_inicio_editar').val()) {
+            errores.push('El campo Fecha Inicio es obligatorio.');
+            camposInvalidos.push($('#id_fecha_inicio_editar'));
+        }
+        if (!$('#id_fecha_fin_editar').val()) {
+            errores.push('El campo Fecha Fin es obligatorio.');
+            camposInvalidos.push($('#id_fecha_fin_editar'));
+        }
+        if (!$('#id_duracion_editar').val()) {
+            errores.push('El campo Duración es obligatorio.');
+            camposInvalidos.push($('#id_duracion_editar'));
+        }
+
+        // Validar que fecha fin sea posterior a fecha inicio
+        if ($('#id_fecha_inicio_editar').val() && $('#id_fecha_fin_editar').val()) {
+            var fechaInicio = new Date($('#id_fecha_inicio_editar').val());
+            var fechaFin = new Date($('#id_fecha_fin_editar').val());
+            
+            if (fechaFin <= fechaInicio) {
+                errores.push('La fecha fin debe ser posterior a la fecha inicio.');
+                camposInvalidos.push($('#id_fecha_fin_editar'));
+            }
+        }
+
+        if (errores.length > 0) {
+            e.preventDefault();
+
+            // Aplicar clase is-invalid a los campos con error
+            camposInvalidos.forEach(function(campo) {
+                campo.addClass('is-invalid');
+            });
+
+            $('#erroresEditar')
+                .removeClass('d-none')
+                .html('<ul><li>' + errores.join('</li><li>') + '</li></ul>');
+        }
+    }); 
+
+    // Quitar el resaltado de error cuando el usuario empiece a escribir
+    $('#formCrear input, #formCrear select, #formEditar input, #formEditar select').on('input change', function() {
+        $(this).removeClass('is-invalid');
+    });
+
+    // Auto abrir modal si hubo errores
+    {% if abrir_modal_crear %}
+        var modalCrear = new bootstrap.Modal(document.getElementById('modalCrear'));
+        modalCrear.show();
+    {% endif %}
+    {% if abrir_modal_editar %}
+        var modalEditar = new bootstrap.Modal(document.getElementById('modalEditar'));
+        modalEditar.show();
+    {% endif %}
+});
+</script>
+{% endblock %}

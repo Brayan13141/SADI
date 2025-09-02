@@ -1,0 +1,85 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+
+
+
+{% block content %}
+<div class="d-flex justify-content-between mb-4">
+    <h2 class="fw-bold text-primary">Resumen General</h2>
+    <button class="btn btn-primary">Nueva Actividad</button>
+</div>
+
+<!-- Sección de Indicadores -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-success text-white shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Completadas</h5>
+                <p class="card-text fs-2 fw-bold">24</p>
+                <span class="small">Tareas finalizadas</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">En Progreso</h5>
+                <p class="card-text fs-2 fw-bold">12</p>
+                <span class="small">Tareas activas</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Pendientes</h5>
+                <p class="card-text fs-2 fw-bold">8</p>
+                <span class="small">Por iniciar</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-gray text-white shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Total</h5>
+                <p class="card-text fs-2 fw-bold">44</p>
+                <span class="small">Actividades registradas</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sección de Actividades -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white">
+        <h5 class="fw-bold text-primary mb-0">Últimas Actividades</h5>
+    </div>
+    <div class="card-body">
+        <div class="list-group">
+            <a href="#" class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1 fw-bold">Revisión de requisitos</h6>
+                    <small class="text-success">Completada</small>
+                </div>
+                <small class="text-muted">Proyecto: Sistema de Gestión</small>
+            </a>
+            <a href="#" class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1 fw-bold">Diseño de interfaz</h6>
+                    <small class="text-info">En progreso</small>
+                </div>
+                <small class="text-muted">Proyecto: Portal Clientes</small>
+            </a>
+            <a href="#" class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1 fw-bold">Pruebas de integración</h6>
+                    <small class="text-warning">Pendiente</small>
+                </div>
+                <small class="text-muted">Proyecto: API Servicios</small>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,236 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Departamentos{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css"/>
+<style>
+    #departamentosTable th, #departamentosTable td {
+        font-size: 0.85rem;
+        white-space: nowrap;
+        vertical-align: middle;
+        text-align: center;
+    }
+    .btn-sm { font-size: 0.75rem; padding: 0.25rem 0.5rem; }
+    .field-error {
+        color: #dc3545;
+        font-size: 0.875em;
+        margin-top: 0.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Mensajes de Django -->
+    {% if messages %}
+    <div class="mb-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+<div class="container-fluid py-3">
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+            <h6 class="mb-0">Gestión de Departamentos</h6>
+            <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#modalCrear">
+                + Agregar Departamento
+            </button>
+        </div>
+
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="departamentosTable" class="table table-striped table-hover table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for departamento in departamentos %}
+                        <tr>
+                            <td>{{ departamento.id }}</td>
+                            <td class="text-start fw-semibold">{{ departamento.nombre }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary btn-editar" 
+                                        data-id="{{ departamento.id }}" 
+                                        data-nombre="{{ departamento.nombre }}">
+                                    Editar
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" 
+                                        data-bs-target="#modalEliminar{{ departamento.id }}">
+                                    Eliminar
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- Modal Eliminar -->
+                        <div class="modal fade" id="modalEliminar{{ departamento.id }}" tabindex="-1">
+                          <div class="modal-dialog">
+                            <div class="modal-content">
+                              <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="departamento_id" value="{{ departamento.id }}">
+                                <input type="hidden" name="eliminar_departamento" value="1">
+                                <div class="modal-header">
+                                  <h5 class="modal-title">Eliminar Departamento</h5>
+                                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                  ¿Seguro que deseas eliminar el departamento <strong>{{ departamento.nombre }}</strong>?
+                                </div>
+                                <div class="modal-footer">
+                                  <button type="submit" class="btn btn-danger">Eliminar</button>
+                                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                </div>
+                              </form>
+                            </div>
+                          </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar (Único para todos los registros) -->
+<div class="modal fade" id="modalEditar" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" id="formEditar" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="departamento_id" id="departamento_id">
+        <input type="hidden" name="editar_departamento" value="1">
+        <div class="modal-header">
+          <h5 class="modal-title">Editar Departamento</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+       <div class="modal-body">
+        {% for field in form %}
+          <div class="mb-3">
+            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+            <input 
+              type="text" 
+              name="{{ field.name }}" 
+              id="{{ field.id_for_label }}" 
+              value="{{ field.value|default_if_none:'' }}" 
+              class="form-control{% if field.errors %} is-invalid{% endif %}">
+            
+            {% if field.errors %}
+              {% for error in field.errors %}
+                <div class="field-error">{{ error }}</div>
+              {% endfor %}
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Guardar</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<!-- Modal Crear -->
+<div class="modal fade" id="modalCrear" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="crear_departamento" value="1">
+        <div class="modal-header">
+          <h5 class="modal-title">Agregar Departamento</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+       <div class="modal-body">
+        {% for field in form %}
+          <div class="mb-3">
+            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+            <input 
+              type="text" 
+              name="{{ field.name }}" 
+              id="{{ field.id_for_label }}" 
+              value="{{ field.value|default_if_none:'' }}" 
+              class="form-control{% if field.errors %} is-invalid{% endif %}">
+            
+            {% if field.errors %}
+              {% for error in field.errors %}
+                <div class="field-error">{{ error }}</div>
+              {% endfor %}
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Guardar</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+{% if abrir_modal_crear %}
+<script>
+$(document).ready(function(){
+    var modalCrear = new bootstrap.Modal(document.getElementById('modalCrear'));
+    modalCrear.show();
+});
+</script>
+{% elif abrir_modal_editar %}
+<script>
+$(document).ready(function(){
+    var modalEditar = new bootstrap.Modal(document.getElementById('modalEditar'));
+    modalEditar.show();  
+});
+</script>
+{% endif %}
+
+<script>
+$(document).ready(function () {
+    // Inicializar DataTable
+    $('#departamentosTable').DataTable({
+        scrollX: true,
+        autoWidth: false,
+        paging: true,
+        searching: true,
+        info: true,
+        pageLength: 5,
+        lengthMenu: [5, 10, 20],
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json',
+        }
+    });
+    
+    // Manejar clic en botón Editar
+    $('.btn-editar').on('click', function() {
+        var departamentoId = $(this).data('id');
+        var departamentoNombre = $(this).data('nombre');
+        
+        // Llenar el formulario con los datos del departamento
+        $('#departamento_id').val(departamentoId);
+        $('#id_nombre').val(departamentoNombre);
+        
+        // Mostrar el modal de edición
+        $('#modalEditar').modal('show');
+    });
+});
+</script>
+{% endblock %}

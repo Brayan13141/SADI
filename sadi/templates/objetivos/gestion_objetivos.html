@@ -1,0 +1,204 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Objetivos Estratégicos{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css"/>
+<style>
+    #objetivosTable th, #objetivosTable td {
+        font-size: 0.85rem;
+        white-space: nowrap;
+        vertical-align: middle;
+        text-align: center;
+    }
+    .btn-sm { font-size: 0.75rem; padding: 0.25rem 0.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+            <h6 class="mb-0">Gestión de Objetivos Estratégicos</h6>
+            <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#modalCrear">
+                + Agregar Objetivo
+            </button>
+        </div>
+
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="objetivosTable" class="table table-striped table-hover table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Descripción</th>
+                            <th>Ciclo</th>
+                            <th>Programa</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for objetivo in objetivos %}
+                        <tr>
+                            <td>{{ objetivo.id }}</td>
+                            <td class="text-start">{{ objetivo.descripcion|truncatewords:10 }}</td>
+                            <td>{{ objetivo.ciclo.programa.nombre }} ({{ objetivo.ciclo.fecha_inicio|date:"Y" }})</td>
+                            <td>{{ objetivo.programa.nombre }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary btn-editar" 
+                                        data-id="{{ objetivo.id }}"
+                                        data-descripcion="{{ objetivo.descripcion }}"
+                                        data-ciclo_id="{{ objetivo.ciclo.id }}"
+                                        data-programa_id="{{ objetivo.programa.id }}">
+                                    Editar
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" 
+                                        data-bs-target="#modalEliminar{{ objetivo.id }}">
+                                    Eliminar
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- Modal Eliminar -->
+                        <div class="modal fade" id="modalEliminar{{ objetivo.id }}" tabindex="-1">
+                          <div class="modal-dialog">
+                            <div class="modal-content">
+                              <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="objetivo_id" value="{{ objetivo.id }}">
+                                <input type="hidden" name="eliminar_objetivo" value="1">
+                                <div class="modal-header">
+                                  <h5 class="modal-title">Eliminar Objetivo</h5>
+                                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                  ¿Seguro que deseas eliminar el objetivo <strong>{{ objetivo.descripcion|truncatewords:5 }}</strong>?
+                                </div>
+                                <div class="modal-footer">
+                                  <button type="submit" class="btn btn-danger">Eliminar</button>
+                                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                </div>
+                              </form>
+                            </div>
+                          </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar (Único para todos los registros) -->
+<div class="modal fade" id="modalEditar" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="post" id="formEditar">
+        {% csrf_token %}
+        <input type="hidden" name="objetivo_id" id="objetivo_id">
+        <input type="hidden" name="editar_objetivo" value="1">
+        <div class="modal-header">
+          <h5 class="modal-title">Editar Objetivo Estratégico</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="id_ciclo" class="form-label">Ciclo</label>
+              <select class="form-select" id="id_ciclo" name="ciclo" required>
+                <option value="">Seleccione un ciclo</option>
+                {% for ciclo in form.ciclo.field.queryset %}
+                <option value="{{ ciclo.id }}">{{ ciclo.programa.nombre }} ({{ ciclo.fecha_inicio|date:"Y" }})</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="id_programa" class="form-label">Programa</label>
+              <select class="form-select" id="id_programa" name="programa" required>
+                <option value="">Seleccione un programa</option>
+                {% for programa in form.programa.field.queryset %}
+                <option value="{{ programa.id }}">{{ programa.clave }} - {{ programa.nombre }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-12 mb-3">
+              <label for="id_descripcion" class="form-label">Descripción</label>
+              <textarea class="form-control" id="id_descripcion" name="descripcion" rows="3" required></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Guardar</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Crear -->
+<div class="modal fade" id="modalCrear" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="crear_objetivo" value="1">
+        <div class="modal-header">
+          <h5 class="modal-title">Agregar Objetivo Estratégico</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          {{ form.as_p }}
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Guardar</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script>
+$(document).ready(function () {
+    // Inicializar DataTable
+    $('#objetivosTable').DataTable({
+        scrollX: true,
+        autoWidth: false,
+        paging: true,
+        searching: true,
+        info: true,
+        pageLength: 5,
+        lengthMenu: [5, 10, 20],
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json',
+        }
+    });
+    
+    // Manejar clic en botón Editar
+    $('.btn-editar').on('click', function() {
+        // Obtener datos del botón
+        var objetivoId = $(this).data('id');
+        var descripcion = $(this).data('descripcion');
+        var cicloId = $(this).data('ciclo_id');
+        var programaId = $(this).data('programa_id');
+        
+        // Llenar el formulario con los datos del objetivo
+        $('#objetivo_id').val(objetivoId);
+        $('#id_descripcion').val(descripcion);
+        $('#id_ciclo').val(cicloId);
+        $('#id_programa').val(programaId);
+        
+        // Mostrar el modal de edición
+        $('#modalEditar').modal('show');
+    });
+});
+</script>
+{% endblock %}
