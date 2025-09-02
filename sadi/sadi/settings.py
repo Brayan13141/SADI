@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 from decouple import config
 
@@ -37,6 +38,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # REST_FRAMEWORK
     "rest_framework",
+    "rest_framework.authtoken",
+    "dj_rest_auth",
     # Django AllAuth
     "django.contrib.sites",
     "allauth",
@@ -161,8 +164,20 @@ USE_TZ = True
 # settings.py
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
-
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Configuraciones de seguridad para ngrok
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
+# Configuración CSRF para ngrok
+CSRF_TRUSTED_ORIGINS = [
+    "https://a1835a660220.ngrok-free.app",
+    "https://*.ngrok-free.app",
+    "https://*.ngrok.io",
+]
