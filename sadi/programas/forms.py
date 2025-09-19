@@ -12,7 +12,6 @@ class ProgramaEstrategicoForm(forms.ModelForm):
             "nombre_corto",
             "fecha_inicio",
             "fecha_fin",
-            "duracion",
         ]
         widgets = {
             "clave": forms.TextInput(attrs={"class": "form-control", "required": True}),
@@ -29,21 +28,20 @@ class ProgramaEstrategicoForm(forms.ModelForm):
             "fecha_fin": forms.DateInput(
                 attrs={"type": "date", "class": "form-control", "required": True}
             ),
-            "duracion": forms.NumberInput(
-                attrs={"class": "form-control", "required": True}
-            ),
         }
 
 
 class CicloForm(forms.ModelForm):
     class Meta:
         model = Ciclo
-        fields = ["activo", "fecha_inicio", "fecha_fin", "duracion", "programa"]
+        fields = ["activo", "fecha_inicio", "fecha_fin", "programa"]
         widgets = {
+            "activo": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "fecha_inicio": forms.DateInput(
                 attrs={"type": "date", "class": "form-control", "required": True}
             ),
             "fecha_fin": forms.DateInput(
                 attrs={"type": "date", "class": "form-control", "required": True}
             ),
+            "programa": forms.Select(attrs={"class": "form-control", "required": True}),
         }

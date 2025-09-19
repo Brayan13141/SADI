@@ -18,9 +18,9 @@ class UsuarioForm(forms.ModelForm):
             "last_name",
             "role",
             "departamento",
+            "is_active",  # Añadido
             "password",
         ]
-
         widgets = {
             "username": forms.TextInput(
                 attrs={"class": "form-control", "required": True}
@@ -34,29 +34,29 @@ class UsuarioForm(forms.ModelForm):
             "last_name": forms.TextInput(
                 attrs={"class": "form-control", "required": True}
             ),
+            "is_active": forms.CheckboxInput(  # Añadido
+                attrs={"class": "form-check-input"}
+            ),
             "role": forms.Select(attrs={"class": "form-select", "required": True}),
             "departamento": forms.Select(
-                attrs={"class": "form-select", "required": True}
+                attrs={
+                    "class": "form-select",
+                    "required": False,
+                }  # Cambiado a no requerido si es opcional
             ),
         }
 
     def save(self, commit=True):
         usuario = super().save(commit=False)
-        usuario.set_password(self.cleaned_data["password"])  # encripta
+        usuario.set_password(self.cleaned_data["password"])
         if commit:
             usuario.save()
         return usuario
 
-    def clean_email(self):
-        email = self.cleaned_data.get("email")
-        if not email:
-            raise forms.ValidationError("El correo es obligatorio.")
-        return email
-
 
 class UsuarioEditForm(forms.ModelForm):
     password = forms.CharField(
-        required=False,  # 👈 en edición puede ir vacío
+        required=False,  # Cambiado a False para que no sea obligatorio
         widget=forms.PasswordInput(attrs={"class": "form-control"}),
         label="Contraseña (dejar en blanco para mantener la actual)",
     )
@@ -66,16 +66,42 @@ class UsuarioEditForm(forms.ModelForm):
         fields = [
             "username",
             "email",
-            "password",
             "first_name",
             "last_name",
-            "is_active",
-            "is_staff",
+            "is_active",  # Añadido
+            "role",  # Añadido
+            "departamento",  # Añadido
+            "password",
         ]
+        widgets = {
+            "username": forms.TextInput(
+                attrs={"class": "form-control", "required": True}
+            ),
+            "email": forms.EmailInput(
+                attrs={"class": "form-control", "required": True}
+            ),
+            "first_name": forms.TextInput(
+                attrs={"class": "form-control", "required": True}
+            ),
+            "last_name": forms.TextInput(
+                attrs={"class": "form-control", "required": True}
+            ),
+            "is_active": forms.CheckboxInput(  # Añadido
+                attrs={"class": "form-check-input"}
+            ),
+            "role": forms.Select(attrs={"class": "form-select", "required": True}),
+            "departamento": forms.Select(
+                attrs={
+                    "class": "form-select",
+                    "required": False,
+                }  # Cambiado a no requerido si es opcional
+            ),
+        }
 
     def save(self, commit=True):
         usuario = super().save(commit=False)
-        if self.cleaned_data.get("password"):  # solo si escribieron algo
+        # Solo establecer nueva contraseña si se proporciona
+        if self.cleaned_data.get("password"):
             usuario.set_password(self.cleaned_data["password"])
         if commit:
             usuario.save()
