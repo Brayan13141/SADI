@@ -1,7 +1,7 @@
 from django.urls import path
-from .views import crud_usuarios
+from .views import gestion_usuarios
 
 
 urlpatterns = [
-    path("admin/", crud_usuarios, name="gestion_usuarios"),
+    path("admin/", gestion_usuarios, name="gestion_usuarios"),
 ]

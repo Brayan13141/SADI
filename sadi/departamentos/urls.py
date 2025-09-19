@@ -4,7 +4,9 @@ from rest_framework.routers import DefaultRouter
 from .views import DepartamentoViewSet, gestion_departamentos
 
 router = DefaultRouter()
-router.register(r"api/departamentos", DepartamentoViewSet)
+# departamentos/urls.py
+router.register(r"api/departamentos", DepartamentoViewSet, basename="departamento")
+
 
 urlpatterns = [
     path("", include(router.urls)),

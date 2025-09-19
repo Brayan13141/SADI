@@ -8,7 +8,7 @@ from .views import (
 )
 
 router = DefaultRouter()
-router.register(r"api/actividades", ActividadViewSet)
+router.register(r"api/actividades", ActividadViewSet, basename="actividad")
 
 urlpatterns = [
     path("", include(router.urls)),
