@@ -1,12 +1,22 @@
+# actividades/serializers.py
 from rest_framework import serializers
 from .models import Actividad
+from riesgos.serializers import RiesgoDetailSerializer
 
 
-class ActividadSerializer(serializers.ModelSerializer):
-    # meta_detail = MetaSerializer(source="meta", read_only=True)
-    # responsable_detail = UsuarioSerializer(source="responsable", read_only=True)
+class ActividadDetailSerializer(serializers.ModelSerializer):
+    riesgos = RiesgoDetailSerializer(source="riesgo_set", many=True, read_only=True)
 
     class Meta:
         model = Actividad
-        fields = "__all__"
-        extra_kwargs = {"history": {"read_only": True}}
+        fields = [
+            "id",
+            "descripcion",
+            "meta",
+            "responsable",
+            "departamento",
+            "estado",
+            "fecha_inicio",
+            "fecha_fin",
+            "riesgos",
+        ]
