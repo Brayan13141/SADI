@@ -1,0 +1,265 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Usuarios{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css"/>
+<style>
+    #usuariosTable th, #usuariosTable td {
+        font-size: 0.85rem;
+        white-space: nowrap;
+        vertical-align: middle;
+        text-align: center;
+    }
+    .btn-sm { font-size: 0.75rem; padding: 0.25rem 0.5rem; }
+    .badge-role { font-size: 0.75rem; }
+    .field-error {
+        color: #dc3545;
+        font-size: 0.875em;
+        margin-top: 0.25rem;
+    }
+    .is-invalid {
+        border-color: #dc3545;
+    }
+    .bg-bg-info{
+        background-color: #17a2b8;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+  
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+            <h6 class="mb-0">Gestión de Usuarios</h6>
+            <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#modalCrear">
+                + Agregar Usuario
+            </button>
+        </div>
+
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="usuariosTable" class="table table-striped table-hover table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Usuario</th>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Rol</th>
+                            <th>Departamento</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for usuario in usuarios %}
+                        <tr>
+                            <td>{{ usuario.id }}</td>
+                            <td>{{ usuario.username }}</td>
+                            <td>{{ usuario.first_name }} {{ usuario.last_name }}</td>
+                            <td>{{ usuario.email }}</td>
+                            <td>
+                                {% if usuario.role == "ADMIN" %}
+                                    <span class="badge bg-danger badge-role">Administrador</span>
+                                {% elif usuario.role == "APOYO" %}
+                                    <span class="badge bg-warning text-white badge-role">Apoyo</span>
+                                {% elif usuario.role == "DOCENTE" %}
+                                    <span class="badge bg-success badge-role">Docente</span>
+                                {% else %}
+                                    <span class="badge bg-bg-info badge-role">Invitado</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ usuario.departamento.nombre|default:"-" }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary btn-editar" 
+                                        data-id="{{ usuario.id }}"
+                                        data-username="{{ usuario.username }}"
+                                        data-first_name="{{ usuario.first_name }}"
+                                        data-last_name="{{ usuario.last_name }}"
+                                        data-email="{{ usuario.email }}"
+                                        data-role="{{ usuario.role }}"
+                                        data-departamento="{{ usuario.departamento.id|default:'' }}">
+                                    Editar
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" 
+                                        data-bs-target="#modalEliminar{{ usuario.id }}">
+                                    Eliminar
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- Modal Eliminar -->
+                        <div class="modal fade" id="modalEliminar{{ usuario.id }}" tabindex="-1">
+                          <div class="modal-dialog">
+                            <div class="modal-content">
+                              <form method="post" novalidate>
+                                {% csrf_token %}
+                                <input type="hidden" name="usuario_id" value="{{ usuario.id }}">
+                                <input type="hidden" name="eliminar_usuario" value="1">
+                                <div class="modal-header">
+                                  <h5 class="modal-title">Eliminar Usuario</h5>
+                                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                  ¿Seguro que deseas eliminar el usuario <strong>{{ usuario.username }}</strong>?
+                                </div>
+                                <div class="modal-footer">
+                                  <button type="submit" class="btn btn-danger">Eliminar</button>
+                                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                </div>
+                              </form>
+                            </div>
+                          </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar -->
+<div class="modal fade" id="modalEditar" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" id="formEditar" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="editar_usuario" value="1">
+        <input type="hidden" name="usuario_id" id="usuario_id">
+        <div class="modal-header">
+          <h5 class="modal-title">Editar Usuario</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="erroresEditar" class="alert alert-danger d-none"></div>
+          <div class="mb-2">
+            <label class="form-label">Usuario</label>
+            <input type="text" class="form-control" id="id_username" name="username">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Nombre</label>
+            <input type="text" class="form-control" id="id_first_name" name="first_name">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Apellido</label>
+            <input type="text" class="form-control" id="id_last_name" name="last_name">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Correo</label>
+            <input type="email" class="form-control" id="id_email" name="email">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Contraseña (Dejar en blanco para no cambiar)</label>
+            <input type="password" class="form-control" id="id_password" name="password">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Rol</label>
+            <select class="form-select" id="id_role" name="role">
+              <option value="">Selecciona un rol</option>
+              <option value="ADMIN">Administrador</option>
+              <option value="APOYO">Apoyo</option>
+              <option value="DOCENTE">Docente</option>
+              <option value="INVITADO">Invitado</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Departamento</label>
+            <select class="form-select" id="id_departamento" name="departamento">
+              <option value="">---------</option>
+              {% for dep in form.fields.departamento.queryset %}
+                <option value="{{ dep.id }}">{{ dep.nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Guardar</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Crear -->
+<div class="modal fade" id="modalCrear" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" id="formCrear" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="crear_usuario" value="1">
+        <div class="modal-header">
+          <h5 class="modal-title">Agregar Usuario</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="erroresCrear" class="alert alert-danger d-none"></div>
+          <div class="mb-2">
+            <label class="form-label">Usuario</label>
+            <input type="text" class="form-control" name="username">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Nombre</label>
+            <input type="text" class="form-control" name="first_name">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Apellido</label>
+            <input type="text" class="form-control" name="last_name">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Correo</label>
+            <input type="email" class="form-control" name="email">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Contraseña</label>
+            <input type="password" class="form-control" name="password">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Rol</label>
+            <select class="form-select" name="role">
+              <option value="">Selecciona un rol</option>
+              <option value="ADMIN">Administrador</option>
+              <option value="APOYO">Apoyo</option>
+              <option value="DOCENTE">Docente</option>
+              <option value="INVITADO">Invitado</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Departamento</label>
+            <select class="form-select" name="departamento">
+              <option value="">---------</option>
+              {% for dep in form.fields.departamento.queryset %}
+                <option value="{{ dep.id }}">{{ dep.nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Guardar</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+ <!-- Mensajes de Django -->
+    {% if messages %}
+    <div class="mb-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+
+<script src="{% static "JS/jsUsuarios.js" %}"> </script>
+{% endblock %}

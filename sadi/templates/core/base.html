@@ -4,193 +4,304 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
+    <title>{% block title %}Dashboard - SADI{% endblock %}</title>
+    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/estiloBase.css' %}">
-    <link rel="stylesheet" href="{% static 'css/font-icons-min.css' %}">
-    <link rel="stylesheet" type="text/css" href="{% static 'css/gobmx.css' %}" />
-    <link rel="stylesheet" type="text/css" href="{% static 'css/mobirise-icons.css' %}" />
-    <link rel="stylesheet" href="{% static 'css/responsive.css' %}">
-    <link rel="stylesheet" type="text/css" href="{% static 'css/style_2.css' %}" />
+    <!-- Íconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <!-- DataTables -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css"/>
+    <!-- Estilos propios -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
-
-    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-    <link href="google-translate.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style2.css' %}">
+    <link rel="stylesheet" href="{% static 'css/estiloBase.css' %}">
+    {% block extra_css %}{% endblock %}
 </head>
 <body class="d-flex flex-column min-vh-100">
-    <!-- Barra Superior -->
-    <nav class=" navbarGob fs-3 navbar-fixed-top" role="navigation">
-        <div class="container">
-                 <div class="navbar-header">
-            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbarMainCollapse">
-                <span class="sr-only">Interruptor de Navegación</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
+    <!-- Barra superior Gobierno -->
+    <nav class="navbar navbar-dark bg-dark fixed-top navbarGob">
+        <div class="container-fluid">
             <a class="navbar-brand" href="https://www.gob.mx/">
-            <img src="https://framework-gb.cdn.gob.mx/gobmx/img/logo_blanco.svg" width="30" height="5" class="" alt="gobierno de mexico"></a>
-        </div>
-        <div class="navbarGob">
-            <ul class="flex-fill  nav gobOptions navbar-nav navbar-right">
-                <li>
-                    <a href="https://www.gob.mx/tramites">Trámites</a>
-                </li>
-                <li>
-                    <a href="https://www.gob.mx/gobierno">Gobierno</a>
-                </li>
-                <li>
-                    <a href="https://www.gob.mx/busqueda">
-                    <span class="sr-only">Búsqueda</span>
-                    <i class="icon-search"></i>
-                    </a>
-                </li>
+                <img src="https://framework-gb.cdn.gob.mx/gobmx/img/logo_blanco.svg" alt="Gobierno de México" height="30">
+            </a>
+            <ul class="navbar-nav flex-row">
+                <li class="nav-item me-3"><a class="nav-link text-white" href="https://www.gob.mx/tramites">Trámites</a></li>
+                <li class="nav-item me-3"><a class="nav-link text-white" href="https://www.gob.mx/gobierno">Gobierno</a></li>
+                <li class="nav-item"><a class="nav-link text-white" href="https://www.gob.mx/busqueda"><i class="fa fa-search"></i></a></li>
             </ul>
-        </div>
-
         </div>
     </nav>
 
+    <!-- Barra SADI -->
+    <div class="navbarSadi bg-primary text-white mt-5 py-3">
+        <div class="container-fluid d-flex justify-content-between align-items-center">
+            <!-- Bloque 1 -->
+            <span class="fs-3 fw-bold">SADI</span>
 
-  <div class="navbarSadi bg-primary py-3">
-    <div class="containernavbarSADI container-fluid d-flex align-items-center justify-content-between">
-        
-        <!-- Bloque 1: SADI -->
-        <div class="txtpanelP flex-fill ">
-            <span class="navbar-brand text-white fs-3 fw-bold">SADI</span>
-        </div>
-
-        <!-- Bloque 2: Indicadores -->
-        <div class="fs-2 d-flex justify-content-center flex-fill text-center">
-            <div class="me-4">
-                <span class="d-block text-white-50 small">PROGRESO META</span>
-                <span class="text-white fw-bold">75%</span>
-            </div>
-            <div class="me-4">
-                <span class="d-block text-white-50 small">PROGRESO OBJETIVO</span>
-                <span class="text-white fw-bold">60%</span>
-            </div>
-            <div>
-                <span class="d-block text-white-50 small">PROGRESO PROYECTO</span>
-                <span class="text-white fw-bold">85%</span>
-            </div>
-        </div>
-
-        <!-- Bloque 3: Usuario -->
-        <div class="d-flex justify-content-end align-items-center flex-fill">
-            <div class="text-end me-3">
-                <span class="d-block text-white fw-bold">Nombre Usuario</span>
-                <span class="text-white-50 small">Cargo | Departamento</span>
-            </div>
-            <div class="dropdown">
-                <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                    <i class="bi bi-person-circle"></i>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="#">Perfil</a></li>
-                    <li><a class="dropdown-item" href="#">Configuración</a></li>
-                    <li><a class="dropdown-item" href="/accounts/logout/">Cerrar Sesión</a></li>
-                </ul>
-            </div>
-        </div>
-
-    </div>
-</div>
-
-    <!-- Contenedor Principal -->
-    <div class="container-fluid flex-grow-1 d-flex">
-        <!-- Menú Lateral -->
-        <div class="col-md-2 bg-light p-0 border-end">
-            <div class="d-flex flex-column p-3">
-                <ul class="nav nav-pills flex-column">
-                    <li class="nav-item mb-2">
-                        <a class="nav-link active" href="#">
-                            <i class="bi bi-speedometer2 me-2"></i>
-                            Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item mb-2">
-                        <a class="nav-link text-dark" href="#">
-                            <i class="bi bi-list-task me-2"></i>
-                            Actividades
-                        </a>
-                    </li>
-                    <li class="nav-item mb-2">
-                        <a class="nav-link text-dark" href="#">
-                            <i class="bi bi-bar-chart me-2"></i>
-                            Reportes
-                        </a>
-                    </li>
-                    <li class="nav-item mb-2">
-                        <a class="nav-link text-dark" href="#">
-                            <i class="bi bi-people me-2"></i>
-                            Equipo
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" href="#">
-                            <i class="bi bi-gear me-2"></i>
-                            Configuración
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-
-        <!-- Contenido Principal -->
-        <main class="col-md-10 p-4">
-            <div class="d-flex justify-content-between mb-4">
-                <h2 class="fw-bold text-primary">Resumen General</h2>
-                <button class="btn btn-primary">Nueva Actividad</button>
-            </div>
-            
-            {% block resumenGeneral %}{% endblock %}
-        </main>
-    </div>
-
-    
-<footer class="bg-extra-blue  xs-no-padding-top" >
-    <div class="footer-top padding-two-top lg-padding-eight-tb md-padding-50px-tb">
-        <div class="container">
-            <div class="row">
-                <div class="col-12 col-xl-3 col-sm-3 order-sm-1 order-xl-0 lg-margin-50px-bottom xs-margin-25px-bottom">
-                    <a class="footer-logo"><img src="{% static 'img/tecnm-blanco.png' %}" class="max-h-inherit"></a>
-                    <span class="alt-font font-weight-500 d-block text-white letter-spacing-0px margin-0px-bottom xs-margin-10px-bottom"><p>Av. Educaci&oacute;n Superior 2000, Col. Ju&aacute;rez, Uriangato, Gto, C.P. 38982</p></span>
+            <!-- Bloque 2 -->
+            <div class="d-flex gap-4 text-center">
+                <div>
+                    <span class="d-block text-white-50 small">PROGRESO META</span>
+                    <span class="fw-bold">75%</span>
                 </div>
-                <div class="col-12 col-xl-3 offset-xl-1 col-sm-3 order-sm-3 order-xl-0 xs-margin-25px-bottom">
-                    <span class="alt-font font-weight-500 d-block text-white text-uppercase letter-spacing-2px margin-20px-bottom xs-margin-10px-bottom">Contacto</span>
-                    <span class="alt-font font-weight-200 d-block text-white letter-spacing-0px margin-0px-bottom xs-margin-10px-bottom"><i class="solid-icon-Mail icon-extra-small"></i> dpto_difusion@itsur.edu.mx</span>
-                    <span class="alt-font font-weight-300 d-block text-white letter-spacing-0px margin-0px-bottom xs-margin-10px-bottom"><i class="solid-icon-Phone icon-extra-small"></i> 445 45 7 74 del 68 al 71 </span>    
-                    
+                <div>
+                    <span class="d-block text-white-50 small">PROGRESO OBJETIVO</span>
+                    <span class="fw-bold">60%</span>
                 </div>
-                <div class="col-12 col-xl-4 offset-xl-1 col-sm-3 order-sm-2 order-xl-0 lg-margin-50px-bottom xs-no-margin-bottom">
-                    <span class="alt-font font-weight-500 d-block text-white text-uppercase letter-spacing-2px margin-30px-bottom xs-margin-25px-bottom">Siguenos</span>
-                    <div class="col-lg-12 col-md-10 col-sm-12  elements-social social-icon-style-04">
-                        <ul class="large-icon">
-                            <li><a class="facebook" href="https://www.facebook.com/TECNMSURGTO" target="_blank"><i class="fab fa-facebook-f"></i></a></li>
-                        </ul>
-                    </div>
+                <div>
+                    <span class="d-block text-white-50 small">PROGRESO PROYECTO</span>
+                    <span class="fw-bold">85%</span>
                 </div>
-                
             </div>
-        </div>
-    </div>
-    <div class="footer-bottom  xs-no-padding-top border-top border-color-white-transparent">
-        <div class="container">
-            <div class="row">
-                <div class="col-12 col-md-6 order-2 order-md-0 text-sm-center text-md-start last-paragraph-no-margin">
-                    <p class="alt-font font-weight-500 d-block text-white">2025 TecNM Campus Sur de Guanajuato | Powered by <a  class="alt-font font-weight-500 text-white" href="https://github.com/Brayan13141" target="_blank">Bryan Sanchez</a></p>
+
+            <!-- Bloque 3 -->
+            <div class="d-flex align-items-center">
+                <div class="me-3 text-end pb-3">
+                    <span class="fw-bold">{{ request.user.get_full_name|default:request.user.username }}</span><br>
+                    <span class="small text-white-50">{{ request.user.email }}</span><br>
+                    {% if request.user.role == "ADMIN" %}
+                        <span class="badge bg-danger">Administrador</span>
+                    {% elif request.user.role == "APOYO" %}
+                        <span class="badge bg-info">Apoyo</span>
+                    {% elif request.user.role == "DOCENTE" %}
+                        <span class="badge bg-warning">Docente</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Invitado</span>
+                    {% endif %}
                 </div>
-                <div class="col-12 col-md-6 order-1 order-md-0 sm-margin-15px-bottom">                    
-                    <ul class="footer-horizontal-link d-flex flex-column flex-sm-row justify-content-sm-center justify-content-md-end">
-                        <li><a href="avisosdeprivacidad.html" class="alt-font font-weight-500 d-block text-white">Avisos de Privacidad</a></li>                       
+                <div class="dropdown">
+                    <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="/accounts/logout/">Cerrar Sesión</a></li>
                     </ul>
                 </div>
             </div>
         </div>
     </div>
-</footer>
+
+    <!-- Layout principal -->
+    <div class="container-fluid flex-grow-1">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-2 bg-light border-end p-2 vh-100 sidebar">
+                <ul class="nav nav-pills flex-column" id="sidebarMenu">
+
+                    <!-- Dashboard - Disponible para todos -->
+                    <li class="nav-item mb-2">
+                        <a class="nav-link text-dark {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
+                            <i class="bi bi-speedometer2 text-dark me-2"></i> Dashboard
+                        </a>
+                    </li>
+
+                    <!-- Gestión de Meta - Solo para ADMIN y APOYO -->
+                    {% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
+                    <li class="nav-item mb-2">
+                        <a class="nav-link text-dark {% if request.resolver_match.url_name == 'tabla_seguimiento' %}active{% endif %}" href="{% url 'tabla_seguimiento' %}">
+                            <i class="bi bi-award text-dark me-2"></i> Gestión de Metas
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    <!-- Menú de Administración - Solo para ADMIN y APOYO -->
+                    {% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
+                    <li class="nav-item">
+                        <button 
+                            class="btn btn-toggle align-items-center rounded w-120 text-start nav-link text-dark {% if request.resolver_match.url_name in 'gestion_usuarios gestion_departamentos gestion_programas gestion_ciclos gestion_objetivos gestion_proyectos gestion_metas gestion_riesgos gestion_mitigaciones gestion_actividades' %}{% else %}collapsed{% endif %}" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#admin-collapse" 
+                            aria-expanded="{% if request.resolver_match.url_name in 'gestion_usuarios gestion_departamentos gestion_programas gestion_ciclos gestion_objetivos gestion_proyectos gestion_metas gestion_riesgos gestion_mitigaciones gestion_actividades' %}true{% else %}false{% endif %}">
+                            
+                            <i id="admin-icon" class="bi me-2 
+                                {% if request.resolver_match.url_name in 'gestion_usuarios gestion_departamentos gestion_programas gestion_ciclos gestion_objetivos gestion_proyectos gestion_metas gestion_riesgos gestion_mitigaciones gestion_actividades' %}
+                                    bi-chevron-compact-up
+                                {% else %}
+                                    bi-chevron-compact-down
+                                {% endif %}
+                            "></i> Administración
+                        </button>
+
+                        <div class="collapse {% if request.resolver_match.url_name in 'gestion_usuarios gestion_departamentos gestion_programas gestion_ciclos gestion_objetivos gestion_proyectos gestion_metas gestion_riesgos gestion_mitigaciones gestion_actividades' %}show{% endif %}" id="admin-collapse">
+                            <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small ms-4">
+
+                                <!-- Opciones solo para ADMIN -->
+                                {% if request.user.role == "ADMIN" %}
+                                <li><a href="{% url 'gestion_usuarios' %}" class="nav-link text-dark
+                                    {% if request.resolver_match.url_name == 'gestion_usuarios' %}active{% endif %}"><i class="bi bi-person me-2"></i> Usuarios</a></li>
+                                <li><a href="{% url 'gestion_departamentos' %}" class="nav-link text-dark
+                                    {% if request.user.role == 'ADMIN' and request.resolver_match.url_name == 'gestion_departamentos' %}active{% endif %}"><i class="bi bi-buildings me-2"></i> Departamentos</a></li>
+                                {% endif %}
+
+                                <!-- Opciones para ADMIN y APOYO -->
+                                <li><a href="{% url 'gestion_programas' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_programas' %}active{% endif %}"><i class="bi bi-journal me-2"></i> Programas</a></li>
+                                <li><a href="{% url 'gestion_ciclos' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_ciclos' %}active{% endif %}"><i class="bi bi-calendar me-2"></i> Ciclos</a></li>
+                                <li><a href="{% url 'gestion_objetivos' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_objetivos' %}active{% endif %}"><i class="bi bi-bullseye me-2"></i> Objetivos</a></li>
+                                <li><a href="{% url 'gestion_proyectos' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_proyectos' %}active{% endif %}"><i class="bi bi-diagram-3 me-2"></i> Proyectos</a></li>
+                                <li><a href="{% url 'gestion_metas' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_metas' %}active{% endif %}"><i class="bi bi-flag me-2"></i> Metas</a></li>
+                                
+                                <!-- Opciones de Riesgos y Mitigaciones para ADMIN, APOYO y DOCENTE -->
+                                {% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
+                                <li><a href="{% url 'gestion_riesgos' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_riesgos' %}active{% endif %}"><i class="bi bi-exclamation-triangle me-2"></i> Riesgos</a></li>
+                                <li><a href="{% url 'gestion_mitigaciones' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_mitigaciones' %}active{% endif %}"><i class="bi bi-shield-check me-2"></i> Mitigaciones</a></li>
+                                {% endif %}
+                                
+                                <li><a href="{% url 'gestion_actividades' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_actividades' %}active{% endif %}"><i class="bi bi-list-check me-2"></i> Actividades</a></li>
+                            </ul>
+                        </div>
+                    </li>
+                    {% endif %}
+
+                    <!-- Opciones específicas para DOCENTE -->
+                    {% if request.user.role == "DOCENTE" %}
+                    <li class="nav-item mb-2">
+                        <button 
+                            class="btn btn-toggle align-items-center rounded w-120 text-start nav-link text-dark 
+                                {% if request.resolver_match.url_name in 'gestion_actividades gestion_riesgos gestion_mitigaciones' %}{% else %}collapsed{% endif %}" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#docente-collapse" 
+                            aria-expanded="{% if request.resolver_match.url_name in 'gestion_actividades gestion_riesgos gestion_mitigaciones' %}true{% else %}false{% endif %}">
+                            
+                            <i class="bi me-2 
+                                {% if request.resolver_match.url_name in 'gestion_actividades gestion_riesgos gestion_mitigaciones' %}
+                                    bi-chevron-compact-up
+                                {% else %}
+                                    bi-chevron-compact-down
+                                {% endif %}
+                            "></i> Mis Recursos
+                        </button>
+
+                        <div class="collapse {% if request.resolver_match.url_name in 'gestion_actividades gestion_riesgos gestion_mitigaciones' %}show{% endif %}" id="docente-collapse">
+                            <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small ms-4">
+                                <li><a href="{% url 'gestion_actividades' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_actividades' %}active{% endif %}"><i class="bi bi-list-check me-2"></i> Actividades</a></li>
+                                <li><a href="{% url 'gestion_riesgos' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_riesgos' %}active{% endif %}"><i class="bi bi-exclamation-triangle me-2"></i> Riesgos</a></li>
+                                <li><a href="{% url 'gestion_mitigaciones' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_mitigaciones' %}active{% endif %}"><i class="bi bi-shield-check me-2"></i> Mitigaciones</a></li>
+                            </ul>
+                        </div>
+                    </li>
+                    {% endif %}
+
+                    <!-- Reportes - Disponible para todos excepto INVITADO -->
+                    {% if request.user.role != "INVITADO" %}
+                    <li class="nav-item mb-2">
+                        <a class="nav-link text-dark" href="#">
+                            <i class="bi bi-bar-chart me-2"></i> Reportes
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    <!-- Equipo - Solo para ADMIN y DOCENTE -->
+                    {% if request.user.role == "ADMIN" or request.user.role == "DOCENTE" %}
+                    <li class="nav-item mb-2">
+                        <a class="nav-link text-dark" href="#">
+                            <i class="bi bi-people me-2"></i> Equipo
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    <!-- Configuración - Disponible para todos -->
+                    <li class="nav-item">
+                        <a class="nav-link text-dark" href="#">
+                            <i class="bi bi-sliders me-2"></i> Configuración
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- Contenido -->
+            <main class="col-md-10 p-4">
+                {% block content %}
+                <h2 class="fw-bold text-primary">Resumen General</h2>
+                {% block resumenGeneral %}{% endblock %}
+                {% endblock %}
+            </main>
+        </div>
+    </div>
+
+   <footer class="bg-extra-blue xs-no-padding-top">
+        <div class="footer-top padding-two-top lg-padding-eight-tb md-padding-50px-tb">
+            <div class="container">
+                <div class="row">
+                    <div class="col-12 col-xl-3 col-sm-3 order-sm-1 order-xl-0 lg-margin-50px-bottom xs-margin-25px-bottom">
+                        <a class="footer-logo"><img src="{% static 'img/tecnm-blanco.png' %}" class="max-h-inherit"></a>
+                        <span class="alt-font font-weight-500 d-block text-white letter-spacing-0px margin-0px-bottom xs-margin-10px-bottom"><p>Av. Educación Superior 2000, Col. Juárez, Uriangato, Gto, C.P. 38982</p></span>
+                    </div>
+                    <div class="col-12 col-xl-3 offset-xl-1 col-sm-3 order-sm-3 order-xl-0 xs-margin-25px-bottom">
+                        <span class="alt-font font-weight-500 d-block text-white text-uppercase letter-spacing-2px margin-20px-bottom xs-margin-10px-bottom">Contacto</span>
+                        <span class="alt-font font-weight-200 d-block text-white letter-spacing-0px margin-0px-bottom xs-margin-10px-bottom"><i class="solid-icon-Mail icon-extra-small"></i> dpto_difusion@itsur.edu.mx</span>
+                        <span class="alt-font font-weight-300 d-block text-white letter-spacing-0px margin-0px-bottom xs-margin-10px-bottom"><i class="solid-icon-Phone icon-extra-small"></i> 445 45 7 74 del 68 al 71 </span>    
+                    </div>
+                    <div class="col-12 col-xl-4 offset-xl-1 col-sm-3 order-sm-2 order-xl-0 lg-margin-50px-bottom xs-no-margin-bottom">
+                        <span class="alt-font font-weight-500 d-block text-white text-uppercase letter-spacing-2px margin-30px-bottom xs-margin-25px-bottom">Siguenos</span>
+                        <div class="col-lg-12 col-md-10 col-sm-12 elements-social social-icon-style-04">
+                            <ul class="large-icon">
+                                <li><a class="facebook" href="https://www.facebook.com/TECNMSURGTO" target="_blank"><i class="fab fa-facebook-f"></i></a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom xs-no-padding-top border-top border-color-white-transparent">
+            <div class="container">
+                <div class="row">
+                    <div class="col-12 col-md-6 order-2 order-md-0 text-sm-center text-md-start last-paragraph-no-margin">
+                        <p class="alt-font font-weight-500 d-block text-white">2025 TecNM Campus Sur de Guanajuato | Powered by <a class="alt-font font-weight-500 text-white" href="https://github.com/Brayan13141" target="blank">Bryan Sanchez</a></p>
+                    </div>
+                    <div class="col-12 col-md-6 order-1 order-md-0 sm-margin-15px-bottom">                    
+                        <ul class="footer-horizontal-link d-flex flex-column flex-sm-row justify-content-sm-center justify-content-md-end">
+                            <li><a href="avisosdeprivacidad.html" class="alt-font font-weight-500 d-block text-white">Avisos de Privacidad</a></li>                       
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+   
+    <script>    
+        document.addEventListener('DOMContentLoaded', function () {
+            // Manejo del colapso del menú de administración
+            const adminCollapse = document.getElementById('admin-collapse');
+            const adminIcon = document.getElementById('admin-icon');
+            
+            if (adminCollapse && adminIcon) {
+                adminCollapse.addEventListener('show.bs.collapse', function () {
+                    adminIcon.classList.remove('bi-chevron-compact-down');
+                    adminIcon.classList.add('bi-chevron-compact-up');
+                });
+
+                adminCollapse.addEventListener('hide.bs.collapse', function () {
+                    adminIcon.classList.remove('bi-chevron-compact-up');
+                    adminIcon.classList.add('bi-chevron-compact-down');
+                });
+            }
+
+            // Manejo del colapso del menú de docente
+            const docenteCollapse = document.getElementById('docente-collapse');
+            const docenteButton = document.querySelector('[data-bs-target="#docente-collapse"]');
+            
+            if (docenteCollapse && docenteButton) {
+                const docenteIcon = docenteButton.querySelector('i');
+                
+                docenteCollapse.addEventListener('show.bs.collapse', function () {
+                    docenteIcon.classList.remove('bi-chevron-compact-down');
+                    docenteIcon.classList.add('bi-chevron-compact-up');
+                });
+
+                docenteCollapse.addEventListener('hide.bs.collapse', function () {
+                    docenteIcon.classList.remove('bi-chevron-compact-up');
+                    docenteIcon.classList.add('bi-chevron-compact-down');
+                });
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

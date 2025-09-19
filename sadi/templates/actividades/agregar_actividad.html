@@ -1,0 +1,45 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+  <h3>Agregar Actividad a la meta: {{ meta.nombre }}</h3>
+  <a href="{% url 'ver_actividades' meta.id %}" class="btn btn-secondary mb-3">← Volver</a>
+
+  <form method="post">
+    {% csrf_token %}
+    
+    <div class="mb-3">
+      <label class="form-label">Descripción</label>
+      <textarea name="descripcion" class="form-control" required></textarea>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Fecha inicio</label>
+      <input type="date" name="fecha_inicio" class="form-control" required>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Fecha fin</label>
+      <input type="date" name="fecha_fin" class="form-control" required>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Responsable</label>
+      <select name="responsable" class="form-select" required>
+        <option value="">-- Selecciona un responsable --</option>
+        {% for usuario in usuarios %}
+          <option value="{{ usuario.id }}">{{ usuario.get_full_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Evidencia</label>
+      <input type="text" name="evidencia" class="form-control">
+    </div>
+
+    <button type="submit" class="btn btn-success">Guardar</button>
+  </form>
+</div>
+{% endblock %}

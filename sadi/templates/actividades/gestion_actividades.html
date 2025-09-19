@@ -1,0 +1,248 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Actividades{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css"/>
+<style>
+    #actividadesTable th, #actividadesTable td {
+        font-size: 0.85rem;
+        white-space: nowrap;
+        vertical-align: middle;
+        text-align: center;
+    }
+    .btn-sm { font-size: 0.75rem; padding: 0.25rem 0.5rem; }
+    .badge-estado { font-size: 0.75rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+            <h6 class="mb-0">Gestión de Actividades</h6>
+            <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#modalCrear">
+                + Agregar Actividad
+            </button>
+        </div>
+
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="actividadesTable" class="table table-striped table-hover table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Descripción</th>
+                            <th>Estado</th>
+                            <th>Fecha Inicio</th>
+                            <th>Fecha Fin</th>
+                            <th>Meta</th>
+                            <th>Responsable</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for actividad in actividades %}
+                        <tr>
+                            <td>{{ actividad.id }}</td>
+                            <td class="text-start">{{ actividad.descripcion|truncatewords:10 }}</td>
+                            <td>
+                                {% if actividad.estado %}
+                                    <span class="badge bg-success badge-estado">Completada</span>
+                                {% else %}
+                                    <span class="badge bg-secondary badge-estado">Incompleta</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ actividad.fecha_inicio|date:"d/m/Y" }}</td>
+                            <td>{{ actividad.fecha_fin|date:"d/m/Y" }}</td>
+                            <td>{{ actividad.meta.clave }}</td>
+                            <td>{{ actividad.responsable.username }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary btn-editar" 
+                                        data-id="{{ actividad.id }}"
+                                        data-estado="{{ actividad.estado|yesno:'true,false' }}"
+                                        data-descripcion="{{ actividad.descripcion }}"
+                                        data-fecha_inicio="{{ actividad.fecha_inicio|date:'Y-m-d' }}"
+                                        data-fecha_fin="{{ actividad.fecha_fin|date:'Y-m-d' }}"
+                                        data-evidencia="{{ actividad.evidencia|default:'' }}"
+                                        data-meta_id="{{ actividad.meta.id }}"
+                                        data-responsable_id="{{ actividad.responsable.id }}">
+                                    Editar
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" 
+                                        data-bs-target="#modalEliminar{{ actividad.id }}">
+                                    Eliminar
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- Modal Eliminar -->
+                        <div class="modal fade" id="modalEliminar{{ actividad.id }}" tabindex="-1">
+                          <div class="modal-dialog">
+                            <div class="modal-content">
+                              <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="actividad_id" value="{{ actividad.id }}">
+                                <input type="hidden" name="eliminar_actividad" value="1">
+                                <div class="modal-header">
+                                  <h5 class="modal-title">Eliminar Actividad</h5>
+                                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                  ¿Seguro que deseas eliminar la actividad <strong>{{ actividad.descripcion|truncatewords:5 }}</strong>?
+                                </div>
+                                <div class="modal-footer">
+                                  <button type="submit" class="btn btn-danger">Eliminar</button>
+                                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                </div>
+                              </form>
+                            </div>
+                          </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar (Único para todos los registros) -->
+<div class="modal fade" id="modalEditar" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="post" id="formEditar">
+        {% csrf_token %}
+        <input type="hidden" name="actividad_id" id="actividad_id">
+        <input type="hidden" name="editar_actividad" value="1">
+        <div class="modal-header">
+          <h5 class="modal-title">Editar Actividad</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="id_estado" class="form-label">Estado</label>
+              <select class="form-select" id="id_estado" name="estado">
+                <option value="true">Activa</option>
+                <option value="false">Inactiva</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="id_meta" class="form-label">Meta</label>
+              <select class="form-select" id="id_meta" name="meta" required>
+                <option value="">Seleccione una meta</option>
+                {% for meta in form.meta.field.queryset %}
+                <option value="{{ meta.id }}">{{ meta.clave }} - {{ meta.nombre }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="id_fecha_inicio" class="form-label">Fecha Inicio</label>
+              <input type="date" class="form-control" id="id_fecha_inicio" name="fecha_inicio" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="id_fecha_fin" class="form-label">Fecha Fin</label>
+              <input type="date" class="form-control" id="id_fecha_fin" name="fecha_fin" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="id_responsable" class="form-label">Responsable</label>
+              <select class="form-select" id="id_responsable" name="responsable" required>
+                <option value="">Seleccione un responsable</option>
+                {% for usuario in form.responsable.field.queryset %}
+                <option value="{{ usuario.id }}">{{ usuario.username }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="id_evidencia" class="form-label">Evidencia</label>
+              <input type="text" class="form-control" id="id_evidencia" name="evidencia">
+            </div>
+            <div class="col-12 mb-3">
+              <label for="id_descripcion" class="form-label">Descripción</label>
+              <textarea class="form-control" id="id_descripcion" name="descripcion" rows="3" required></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Guardar</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Crear -->
+<div class="modal fade" id="modalCrear" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="crear_actividad" value="1">
+        <div class="modal-header">
+          <h5 class="modal-title">Agregar Actividad</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          {{ form.as_p }}
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Guardar</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script>
+$(document).ready(function () {
+    // Inicializar DataTable
+    $('#actividadesTable').DataTable({
+        scrollX: true,
+        autoWidth: false,
+        paging: true,
+        searching: true,
+        info: true,
+        pageLength: 5,
+        lengthMenu: [5, 10, 20],
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json',
+        }
+    });
+    
+    // Manejar clic en botón Editar
+    $('.btn-editar').on('click', function() {
+        // Obtener datos del botón
+        var actividadId = $(this).data('id');
+        var estado = $(this).data('estado');
+        var descripcion = $(this).data('descripcion');
+        var fechaInicio = $(this).data('fecha_inicio');
+        var fechaFin = $(this).data('fecha_fin');
+        var evidencia = $(this).data('evidencia');
+        var metaId = $(this).data('meta_id');
+        var responsableId = $(this).data('responsable_id');
+        
+        // Llenar el formulario con los datos de la actividad
+        $('#actividad_id').val(actividadId);
+        $('#id_estado').val(estado);
+        $('#id_descripcion').val(descripcion);
+        $('#id_fecha_inicio').val(fechaInicio);
+        $('#id_fecha_fin').val(fechaFin);
+        $('#id_evidencia').val(evidencia);
+        $('#id_meta').val(metaId);
+        $('#id_responsable').val(responsableId);
+        
+        // Mostrar el modal de edición
+        $('#modalEditar').modal('show');
+    });
+});
+</script>
+{% endblock %}
