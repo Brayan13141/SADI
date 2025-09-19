@@ -1,0 +1,135 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Asignación de Metas{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+<link rel="stylesheet" href="{% static 'CSS/asignacion_metas.css' %}">
+{% endblock %}
+
+{% block content %}
+{% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Administración</h1>
+
+    <div class="row g-4">
+        <!-- Tabla -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h3 class="text-primary border-bottom pb-2 mb-3">
+                        <i class="fas fa-bullseye"></i> Metas disponibles
+                    </h3>
+                    <div class="table-responsive">
+                        <table id="tabla-metas" class="table table-hover align-middle">
+                            <thead class="table-primary">
+                                <tr>
+                                    <th>Clave</th>
+                                    <th>Nombre</th>
+                                    <th>Estado</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for meta in metas %}
+                                <tr data-id="{{ meta.id }}" data-ciclo="{{ meta.ciclo|default:'' }}" data-departamento="{{ meta.departamento|default:'' }}">
+                                    <td><strong>{{ meta.clave }}</strong></td>
+                                    <td>{{ meta.nombre }}</td>
+                                    <td>
+                                        <span class="{% if meta.activa %}badge-active{% else %}badge-inactive{% endif %}">
+                                            {% if meta.activa %}Activa{% else %}Inactiva{% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-add" 
+                                            data-id="{{ meta.id }}" 
+                                            data-clave="{{ meta.clave }}" 
+                                            data-nombre="{{ meta.nombre }}">
+                                            <i class="fas fa-plus"></i> Agregar
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Panel de detalles (inicialmente oculto) -->
+                    <div class="details-panel mt-3" id="details-panel">
+                        <h5 class="text-primary mb-3">Detalles de la Meta</h5>
+                        <div class="details-content">
+                            <div class="detail-item">
+                                <div class="detail-label">Ciclo:</div>
+                                <div class="detail-value" id="detail-ciclo">-</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Departamento:</div>
+                                <div class="detail-value" id="detail-departamento">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Carrito -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                        <h5 class="mb-0"><i class="fas fa-shopping-cart"></i> Metas seleccionadas</h5>
+                        <span id="cart-count">0</span>
+                    </div>
+
+                    <ul class="list-group flex-grow-1 overflow-auto mb-3" id="carrito-lista" style="max-height: 300px;">
+                        <li class="list-group-item text-center text-muted" id="empty-cart">
+                            <p class="mb-0">Vacío</p>
+                            <small>Selecciona metas de la tabla para agregarlas</small>
+                        </li>
+                    </ul>
+
+                    <!-- Formulario -->
+                    <div>
+                        <div class="mb-3">
+                            <label for="ciclo" class="form-label">Asignar Ciclo</label>
+                            <select id="ciclo" class="form-select">
+                                <option value="">-- No cambiar --</option>
+                                {% for c in ciclos %}
+                                <option value="{{ c.id }}"> {{ c.fecha_inicio|date:"M Y" }} - {{ c.fecha_fin|date:"M Y" }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="departamento" class="form-label">Asignar Departamento</label>
+                            <select id="departamento" class="form-select">
+                                <option value="">-- No cambiar --</option>
+                                {% for d in departamentos %}
+                                <option value="{{ d.id }}">{{ d.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <button id="aplicar-cambios" class="btn btn-success w-100 fw-bold">
+                            <i class="fas fa-check-circle"></i> Aplicar Cambios
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+<script src='{% static "JS/Metas/asignacion_metas.js" %}'></script>
+{% endblock %}

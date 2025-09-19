@@ -16,7 +16,6 @@
           <th>Fecha de registro</th>
           <th>Fecha de finalización</th>
           <th>Evidencia</th>
-          <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -27,8 +26,6 @@
             <td>{{ act.fecha_inicio|date:"d/m/Y" }}</td>
             <td>{{ act.fecha_fin|date:"d/m/Y" }}</td>
             <td>{{ act.evidencia }}</td>
-            <td>
-              </td>
           </tr>
         {% endfor %}
       </tbody>

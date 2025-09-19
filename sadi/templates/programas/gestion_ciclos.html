@@ -5,19 +5,22 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css"/>
-<style>
-    #ciclosTable th, #ciclosTable td {
-        font-size: 0.85rem;
-        white-space: nowrap;
-        vertical-align: middle;
-        text-align: center;
-    }
-    .btn-sm { font-size: 0.75rem; padding: 0.25rem 0.5rem; }
-    .badge-estado { font-size: 0.75rem; }
-</style>
 {% endblock %}
 
 {% block content %}
+{% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
+  <!-- Mensajes de Django -->
+  {% if messages %}
+  <div class="mb-3">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+      {% endfor %}
+  </div>
+  {% endif %}
+
 <div class="container-fluid py-3">
     <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
@@ -48,31 +51,33 @@
                             <td class="text-start">{{ ciclo.programa.nombre }}</td>
                             <td>
                                 {% if ciclo.activo %}
-                                    <span class="badge bg-success badge-estado">Activo</span>
+                                    <span class="badge bg-success">Activo</span>
                                 {% else %}
-                                    <span class="badge bg-secondary badge-estado">Inactivo</span>
+                                    <span class="badge bg-secondary">Inactivo</span>
                                 {% endif %}
                             </td>
                             <td>{{ ciclo.fecha_inicio|date:"d/m/Y" }}</td>
                             <td>{{ ciclo.fecha_fin|date:"d/m/Y" }}</td>
-                            <td>{{ ciclo.duracion }} días</td>
+                            <td>{{ ciclo.duracion }} años</td>
                             <td>
                                 <button class="btn btn-sm btn-outline-primary btn-editar" 
                                         data-id="{{ ciclo.id }}"
-                                        data-activo="{{ ciclo.activo|yesno:'true,false' }}"
+                                        data-activo="{{ ciclo.activo|yesno:'True,False' }}"
                                         data-fecha_inicio="{{ ciclo.fecha_inicio|date:'Y-m-d' }}"
                                         data-fecha_fin="{{ ciclo.fecha_fin|date:'Y-m-d' }}"
                                         data-duracion="{{ ciclo.duracion }}"
                                         data-programa_id="{{ ciclo.programa.id }}">
                                     Editar
                                 </button>
+                                {% if request.user.role == "ADMIN" %}
                                 <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" 
                                         data-bs-target="#modalEliminar{{ ciclo.id }}">
                                     Eliminar
                                 </button>
+                                {% endif %} 
                             </td>
                         </tr>
-
+                      {% if request.user.role == "ADMIN" %}
                         <!-- Modal Eliminar -->
                         <div class="modal fade" id="modalEliminar{{ ciclo.id }}" tabindex="-1">
                           <div class="modal-dialog">
@@ -96,6 +101,7 @@
                             </div>
                           </div>
                         </div>
+                      {% endif %}
                         {% endfor %}
                     </tbody>
                 </table>
@@ -104,11 +110,11 @@
     </div>
 </div>
 
-<!-- Modal Editar (Único para todos los registros) -->
+<!-- Modal Editar -->
 <div class="modal fade" id="modalEditar" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form method="post" id="formEditar">
+      <form method="post" id="formEditar" novalidate>
         {% csrf_token %}
         <input type="hidden" name="ciclo_id" id="ciclo_id">
         <input type="hidden" name="editar_ciclo" value="1">
@@ -117,17 +123,20 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
+          <div id="erroresEditar" class="alert alert-danger d-none"></div>
+          
           <div class="row">
             <div class="col-md-6 mb-3">
               <label for="id_activo" class="form-label">Estado</label>
               <select class="form-select" id="id_activo" name="activo">
-                <option value="true">Activo</option>
-                <option value="false">Inactivo</option>
+                <option value="True">Activo</option>
+                <option value="False">Inactivo</option>
               </select>
             </div>
             <div class="col-md-6 mb-3">
-              <label for="id_duracion" class="form-label">Duración (días)</label>
-              <input type="number" class="form-control" id="id_duracion" name="duracion">
+              <label for="id_duracion" class="form-label">Duración (años)</label>
+              <input type="number" class="form-control readonly-field" id="id_duracion" name="duracion" readonly step="0.1">
+              <small class="text-muted">La duración se calcula automáticamente</small>
             </div>
             <div class="col-md-6 mb-3">
               <label for="id_fecha_inicio" class="form-label">Fecha Inicio</label>
@@ -161,7 +170,7 @@
 <div class="modal fade" id="modalCrear" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form method="post">
+      <form method="post" id="formCrear" novalidate>
         {% csrf_token %}
         <input type="hidden" name="crear_ciclo" value="1">
         <div class="modal-header">
@@ -169,7 +178,39 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          {{ form.as_p }}
+          <div id="erroresCrear" class="alert alert-danger d-none"></div>
+          
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="id_activo_crear" class="form-label">Estado</label>
+              <select class="form-select" id="id_activo_crear" name="activo">
+                <option value="true">Activo</option>
+                <option value="false">Inactivo</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="id_duracion_crear" class="form-label">Duración (años)</label>
+              <input type="number" class="form-control readonly-field" id="id_duracion_crear" name="duracion" readonly step="0.1">
+              <small class="text-muted">La duración se calcula automáticamente</small>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="id_fecha_inicio_crear" class="form-label">Fecha Inicio</label>
+              <input type="date" class="form-control" id="id_fecha_inicio_crear" name="fecha_inicio" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="id_fecha_fin_crear" class="form-label">Fecha Fin</label>
+              <input type="date" class="form-control" id="id_fecha_fin_crear" name="fecha_fin" required>
+            </div>
+            <div class="col-12 mb-3">
+              <label for="id_programa_crear" class="form-label">Programa</label>
+              <select class="form-select" id="id_programa_crear" name="programa" required>
+                <option value="">Seleccione un programa</option>
+                {% for programa in form.programa.field.queryset %}
+                <option value="{{ programa.id }}">{{ programa.clave }} - {{ programa.nombre }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
         </div>
         <div class="modal-footer">
           <button type="submit" class="btn btn-primary">Guardar</button>
@@ -179,49 +220,12 @@
     </div>
   </div>
 </div>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
-<script>
-$(document).ready(function () {
-    // Inicializar DataTable
-    $('#ciclosTable').DataTable({
-        scrollX: true,
-        autoWidth: false,
-        paging: true,
-        searching: true,
-        info: true,
-        pageLength: 5,
-        lengthMenu: [5, 10, 20],
-        language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json',
-        }
-    });
-    
-    // Manejar clic en botón Editar
-    $('.btn-editar').on('click', function() {
-        // Obtener datos del botón
-        var cicloId = $(this).data('id');
-        var activo = $(this).data('activo');
-        var fechaInicio = $(this).data('fecha_inicio');
-        var fechaFin = $(this).data('fecha_fin');
-        var duracion = $(this).data('duracion');
-        var programaId = $(this).data('programa_id');
-        
-        // Llenar el formulario con los datos del ciclo
-        $('#ciclo_id').val(cicloId);
-        $('#id_activo').val(activo);
-        $('#id_fecha_inicio').val(fechaInicio);
-        $('#id_fecha_fin').val(fechaFin);
-        $('#id_duracion').val(duracion);
-        $('#id_programa').val(programaId);
-        
-        // Mostrar el modal de edición
-        $('#modalEditar').modal('show');
-    });
-});
-</script>
+<script src="{% static 'JS/Programas/gestion_ciclos.js' %}"></script>
 {% endblock %}

@@ -5,19 +5,24 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css"/>
-<style>
-    #mitigacionesTable th, #mitigacionesTable td {
-        font-size: 0.85rem;
-        white-space: nowrap;
-        vertical-align: middle;
-        text-align: center;
-    }
-    .btn-sm { font-size: 0.75rem; padding: 0.25rem 0.5rem; }
-</style>
+ 
 {% endblock %}
 
 {% block content %}
+ {% if request.user.role == "ADMIN" or request.user.role == "DOCENTE" or request.user.role == "APOYO" %}
 <div class="container-fluid py-3">
+    <!-- Mensajes de Django -->
+    {% if messages %}
+    <div class="mb-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
             <h6 class="mb-0">Gestión de Mitigaciones</h6>
@@ -35,7 +40,7 @@
                             <th>Acción</th>
                             <th>Fecha Acción</th>
                             <th>Responsable</th>
-                            <th>Riesgo</th>
+                            <th>Riesgo a mitigar</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -43,26 +48,30 @@
                         {% for mitigacion in mitigaciones %}
                         <tr>
                             <td>{{ mitigacion.id }}</td>
-                            <td class="text-start">{{ mitigacion.accion|truncatewords:5 }}</td>
+                            <td class="text-start">{{ mitigacion.accion|truncatewords:10 }}</td>
                             <td>{{ mitigacion.fecha_accion|date:"d/m/Y" }}</td>
                             <td>{{ mitigacion.responsable.username }}</td>
-                            <td>{{ mitigacion.riesgo.enunciado|truncatewords:3 }}</td>
+                            <td>{{ mitigacion.riesgo.enunciado}}</td>
                             <td>
-                                <button class="btn btn-sm btn-outline-primary btn-editar" 
-                                        data-id="{{ mitigacion.id }}"
-                                        data-accion="{{ mitigacion.accion }}"
-                                        data-fecha_accion="{{ mitigacion.fecha_accion|date:'Y-m-d' }}"
-                                        data-responsable_id="{{ mitigacion.responsable.id }}"
-                                        data-riesgo_id="{{ mitigacion.riesgo.id }}">
-                                    Editar
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" 
-                                        data-bs-target="#modalEliminar{{ mitigacion.id }}">
-                                    Eliminar
-                                </button>
+                                <div class="action-buttons">
+                                    <button class="btn btn-sm btn-outline-primary btn-editar" 
+                                            data-id="{{ mitigacion.id }}"
+                                            data-accion="{{ mitigacion.accion }}"
+                                            data-fecha_accion="{{ mitigacion.fecha_accion|date:'Y-m-d' }}"
+                                            data-responsable_id="{{ mitigacion.responsable.id }}"
+                                            data-riesgo_id="{{ mitigacion.riesgo.id }}">
+                                        Editar
+                                    </button>
+                                     {% if request.user.role == "ADMIN" or request.user.role == "DOCENTE" %}
+                                    <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" 
+                                            data-bs-target="#modalEliminar{{ mitigacion.id }}">
+                                        Eliminar
+                                    </button>
+                                    {% endif %}
+                                </div>
                             </td>
                         </tr>
-
+                        {% if request.user.role == "ADMIN" or request.user.role == "DOCENTE" %}
                         <!-- Modal Eliminar -->
                         <div class="modal fade" id="modalEliminar{{ mitigacion.id }}" tabindex="-1">
                           <div class="modal-dialog">
@@ -86,6 +95,7 @@
                             </div>
                           </div>
                         </div>
+                        {% endif %}
                         {% endfor %}
                     </tbody>
                 </table>
@@ -94,62 +104,11 @@
     </div>
 </div>
 
-<!-- Modal Editar (Único para todos los registros) -->
-<div class="modal fade" id="modalEditar" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form method="post" id="formEditar">
-        {% csrf_token %}
-        <input type="hidden" name="mitigacion_id" id="mitigacion_id">
-        <input type="hidden" name="editar_mitigacion" value="1">
-        <div class="modal-header">
-          <h5 class="modal-title">Editar Mitigación</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label for="id_riesgo" class="form-label">Riesgo</label>
-              <select class="form-select" id="id_riesgo" name="riesgo" required>
-                <option value="">Seleccione un riesgo</option>
-                {% for riesgo in form.riesgo.field.queryset %}
-                <option value="{{ riesgo.id }}">{{ riesgo.enunciado|truncatewords:3 }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label for="id_responsable" class="form-label">Responsable</label>
-              <select class="form-select" id="id_responsable" name="responsable" required>
-                <option value="">Seleccione un responsable</option>
-                {% for usuario in form.responsable.field.queryset %}
-                <option value="{{ usuario.id }}">{{ usuario.username }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label for="id_fecha_accion" class="form-label">Fecha de Acción</label>
-              <input type="date" class="form-control" id="id_fecha_accion" name="fecha_accion" required>
-            </div>
-            <div class="col-12 mb-3">
-              <label for="id_accion" class="form-label">Acción</label>
-              <input type="text" class="form-control" id="id_accion" name="accion" required>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-success">Guardar</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
 <!-- Modal Crear -->
 <div class="modal fade" id="modalCrear" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form method="post">
+      <form method="post" id="formCrear" novalidate>
         {% csrf_token %}
         <input type="hidden" name="crear_mitigacion" value="1">
         <div class="modal-header">
@@ -157,7 +116,34 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          {{ form.as_p }}
+          <div id="erroresCrear" class="alert alert-danger d-none"></div>
+          
+          <div class="mb-3">
+            <label class="form-label">Acción</label>
+            <input type="text" class="form-control" name="accion" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Fecha Acción</label>
+            <input type="date" class="form-control" name="fecha_accion" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Responsable</label>
+            <select class="form-select" name="responsable" required>
+              <option value="">Seleccione un responsable</option>
+              {% for usuario in form.responsable.field.queryset %}
+              <option value="{{ usuario.id }}">{{ usuario.username }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Riesgo</label>
+            <select class="form-select" name="riesgo" required>
+              <option value="">Seleccione un riesgo</option>
+              {% for riesgo in form.riesgo.field.queryset %}
+              <option value="{{ riesgo.id }}">{{ riesgo.enunciado|truncatewords:5 }}</option>
+              {% endfor %}
+            </select>
+          </div>
         </div>
         <div class="modal-footer">
           <button type="submit" class="btn btn-primary">Guardar</button>
@@ -167,47 +153,74 @@
     </div>
   </div>
 </div>
+
+<!-- Modal Editar -->
+<div class="modal fade" id="modalEditar" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" id="formEditar" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="mitigacion_id" id="mitigacion_id">
+        <input type="hidden" name="editar_mitigacion" value="1">
+        <div class="modal-header">
+          <h5 class="modal-title">Editar Mitigación</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="erroresEditar" class="alert alert-danger d-none"></div>
+          
+          <div class="mb-3">
+            <label class="form-label">Acción</label>
+            <input type="text" class="form-control" id="id_accion" name="accion" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Fecha Acción</label>
+            <input type="date" class="form-control" id="id_fecha_accion" name="fecha_accion" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Responsable</label>
+            <select class="form-select" id="id_responsable" name="responsable" required>
+              <option value="">Seleccione un responsable</option>
+              {% for usuario in form.responsable.field.queryset %}
+              <option value="{{ usuario.id }}">{{ usuario.username }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Riesgo</label>
+            <select class="form-select" id="id_riesgo" name="riesgo" required>
+              <option value="">Seleccione un riesgo</option>
+              {% for riesgo in form.riesgo.field.queryset %}
+              <option value="{{ riesgo.id }}">{{ riesgo.enunciado|truncatewords:5 }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Guardar cambios</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script src="{% static "JS/Riesgos/gestion_mitigaciones.js" %}"></script>
 <script>
-$(document).ready(function () {
-    // Inicializar DataTable
-    $('#mitigacionesTable').DataTable({
-        scrollX: true,
-        autoWidth: false,
-        paging: true,
-        searching: true,
-        info: true,
-        pageLength: 5,
-        lengthMenu: [5, 10, 20],
-        language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json',
-        }
-    });
-    
-    // Manejar clic en botón Editar
-    $('.btn-editar').on('click', function() {
-        // Obtener datos del botón
-        var mitigacionId = $(this).data('id');
-        var accion = $(this).data('accion');
-        var fechaAccion = $(this).data('fecha_accion');
-        var responsableId = $(this).data('responsable_id');
-        var riesgoId = $(this).data('riesgo_id');
-        
-        // Llenar el formulario con los datos de la mitigación
-        $('#mitigacion_id').val(mitigacionId);
-        $('#id_accion').val(accion);
-        $('#id_fecha_accion').val(fechaAccion);
-        $('#id_responsable').val(responsableId);
-        $('#id_riesgo').val(riesgoId);
-        
-        // Mostrar el modal de edición
-        $('#modalEditar').modal('show');
-    });
-});
+    // Auto abrir modal si hubo errores
+    {% if abrir_modal_crear %}
+        var modalCrear = new bootstrap.Modal(document.getElementById('modalCrear'));
+        modalCrear.show();
+    {% endif %}
+    {% if abrir_modal_editar %}
+        var modalEditar = new bootstrap.Modal(document.getElementById('modalEditar'));
+        modalEditar.show();
+    {% endif %}
 </script>
 {% endblock %}

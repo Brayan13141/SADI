@@ -7,8 +7,6 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css"/>
 <style>
     #usuariosTable th, #usuariosTable td {
-        font-size: 0.85rem;
-        white-space: nowrap;
         vertical-align: middle;
         text-align: center;
     }
@@ -30,8 +28,18 @@
 {% endblock %}
 
 {% block content %}
+ <!-- Mensajes de Django -->
+    {% if messages %}
+    <div class="mb-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 <div class="container-fluid py-3">
-  
     <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
             <h6 class="mb-0">Gestión de Usuarios</h6>
@@ -49,6 +57,7 @@
                             <th>Usuario</th>
                             <th>Nombre</th>
                             <th>Email</th>
+                            <th>Estado</th>
                             <th>Rol</th>
                             <th>Departamento</th>
                             <th>Acciones</th>
@@ -61,6 +70,13 @@
                             <td>{{ usuario.username }}</td>
                             <td>{{ usuario.first_name }} {{ usuario.last_name }}</td>
                             <td>{{ usuario.email }}</td>
+                            <td>
+                                {% if usuario.is_active %}
+                                    <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactivo</span>
+                                {% endif %}
+                            </td>
                             <td>
                                 {% if usuario.role == "ADMIN" %}
                                     <span class="badge bg-danger badge-role">Administrador</span>
@@ -152,9 +168,15 @@
             <label class="form-label">Correo</label>
             <input type="email" class="form-control" id="id_email" name="email">
           </div>
+          <label class="form-label">Estado</label>
+          <div class="form-check form-switch mt-2">
+              <input class="form-check-input" type="checkbox" id="is_active" name="is_active" {% if form.instance.is_active %}checked{% endif %}>
+              <label class="form-check-label">Activo</label>
+          </div>
+
           <div class="mb-2">
             <label class="form-label">Contraseña (Dejar en blanco para no cambiar)</label>
-            <input type="password" class="form-control" id="id_password" name="password">
+            <input type="password" class="form-control" id="id_password" name="password" value="">
           </div>
           <div class="mb-2">
             <label class="form-label">Rol</label>
@@ -216,8 +238,15 @@
           </div>
           <div class="mb-2">
             <label class="form-label">Contraseña</label>
-            <input type="password" class="form-control" name="password">
+            <input type="password" class="form-control" name="password" value="">
           </div>
+          
+          <label class="form-label">Estado</label>
+          <div class="form-check form-switch mt-2">
+              <input class="form-check-input" type="checkbox" id="is_active_crear" name="is_active" checked>
+              <label class="form-check-label">Activo</label>
+          </div>
+
           <div class="mb-2">
             <label class="form-label">Rol</label>
             <select class="form-select" name="role">
@@ -246,20 +275,10 @@
     </div>
   </div>
 </div>
- <!-- Mensajes de Django -->
-    {% if messages %}
-    <div class="mb-3">
-        {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
+
 {% endblock %}
 
 {% block extra_js %}
 
-<script src="{% static "JS/jsUsuarios.js" %}"> </script>
+<script src="{% static "JS/gestion_usuarios.js" %}"> </script>
 {% endblock %}

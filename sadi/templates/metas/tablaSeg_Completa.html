@@ -1,61 +1,20 @@
 {% extends "core/base.html" %}
 {% load static %}
 
-
-{% block title %}Seguimiento de Metas{% endblock %}
-
-{% block extra_css %}
-
-{% endblock %}
+{% block title %}Todas las Metas{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-3">
     <div class="card shadow-sm">
-        <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
-    <h6 class="mb-0">Seguimiento de Metas Activas</h6>
-    <a href="?view=simple" class="btn btn-outline-light">
-    <i class="fas fa-list"></i> Ver todas las metas
+        <div class="card-header bg-primary text-white">
+            <h6 class="mb-0">Listado de Metas</h6>
+        </div>
+        <div class="card-body">
+            <a href="{% url 'tabla_seguimiento' %}" class="btn btn-outline-secondary mb-3">
+    <i class="fas fa-arrow-left"></i> Volver al seguimiento
 </a>
 
-    </div>
-
-        <div class="card-body">
-            <!-- Tarjetas resumen -->
-            <div class="row mb-4 text-center g-3">
-                <div class="col-md-4">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body py-2">
-                            <small class="text-muted">Total de Metas</small>
-                            <h5 class="fw-bold">{{ tabla|length }}</h5>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body py-2">
-                            <small class="text-muted">Avance Promedio</small>
-                            <h5 class="fw-bold">{{ avance_promedio }}%</h5>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body py-2">
-                            <small class="text-muted">Ciclo Actual</small>
-                            <h6 class="fw-bold">
-                                {% if ciclo %}
-                                    {{ ciclo.fecha_inicio|date:"M Y" }} - {{ ciclo.fecha_fin|date:"M Y" }}
-                                {% else %}
-                                    No definido
-                                {% endif %}
-                            </h6>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Tabla -->
-            
             <div class="table-responsive">
                 <table id="seguimientoTable" class="table table-striped table-hover table-bordered table-sm">
                     <thead >
@@ -123,12 +82,11 @@
 {% endblock %}
 
 {% block extra_js %}
-
 <script>
 $(document).ready(function () {
     $('#seguimientoTable').DataTable({
         scrollX: true,       
-        scrollY: '400px',    
+        scrollY: '800px',    
         scrollCollapse: true, 
         fixedColumns: {
             left: 1           

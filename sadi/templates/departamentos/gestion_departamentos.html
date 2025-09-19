@@ -37,9 +37,11 @@
     <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
             <h6 class="mb-0">Gestión de Departamentos</h6>
+            {% if request.user.role in "ADMIN,APOYO" %}
             <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#modalCrear">
                 + Agregar Departamento
             </button>
+            {% endif %}
         </div>
 
         <div class="card-body">
@@ -55,21 +57,27 @@
                     <tbody>
                         {% for departamento in departamentos %}
                         <tr>
-                            <td>{{ departamento.id }}</td>
-                            <td class="text-start fw-semibold">{{ departamento.nombre }}</td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary btn-editar" 
-                                        data-id="{{ departamento.id }}" 
-                                        data-nombre="{{ departamento.nombre }}">
-                                    Editar
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" 
-                                        data-bs-target="#modalEliminar{{ departamento.id }}">
-                                    Eliminar
-                                </button>
+                            <td class="text-center">{{ departamento.id }}</td>
+                            <td class="text-center fw-semibold">{{ departamento.nombre }}</td>
+                            <td class="text-start">
+                                {% if request.user.role == "ADMIN" or request.user.role == "DOCENTE" %
+                                    <button class="btn btn-sm btn-outline-primary btn-editar" 
+                                            data-id="{{ departamento.id }}" 
+                                            data-nombre="{{ departamento.nombre }}">
+                                        Editar
+                                    </button>
+                                {% endif %}
+
+                                {% if request.user.role == "ADMIN" %}
+                                    <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" 
+                                            data-bs-target="#modalEliminar{{ departamento.id }}">
+                                        Eliminar
+                                    </button>
+                                {% endif %}
                             </td>
                         </tr>
 
+                        {% if request.user.role == "ADMIN" %}
                         <!-- Modal Eliminar -->
                         <div class="modal fade" id="modalEliminar{{ departamento.id }}" tabindex="-1">
                           <div class="modal-dialog">
@@ -93,6 +101,7 @@
                             </div>
                           </div>
                         </div>
+                        {% endif %}
                         {% endfor %}
                     </tbody>
                 </table>
@@ -101,6 +110,7 @@
     </div>
 </div>
 
+{% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
 <!-- Modal Editar (Único para todos los registros) -->
 <div class="modal fade" id="modalEditar" tabindex="-1">
   <div class="modal-dialog">
@@ -140,6 +150,7 @@
     </div>
   </div>
 </div>
+
 <!-- Modal Crear -->
 <div class="modal fade" id="modalCrear" tabindex="-1">
   <div class="modal-dialog">
@@ -179,7 +190,7 @@
     </div>
   </div>
 </div>
-
+{% endif %}
 
 {% endblock %}
 
@@ -203,34 +214,5 @@ $(document).ready(function(){
 </script>
 {% endif %}
 
-<script>
-$(document).ready(function () {
-    // Inicializar DataTable
-    $('#departamentosTable').DataTable({
-        scrollX: true,
-        autoWidth: false,
-        paging: true,
-        searching: true,
-        info: true,
-        pageLength: 5,
-        lengthMenu: [5, 10, 20],
-        language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json',
-        }
-    });
-    
-    // Manejar clic en botón Editar
-    $('.btn-editar').on('click', function() {
-        var departamentoId = $(this).data('id');
-        var departamentoNombre = $(this).data('nombre');
-        
-        // Llenar el formulario con los datos del departamento
-        $('#departamento_id').val(departamentoId);
-        $('#id_nombre').val(departamentoNombre);
-        
-        // Mostrar el modal de edición
-        $('#modalEditar').modal('show');
-    });
-});
-</script>
+<script src="{% static 'JS/gestion_departamentos.js' %}"> </script>
 {% endblock %}
