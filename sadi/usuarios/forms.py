@@ -1,5 +1,6 @@
 from django import forms
 from .models import Usuario
+from departamentos.models import Departamento
 
 
 class UsuarioForm(forms.ModelForm):
@@ -18,7 +19,7 @@ class UsuarioForm(forms.ModelForm):
             "last_name",
             "role",
             "departamento",
-            "is_active",  # Añadido
+            "is_active",
             "password",
         ]
         widgets = {
@@ -34,17 +35,30 @@ class UsuarioForm(forms.ModelForm):
             "last_name": forms.TextInput(
                 attrs={"class": "form-control", "required": True}
             ),
-            "is_active": forms.CheckboxInput(  # Añadido
-                attrs={"class": "form-check-input"}
-            ),
+            "is_active": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "role": forms.Select(attrs={"class": "form-select", "required": True}),
             "departamento": forms.Select(
-                attrs={
-                    "class": "form-select",
-                    "required": False,
-                }  # Cambiado a no requerido si es opcional
+                attrs={"class": "form-select", "required": False}
             ),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Mostrar solo departamentos que no tienen usuario asignado
+        usados = Usuario.objects.exclude(departamento__isnull=True).values_list(
+            "departamento_id", flat=True
+        )
+        self.fields["departamento"].queryset = Departamento.objects.exclude(
+            id__in=usados
+        )
+
+    def clean_departamento(self):
+        departamento = self.cleaned_data.get("departamento")
+        if departamento and Usuario.objects.filter(departamento=departamento).exists():
+            raise forms.ValidationError(
+                "Ya existe un usuario asignado a este departamento."
+            )
+        return departamento
 
     def save(self, commit=True):
         usuario = super().save(commit=False)
@@ -56,7 +70,7 @@ class UsuarioForm(forms.ModelForm):
 
 class UsuarioEditForm(forms.ModelForm):
     password = forms.CharField(
-        required=False,  # Cambiado a False para que no sea obligatorio
+        required=False,
         widget=forms.PasswordInput(attrs={"class": "form-control"}),
         label="Contraseña (dejar en blanco para mantener la actual)",
     )
@@ -68,9 +82,9 @@ class UsuarioEditForm(forms.ModelForm):
             "email",
             "first_name",
             "last_name",
-            "is_active",  # Añadido
-            "role",  # Añadido
-            "departamento",  # Añadido
+            "is_active",
+            "role",
+            "departamento",
             "password",
         ]
         widgets = {
@@ -86,21 +100,39 @@ class UsuarioEditForm(forms.ModelForm):
             "last_name": forms.TextInput(
                 attrs={"class": "form-control", "required": True}
             ),
-            "is_active": forms.CheckboxInput(  # Añadido
-                attrs={"class": "form-check-input"}
-            ),
+            "is_active": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "role": forms.Select(attrs={"class": "form-select", "required": True}),
             "departamento": forms.Select(
-                attrs={
-                    "class": "form-select",
-                    "required": False,
-                }  # Cambiado a no requerido si es opcional
+                attrs={"class": "form-select", "required": False}
             ),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        usados = (
+            Usuario.objects.exclude(departamento__isnull=True)
+            .exclude(id=self.instance.id)
+            .values_list("departamento_id", flat=True)
+        )
+        self.fields["departamento"].queryset = Departamento.objects.exclude(
+            id__in=usados
+        )
+
+    def clean_departamento(self):
+        departamento = self.cleaned_data.get("departamento")
+        if (
+            departamento
+            and Usuario.objects.filter(departamento=departamento)
+            .exclude(id=self.instance.id)
+            .exists()
+        ):
+            raise forms.ValidationError(
+                "Ya existe un usuario asignado a este departamento."
+            )
+        return departamento
+
     def save(self, commit=True):
         usuario = super().save(commit=False)
-        # Solo establecer nueva contraseña si se proporciona
         if self.cleaned_data.get("password"):
             usuario.set_password(self.cleaned_data["password"])
         if commit:
