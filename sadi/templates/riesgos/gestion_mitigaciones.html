@@ -39,7 +39,9 @@
                             <th>ID</th>
                             <th>Acción</th>
                             <th>Fecha Acción</th>
+                            {% if request.user.role == "ADMIN" %}
                             <th>Responsable</th>
+                            {% endif %}
                             <th>Riesgo a mitigar</th>
                             <th>Acciones</th>
                         </tr>
@@ -50,7 +52,9 @@
                             <td>{{ mitigacion.id }}</td>
                             <td class="text-start">{{ mitigacion.accion|truncatewords:10 }}</td>
                             <td>{{ mitigacion.fecha_accion|date:"d/m/Y" }}</td>
+                            {% if request.user.role == "ADMIN" %}
                             <td>{{ mitigacion.responsable.username }}</td>
+                            {% endif %}
                             <td>{{ mitigacion.riesgo.enunciado}}</td>
                             <td>
                                 <div class="action-buttons">
@@ -124,8 +128,9 @@
           </div>
           <div class="mb-3">
             <label class="form-label">Fecha Acción</label>
-            <input type="date" class="form-control" name="fecha_accion" required>
+              {{ form.fecha_accion }}
           </div>
+          {% if request.user.role == "ADMIN" %}
           <div class="mb-3">
             <label class="form-label">Responsable</label>
             <select class="form-select" name="responsable" required>
@@ -135,14 +140,12 @@
               {% endfor %}
             </select>
           </div>
+          {% else %}
+          <input type="hidden" name="responsable" value="{{ request.user.id }}">  
+          {% endif %}
           <div class="mb-3">
-            <label class="form-label">Riesgo</label>
-            <select class="form-select" name="riesgo" required>
-              <option value="">Seleccione un riesgo</option>
-              {% for riesgo in form.riesgo.field.queryset %}
-              <option value="{{ riesgo.id }}">{{ riesgo.enunciado|truncatewords:5 }}</option>
-              {% endfor %}
-            </select>
+            <label class="form-label">Riesgo a mitigar</label>
+           {{ form.riesgo }}
           </div>
         </div>
         <div class="modal-footer">
@@ -175,8 +178,9 @@
           </div>
           <div class="mb-3">
             <label class="form-label">Fecha Acción</label>
-            <input type="date" class="form-control" id="id_fecha_accion" name="fecha_accion" required>
+            {{ form.fecha_accion }}
           </div>
+{% if request.user.role == "ADMIN" %}
           <div class="mb-3">
             <label class="form-label">Responsable</label>
             <select class="form-select" id="id_responsable" name="responsable" required>
@@ -186,14 +190,13 @@
               {% endfor %}
             </select>
           </div>
+{% else %}
+          <input type="hidden" name="responsable" value="{{ request.user.id }}">
+{% endif %}
+
           <div class="mb-3">
-            <label class="form-label">Riesgo</label>
-            <select class="form-select" id="id_riesgo" name="riesgo" required>
-              <option value="">Seleccione un riesgo</option>
-              {% for riesgo in form.riesgo.field.queryset %}
-              <option value="{{ riesgo.id }}">{{ riesgo.enunciado|truncatewords:5 }}</option>
-              {% endfor %}
-            </select>
+            <label class="form-label">Riesgo a mitigar</label>
+           {{ form.riesgo }}
           </div>
         </div>
         <div class="modal-footer">

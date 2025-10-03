@@ -60,7 +60,7 @@
                             <td class="text-center">{{ departamento.id }}</td>
                             <td class="text-center fw-semibold">{{ departamento.nombre }}</td>
                             <td class="text-start">
-                                {% if request.user.role == "ADMIN" or request.user.role == "DOCENTE" %
+                                {% if request.user.role == "ADMIN" or request.user.role == "DOCENTE" %}
                                     <button class="btn btn-sm btn-outline-primary btn-editar" 
                                             data-id="{{ departamento.id }}" 
                                             data-nombre="{{ departamento.nombre }}">

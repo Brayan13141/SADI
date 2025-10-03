@@ -41,7 +41,7 @@
     {% if comprometida %}
     <div class="card shadow-sm mb-3">
       <div class="card-body">
-        <p><strong>Valor:</strong> {{ comprometida.valor }}</p>
+        <p><strong>Valor:</strong> {{ comprometida.valor_display }}</p>
 
         <button class="btn btn-sm btn-outline-primary btn-editar-comprometida"
                 data-id="{{ comprometida.id }}"
@@ -167,20 +167,5 @@
 
 {% block extra_js %}
 <script src = '{% static "JS/Metas/gestion_metaComprometida.js" %}'></script>
-<script>
-  // Mostrar modal de creación si hay error
-    {% if abrir_modal_comprometida %}
-        {% if modo_edicion %}
-            // Si hay error en edición, abrir modal de edición
-            const btnEditar = document.querySelector('.btn-editar-comprometida');
-            if (btnEditar) {
-                btnEditar.click();
-            }
-        {% else %}
-            // Si hay error en creación, abrir modal de creación
-            const modalCrear = new bootstrap.Modal(document.getElementById('modalCrearComprometida'));
-            modalCrear.show();
-        {% endif %}
-    {% endif %}
-</script>
+
 {% endblock %}

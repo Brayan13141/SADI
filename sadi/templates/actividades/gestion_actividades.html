@@ -36,6 +36,7 @@
                     <thead>
                         <tr>
                             <th>ID</th>
+                            <th>Nombre</th>
                             <th>Descripción</th>
                             <th>Estado</th>
                             <th>Departamento</th>
@@ -50,13 +51,19 @@
                         {% for actividad in actividades %}
                         <tr>
                             <td>{{ actividad.id }}</td>
+                            <td>{{ actividad.nombre }}</td>
                             <td class="text-start">{{ actividad.descripcion|truncatewords:10 }}</td>
                             <td>
-                                {% if actividad.estado %}
-                                    <span class="badge bg-success badge-estado">Completada</span>
-                                {% else %}
-                                    <span class="badge bg-secondary badge-estado">Pendiente</span>
-                                {% endif %}
+                             {% if actividad.estado == 'Activa' %}
+                                <span class="badge bg-secondary">Activa</span>
+                              {% elif actividad.estado == "En Proceso" %}
+                                <span class="badge bg-info text-dark">En Proceso</span>
+                              {% elif actividad.estado == 'Cumplida' %}
+                                <span class="badge bg-success">Cumplida</span>
+                              {% elif actividad.estado == "No Cumplida" %}
+                                <span class="badge bg-danger">No Cumplida</span>
+                              {% endif %}
+
                             </td>
                             <td>{{ actividad.departamento.nombre }}</td>
                             <td>{{ actividad.fecha_inicio|date:"d/m/Y" }}</td>
@@ -67,7 +74,8 @@
                                 <div class="action-buttons">
                                   <button class="btn btn-sm btn-outline-primary btn-editar" 
                                           data-id="{{ actividad.id }}"
-                                          data-estado="{{ actividad.estado|yesno:'True,False' }}"
+                                          data-nombre="{{ actividad.nombre }}"
+                                          data-estado="{{ actividad.estado}}"
                                           data-descripcion="{{ actividad.descripcion }}"
                                           data-fecha_inicio="{{ actividad.fecha_inicio|date:'Y-m-d' }}"
                                           data-fecha_fin="{{ actividad.fecha_fin|date:'Y-m-d' }}"
@@ -136,17 +144,21 @@
           <div id="erroresCrear" class="alert alert-danger d-none"></div>
           
           <div class="row">
-                
+
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Nombre</label>
+               {{ form.nombre }}
+            </div>
+
           <div class="col-md-6 mb-3">
-            {% if request.user.role == "DOCENTE" %}
-              <input type="hidden" name="estado" value="False">
-            {% else %}
-            <label class="form-label">Estado</label>
-              <select class="form-select" id="id_estado" name="estado">
-                <option value="True">Completada</option>
-                <option value="False" selected>Pendiente</option>
-              </select>
-            {% endif %}
+          <label class="form-label">Estado</label>
+          <select class="form-select" name="estado" id="id_estado" required>
+            {% for code, label in form.fields.estado.choices %}
+              <option value="{{ code }}" {% if actividad.estado == code %}selected{% endif %}>
+                {{ label }}
+              </option>
+            {% endfor %}
+          </select>
           </div>
 
             <div class="col-md-6 mb-3">
@@ -161,18 +173,18 @@
 
             <div class="col-md-6 mb-3">
               <label class="form-label">Fecha Inicio</label>
-              <input type="date" class="form-control" name="fecha_inicio" required>
+             {{ form.fecha_inicio }}
             </div>
             <div class="col-md-6 mb-3">
               <label class="form-label">Fecha Fin</label>
-              <input type="date" class="form-control" name="fecha_fin" required>
+              {{ form.fecha_fin }}
             </div>
 
             {% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
               <!-- Responsable visible -->
               <div class="col-md-6 mb-3">
                 <label class="form-label">Responsable</label>
-                <select class="form-select" name="responsable" required>
+                <select class="form-select" name="responsable" id="Cid_responsable" required>
                   <option value="">Seleccione un responsable</option>
                   {% for usuario in form.responsable.field.queryset %}
                   <option value="{{ usuario.id }}">{{ usuario.username }}</option>
@@ -182,7 +194,7 @@
               <!-- Departamento visible -->
               <div class="col-md-6 mb-3">
                 <label class="form-label">Departamento</label>
-                <select class="form-select" name="departamento" required>
+                <select class="form-select" name="departamento" id="Cid_departamento" required>
                   {% for dep in form.departamento.field.queryset %}
                   <option value="{{ dep.id }}">{{ dep.nombre }}</option>
                   {% endfor %}
@@ -221,7 +233,7 @@
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <form method="post" id="formEditar" enctype="multipart/form-data" novalidate>
-        {% csrf_token %}
+        <input type="hidden" name="csrfmiddlewaretoken" id="csrf_token" value="{{ csrf_token }}">
         <input type="hidden" name="actividad_id" id="actividad_id">
         <input type="hidden" name="editar_actividad" value="1">
 
@@ -234,20 +246,21 @@
           <div id="erroresEditar" class="alert alert-danger d-none"></div>
 
           <div class="row">
-
-            <!-- Estado -->
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Estado</label>
-              {% if request.user.role == "DOCENTE" %}
-                <input type="text" class="form-control" value="Pendiente" readonly>
-                <input type="hidden" name="estado" value="False">
-              {% else %}
-                <select class="form-select" id="id_estado" name="estado">
-                  <option value="True">Completada</option>
-                  <option value="False" selected>Pendiente</option>
-                </select>
-              {% endif %}
-            </div>
+             <div class="col-md-6 mb-3">
+              <label class="form-label">Nombre</label>
+              <input type="text" class="form-control" id="Eid_nombre" name="nombre" required>
+            </div>  
+          <!-- Estado -->
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Estado</label>
+            <select class="form-select" name="estado" id="Eid_estado" required>
+              {% for code, label in form.fields.estado.choices %}
+                <option value="{{ code }}" {% if actividad.estado == code %}selected{% endif %}>
+                  {{ label }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
 
             <!-- Meta -->
             <div class="col-md-6 mb-3">
@@ -263,18 +276,18 @@
             <!-- Fechas -->
             <div class="col-md-6 mb-3">
               <label class="form-label">Fecha Inicio</label>
-              <input type="date" class="form-control" id="id_fecha_inicio" name="fecha_inicio" required>
+              <input type="date" class="form-control" id="Eid_fecha_inicio" name="fecha_inicio" required>
             </div>
             <div class="col-md-6 mb-3">
               <label class="form-label">Fecha Fin</label>
-              <input type="date" class="form-control" id="id_fecha_fin" name="fecha_fin" required>
+              <input type="date" class="form-control" id="Eid_fecha_fin" name="fecha_fin" required>
             </div>
 
             <!-- Responsable y Departamento -->
-            {% if request.user.role in "ADMIN APOYO" %}
+            {% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
               <div class="col-md-6 mb-3">
                 <label class="form-label">Responsable</label>
-                <select class="form-select" id="id_responsable" name="responsable" required>
+                <select class="form-select" id="Eid_responsable" name="responsable" required>
                   {% for usuario in form.responsable.field.queryset %}
                   <option value="{{ usuario.id }}">{{ usuario.username }}</option>
                   {% endfor %}
@@ -282,39 +295,44 @@
               </div>
               <div class="col-md-6 mb-3">
                 <label class="form-label">Departamento</label>
-                <select class="form-select" id="id_departamento" name="departamento" required>
+                <select class="form-select" id="Eid_departamento" name="departamento" required>
                   {% for dep in form.departamento.field.queryset %}
                   <option value="{{ dep.id }}">{{ dep.nombre }}</option>
                   {% endfor %}
                 </select>
               </div>
             {% else %}
-              <input type="hidden" id="id_responsable" name="responsable" value="{{ request.user.id }}">
-              <input type="hidden" id="id_departamento" name="departamento" value="{{ request.user.departamento.id }}">
+              <input type="hidden" id="Eid_responsable" name="responsable" value="{{ request.user.id }}">
+              <input type="hidden" id="Eid_departamento" name="departamento" value="{{ request.user.departamento.id }}">
             {% endif %}
 
             <!-- Evidencias existentes -->
             <div class="col-12 mb-3">
               <label class="form-label">Evidencias actuales</label>
-              <ul id="listaEvidencias" class="list-unstyled"></ul>
+              <div id="listaEvidencias" class="mt-2 border p-2 rounded list-unstyled">
+                <!-- Las evidencias se cargarán aquí mediante JavaScript -->
+              </div>
             </div>
-
+            
             <!-- Inputs solo si editable -->
             <div id="editarInputs" class="col-12 mb-3">
               <label class="form-label">Agregar nuevas evidencias</label>
               <input type="file" name="archivo_evidencia" class="form-control" multiple>
               <small class="text-muted">No se pueden modificar las evidencias existentes, solo agregar nuevas.</small>
             </div>
-
-            <!-- Mensaje si no editable -->
+          
+               <!-- Mensaje si no editable -->
             <div id="noEditableMsg" class="col-12 mb-3" style="display:none;">
               <div class="alert alert-warning">
                 Esta actividad ya no se puede editar. Puede solicitar al administrador que la reabra.
               </div>
               <button type="submit" name="solicitar_reapertura" value="1" class="btn btn-warning">
-                Solicitar reapertura
+                Solicitar Reapertura
               </button>
-            </div>
+            </div> 
+
+          
+
 
             <!-- Descripción -->
             <div class="col-12 mb-3">
@@ -343,8 +361,6 @@
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
-<script src="{% static "JS/Actividades/gestion_actividades.js" %}"></script>
-
 <script>
  // Auto abrir modal si hubo errores
     {% if abrir_modal_crear %}
@@ -355,5 +371,58 @@
         var modalEditar = new bootstrap.Modal(document.getElementById('modalEditar'));
         modalEditar.show();
     {% endif %}
+    // Datos de usuarios con sus departamentos (debes pasar estos datos desde Django)
+    
+   const usuarios = [
+    {% for usuario in form.responsable.field.queryset %}
+    {
+        id: {{ usuario.id }},
+        username: "{{ usuario.username|escapejs }}",
+        departamento_id: {{ usuario.departamento.id }},
+        departamento_nombre: "{{ usuario.departamento.nombre|escapejs }}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+  $('#Cid_responsable').on('change', function () {
+        var usuarioId = $(this).val();
+        var usuario = usuarios.find((u) => u.id == usuarioId);
+        if (usuario) {
+            $('#modalCrear select[name="departamento"], #Cid_departamento').val(
+                usuario.departamento_id
+            );
+        }
+    });
+
+    // Al cambiar departamento -> setear responsable
+    $('#Cid_departamento').on('change', function () {
+        var departamentoId = $(this).val();
+        var usuario = usuarios.find((u) => u.departamento_id == departamentoId);
+        if (usuario) {
+            $('#modalCrear select[name="responsable"], #Cid_responsable').val(
+                usuario.id
+            );
+        }
+    });
+      $('#Eid_responsable').on('change', function () {
+        var usuarioId = $(this).val();
+        var usuario = usuarios.find((u) => u.id == usuarioId);
+        if (usuario) {
+            $('#modalCrear select[name="departamento"], #Eid_departamento').val(
+                usuario.departamento_id
+            );
+        }
+    });
+
+    // Al cambiar departamento -> setear responsable
+    $('#Eid_departamento').on('change', function () {
+        var departamentoId = $(this).val();
+        var usuario = usuarios.find((u) => u.departamento_id == departamentoId);
+        if (usuario) {
+            $('#modalCrear select[name="responsable"], #Eid_responsable').val(
+                usuario.id
+            );
+        }
+    });
 </script>
+<script src="{% static "JS/Actividades/gestion_actividades.js" %}"></script>
 {% endblock %}

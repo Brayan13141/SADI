@@ -54,11 +54,11 @@
                             <td>{{ riesgo.impacto }}</td>
                             <td>
                                 {% if riesgo.riesgo <= 25 %}
-                                    <span class="badge risk-badge risk-low">Bajo ({{ riesgo.riesgo }})</span>
+                                    <span class="badge bg-success">Bajo ({{ riesgo.riesgo }})</span>
                                 {% elif riesgo.riesgo <= 50 %}
-                                    <span class="badge risk-badge risk-medium">Medio ({{ riesgo.riesgo }})</span>
+                                    <span class="badge bg-warning">Medio ({{ riesgo.riesgo }})</span>
                                 {% else %}
-                                    <span class="badge risk-badge risk-high">Alto ({{ riesgo.riesgo }})</span>
+                                    <span class="badge bg-danger">Alto ({{ riesgo.riesgo }})</span>
                                 {% endif %}
                             </td>
                             <td>{{ riesgo.meta.nombre|truncatewords:3 }}</td>
@@ -145,13 +145,8 @@
             <div id="riesgo-calculado" class="form-control-plaintext fw-bold">0</div>
           </div>
           <div class="mb-3">
-            <label class="form-label">Meta</label>
-            <select class="form-select" name="meta" required>
-              <option value="">Seleccione una meta</option>
-              {% for meta in form.meta.field.queryset %}
-              <option value="{{ meta.id }}">{{ meta.nombre }}</option>
-              {% endfor %}
-            </select>
+              <label class="form-label">Meta</label>
+              {{ form.meta }}
           </div>
         </div>
         <div class="modal-footer">
@@ -194,14 +189,9 @@
             <label class="form-label">Nivel de Riesgo Calculado</label>
             <div id="riesgo-calculado-editar" class="form-control-plaintext fw-bold">0</div>
           </div>
-          <div class="mb-3">
-            <label class="form-label">Meta</label>
-            <select class="form-select" id="id_meta" name="meta" required>
-              <option value="">Seleccione una meta</option>
-              {% for meta in form.meta.field.queryset %}
-              <option value="{{ meta.id }}">{{ meta.nombre }}</option>
-              {% endfor %}
-            </select>
+        <div class="mb-3">
+              <label class="form-label">Meta</label>
+              {{ form.meta }}
           </div>
         </div>
         <div class="modal-footer">

@@ -23,14 +23,16 @@
 {% endblock %}
 
 {% block content %}
-{% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
+{% if request.user.role == "ADMIN" or request.user.role == "APOYO" or request.user.role == "DOCENTE" %}
 <!-- SECCIÓN META COMPROMETIDA -->
 <div class="card shadow-sm mb-3">
   <div class="card-header bg-info text-white d-flex justify-content-between">
     <h6 class="mb-0">Meta comprometida seleccionada</h6>
+    {% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
     <a id="btnVerComprometida" href="#" class="btn btn-sm btn-light d-none">
       Ver detalles
     </a>
+    {% endif %}
   </div>
   <div class="card-body">
     <div id="infoComprometida" class="text-muted">
@@ -55,9 +57,11 @@
   <div class="card shadow-sm">
       <div class="card-header d-flex justify-content-between bg-primary text-white">
           <h6 class="mb-0">Gestión de Metas</h6>
+          {% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
           <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#modalCrear">
               + Agregar Meta
           </button>
+          {% endif %}
       </div>
       <div class="card-body">
           <div class="table-responsive">
@@ -69,102 +73,146 @@
                           <th>Nombre</th>
                           <th>Proyecto</th>
                           <th>Departamento</th>
+                          <th>LB</th>
+                          <th>MC</th>
+                          <th>Avance</th>
                           <th>Ciclo</th>
                           <th>Estado</th>
+                          <th>Acumulable</th>
                           <th>Acciones</th>
                       </tr>
                   </thead>
-                  <tbody>
-                      {% for meta in metas %}
-                      <tr class="fila-meta"
-                          data-id="{{ meta.id }}"
-                          data-clave="{{ meta.clave }}"
-                          data-nombre="{{ meta.nombre }}"
-                          data-ciclo="{{ meta.ciclo.id|default:'' }}"
-                          data-comprometida-id="{{ meta.metacomprometida.id|default:'' }}"
-                          data-comprometida-valor="{{ meta.metacomprometida.valor|default:'' }}"
-                          data-comprometida-programa="{{ meta.metacomprometida.programa.nombre|default:'-' }}"
-                          data-proyecto="{{ meta.proyecto.id }}"
-                          data-departamento="{{ meta.departamento.id|default_if_none:'' }}"
-                          data-activa="{{ meta.activa }}"
-                          data-enunciado="{{ meta.enunciado|default:'' }}"
-                          data-indicador="{{ meta.indicador|default:'' }}"
-                          data-unidadmedida="{{ meta.unidadMedida|default:'' }}"
-                          data-metodocalculo="{{ meta.metodoCalculo|default:'' }}"
-                          data-lineabase="{{ meta.lineabase|default:0 }}"
-                          data-metacumplir="{{ meta.metacumplir|default:0 }}"
-                          data-variableb="{{ meta.variableB|default:0 }}"
-                          data-porcentages="{{ meta.porcentages|yesno:'True,False' }}">
-                          <td class="text-center">{{ meta.id }}</td>
-                          <td class="text-center">{{ meta.clave }}</td>
-                          <td class="text-center">{{ meta.nombre }}</td>
-                          <td class="text-center">{{ meta.proyecto.nombre }}</td>
-                          <td class="text-center">{{ meta.departamento|default:"-" }}</td>
-                          <td class="text-center">{{ meta.ciclo|default:"-" }}</td>
-                          <td class="text-center">
-                              {% if meta.activa %}
-                                  <span class="badge bg-success">Activa</span>
-                              {% else %}
-                                  <span class="badge bg-secondary">Inactiva</span>
-                              {% endif %}
-                          </td>
-                          <td class="text-center">
-                            <a href="{% url 'gestion_meta_avances' meta.id %}" class="btn btn-sm btn-outline-info">
-                                Avances
-                            </a>
-                            <button class="btn btn-sm btn-outline-primary btn-editar"
-                                    data-id="{{ meta.id }}"
-                                    data-clave="{{ meta.clave }}"
-                                    data-nombre="{{ meta.nombre }}"
-                                    data-ciclo="{{ meta.ciclo.id|default:'' }}"
-                                    data-proyecto="{{ meta.proyecto.id }}"
-                                    data-departamento="{{ meta.departamento.id|default_if_none:'' }}"
-                                    data-activa="{{ meta.activa }}"
-                                    data-enunciado="{{ meta.enunciado|default:'' }}"
-                                    data-indicador="{{ meta.indicador|default:'' }}"
-                                    data-unidadmedida="{{ meta.unidadMedida|default:'' }}"
-                                    data-metodocalculo="{{ meta.metodoCalculo|default:'' }}"
-                                    data-lineabase="{{ meta.lineabase|default:0 }}"
-                                    data-metacumplir="{{ meta.metacumplir|default:0 }}"
-                                    data-variableb="{{ meta.variableB|default:0 }}"
-                                    data-porcentages="{{ meta.porcentages|yesno:'True,False' }}">
-                                Editar
-                            </button>
-                            {% if request.user.role == "ADMIN"%}
-                            <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
-                                    data-bs-target="#modalEliminar{{ meta.id }}">
-                                Eliminar
-                            </button>
-                            {% endif %}
-                        </td>
-                      </tr>
-                  {% if request.user.role == "ADMIN"%}
-                      <!-- Modal Eliminar -->
-                      <div class="modal fade" id="modalEliminar{{ meta.id }}" tabindex="-1">
-                        <div class="modal-dialog">
-                          <div class="modal-content">
-                            <form method="post">
-                              {% csrf_token %}
-                              <input type="hidden" name="meta_id" value="{{ meta.id }}">
-                              <input type="hidden" name="eliminar_meta" value="1">
-                              <div class="modal-header">
-                                <h5 class="modal-title">Eliminar Meta</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                              </div>
-                              <div class="modal-body">
-                                ¿Seguro que deseas eliminar la meta <strong>{{ meta.clave }}</strong>?
-                              </div>
-                              <div class="modal-footer">
-                                <button type="submit" class="btn btn-danger">Eliminar</button>
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                              </div>
-                            </form>
-                          </div>
-                        </div>
-                      </div>
+                 <tbody>
+                {% for meta in metas %}
+                <tr class="fila-meta"
+                    data-id="{{ meta.id }}"
+                    data-clave="{{ meta.clave }}"
+                    data-nombre="{{ meta.nombre }}"
+                    data-ciclo="{{ meta.ciclo.id|default:'' }}"
+                    data-comprometida-id="{{ meta.metacomprometida.id|default:'' }}"
+                    data-comprometida-valor="{{ meta.metacomprometida.valor_display|default:'' }}"
+                    data-comprometida-programa="{{ meta.metacomprometida.programa.nombre|default:'-' }}"
+                    data-proyecto="{{ meta.proyecto.id }}"
+                    data-departamento="{{ meta.departamento.id|default_if_none:'' }}"
+                    data-activa="{{ meta.activa }}"
+                    data-acumulable="{{ meta.acumulable|yesno:'True,False' }}"
+                    data-enunciado="{{ meta.enunciado|default:'' }}"
+                    data-indicador="{{ meta.indicador|default:'' }}"
+                    data-unidadmedida="{{ meta.unidadMedida|default:'' }}"
+                    data-metodocalculo="{{ meta.metodoCalculo|default:'' }}"
+                    data-lineabase="{{ meta.lineabase|default:0 }}"
+                    data-metacumplir="{{ meta.metacumplir|default:0 }}"
+                    data-variableb="{{ meta.variableB|default:0 }}"
+                    data-porcentages="{{ meta.porcentages|yesno:'True,False' }}">
+                    
+                    <td class="text-center">{{ meta.id }}</td>
+                    <td class="text-center">{{ meta.clave }}</td>
+                    <td class="text-center">{{ meta.nombre }}</td>
+                    <td class="text-center">{{ meta.proyecto.nombre }}</td>
+                    <td class="text-center">{{ meta.departamento|default:"-" }}</td>
+                    
+                    <!-- Línea Base -->
+                    <td class="text-center">
+                      {% if meta.porcentages %}
+                        {{ meta.lineabase_display|floatformat:2 }}%
+                      {% else %}
+                        {{ meta.lineabase_display|floatformat:2 }}
                       {% endif %}
-                      {% endfor %}
-                  </tbody>
+                    </td>
+                    
+                    <!-- Meta a Cumplir -->
+                    <td class="text-center">
+                      {% if meta.porcentages %}
+                        {{ meta.metacumplir_display|floatformat:2 }}%
+                      {% else %}
+                        {{ meta.metacumplir_display|floatformat:2 }}
+                      {% endif %}
+                    </td>
+                    
+                    <!-- Variable B -->
+                    <td class="text-center">
+                      {% if meta.porcentages %}
+                        {{ meta.variableB_display|floatformat:2 }}%
+                      {% else %}
+                        {{ meta.variableB_display|floatformat:2 }}
+                      {% endif %}
+                    </td>
+                    
+                    <!-- Ciclo -->
+                    <td class="text-center">{{ meta.ciclo|default:"-" }}</td>
+                    
+                    <!-- Estado -->
+                    <td class="text-center">
+                      {% if meta.activa %}
+                        <span class="badge bg-success">Activa</span>
+                      {% else %}
+                        <span class="badge bg-secondary">Inactiva</span>
+                      {% endif %}
+                    </td>
+                    
+                    <!-- Acumulable -->
+                    <td class="text-center">{{ meta.acumulable|default_if_none:False|yesno:'Sí,No' }}</td>
+                    
+                    <!-- Acciones -->
+                    <td class="text-center">
+                      <a href="{% url 'gestion_meta_avances' meta.id %}" class="btn btn-sm btn-outline-info">Avances</a>
+                      <button class="btn btn-sm btn-outline-primary btn-editar"
+                              data-id="{{ meta.id }}"
+                              data-clave="{{ meta.clave }}"
+                              data-nombre="{{ meta.nombre }}"
+                              data-ciclo="{{ meta.ciclo.id|default:'' }}"
+                              data-proyecto="{{ meta.proyecto.id }}"
+                              data-departamento="{{ meta.departamento.id|default_if_none:'' }}"
+                              data-activa="{{ meta.activa }}"
+                              data-acumulable="{{ meta.acumulable|yesno:'True,False' }}"
+                              data-enunciado="{{ meta.enunciado|default:'' }}"
+                              data-indicador="{{ meta.indicador|default:'' }}"
+                              data-unidadmedida="{{ meta.unidadMedida|default:'' }}"
+                              data-metodocalculo="{{ meta.metodoCalculo|default:'' }}"
+                              data-lineabase="{{ meta.lineabase|default:0 }}"
+                              data-metacumplir="{{ meta.metacumplir|default:0 }}"
+                              data-variableb="{{ meta.variableB|default:0 }}"
+                              data-porcentages="{{ meta.porcentages|yesno:'True,False' }}">
+                        Editar
+                      </button>
+                      {% if request.user.role == "ADMIN" %}
+                      <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
+                              data-bs-target="#modalEliminar{{ meta.id }}">
+                        Eliminar
+                      </button>
+                      {% endif %}
+                    </td>
+                </tr>
+                
+                {% if request.user.role == "ADMIN" %}
+                <!-- Modal Eliminar -->
+                <div class="modal fade" id="modalEliminar{{ meta.id }}" tabindex="-1">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="meta_id" value="{{ meta.id }}">
+                        <input type="hidden" name="eliminar_meta" value="1">
+                        <div class="modal-header">
+                          <h5 class="modal-title">Eliminar Meta</h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                          ¿Seguro que deseas eliminar la meta <strong>{{ meta.clave }}</strong>?
+                        </div>
+                        <div class="modal-footer">
+                          <button type="submit" class="btn btn-danger">Eliminar</button>
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+                {% endif %}
+                
+                {% endfor %}
+              </tbody>
+
               </table>
           </div>
       </div>
@@ -236,7 +284,13 @@
             <label class="form-label">Indicador</label>
             <textarea class="form-control" id="id_indicador" name="indicador" rows="3" required></textarea>
           </div>
-
+          <div class="mb-2">
+           <label class="form-label">Incremental/Acumulable</label>
+                <div class="form-check form-switch mt-2">
+                  <input class="form-check-input" type="checkbox" name="acumulable" id="id_acumulable">
+                  <label class="form-check-label">Acumulable</label>
+                </div>
+          </div>
           <div class="row">
             <div class="col-md-6">
               <div class="mb-2">
@@ -257,18 +311,13 @@
               <div class="mb-2">
                 <label class="form-label">Línea Base(LB)</label>
                 <input type="number" step="0.0001" class="form-control" id="id_lineabase" name="lineabase">
+                <small id="labelEjemplo" class="form-text text-muted"></small>  
               </div>
             </div>
             <div class="col-md-4">
               <div class="mb-2">
                 <label class="form-label">Meta a Cumplir(MC)</label>
                 <input type="number" class="form-control" id="id_metacumplir" name="metacumplir">
-              </div>
-            </div>
-            <div class="col-md-4">
-              <div class="mb-2">
-                <label class="form-label">Variable B</label>
-                <input type="number" step="0.0001" class="form-control" id="id_variableb" name="variableB">
               </div>
             </div>
           </div>
@@ -292,17 +341,30 @@
             <div class="col-md-6">
               <div class="mb-2">
                 <label class="form-label">Estado</label>
-                <div class="form-check form-switch mt-2">
-                  <input class="form-check-input" type="checkbox" id="id_activa" name="activa" checked>
-                  <label class="form-check-label" for="id_activa">Activa</label>
+                <div class="d-flex align-items-center mt-2">
+                  <div class="form-check form-switch me-4">
+                    <input class="form-check-input" type="checkbox" id="id_activa" name="activa">
+                    <label class="form-check-label" for="id_activa">Activa</label>
+                  </div>
+                {% if request.user.role == "ADMIN" %}
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="id_porcentages" name="porcentages">
+                    <label class="form-check-label" for="id_porcentages">Porcentajes</label>
+                  </div>
+                {% else %}
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="id_porcentages" name="porcentages" hidden>
+                  </div>
+                {% endif %}
                 </div>
-                <label class="form-label">Valores LB y MC</label>
-                <div class="form-check form-switch mt-2">
-                  <input class="form-check-input" type="checkbox" id="id_porcentages" name="porcentages">
-                  <label class="form-check-label" for="id_porcentages">Porcentajes</label>
-                </div>
+
+              </div>
+
+              <div class="mb-2">
+
               </div>
             </div>
+
           </div>
         </div>
         <div class="modal-footer">
@@ -378,7 +440,13 @@
             <label class="form-label">Indicador</label>
             <textarea class="form-control" name="indicador" rows="3" required></textarea>
           </div>
-
+          <div class="mb-2">
+           <label class="form-label">Incremental/Acumulable</label>
+                <div class="form-check form-switch mt-2">
+                  <input class="form-check-input" type="checkbox" name="acumulable" id="id_acumulable">
+                  <label class="form-check-label">Acumulable</label>
+                </div>
+          </div>
           <div class="row">
             <div class="col-md-6">
               <div class="mb-2">
@@ -405,12 +473,6 @@
               <div class="mb-2">
                 <label class="form-label">Meta a Cumplir(MC)</label>
                 <input type="number" class="form-control" name="metacumplir">
-              </div>
-            </div>
-            <div class="col-md-4">
-              <div class="mb-2">
-                <label class="form-label">Variable B</label>
-                <input type="number" step="0.0001" class="form-control" name="variableB">
               </div>
             </div>
           </div>
@@ -464,7 +526,7 @@
 {% block extra_js %}
 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
-<script src="{% static "JS/Metas/gestion_metas.js" %}"></script>
+
 <script>
   // Mostrar modales si hay errores
     {% if abrir_modal_crear %}
@@ -476,5 +538,9 @@
         var metaId = "{{ meta_editar_id }}";
         $('.btn-editar[data-id="' + metaId + '"]').click();
     {% endif %}
+ 
+  
+    const usuarioRol = "{{ request.user.role }}"; // ADMIN, APOYO o DOCENTE
 </script>
+<script src="{% static "JS/Metas/gestion_metas.js" %}"></script>
 {% endblock %}

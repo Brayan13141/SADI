@@ -190,6 +190,7 @@
           </div>
           <div class="mb-2">
             <label class="form-label">Departamento</label>
+            <p class="form-text">Solo se muestran los departamentos disponibles.</p>
             <select class="form-select" id="id_departamento" name="departamento">
               <option value="">---------</option>
               {% for dep in form.fields.departamento.queryset %}
@@ -259,6 +260,7 @@
           </div>
           <div class="mb-2">
             <label class="form-label">Departamento</label>
+            <p class="form-text">Solo se muestran los departamentos disponibles.</p>
             <select class="form-select" name="departamento">
               <option value="">---------</option>
               {% for dep in form.fields.departamento.queryset %}

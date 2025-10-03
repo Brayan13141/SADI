@@ -4,7 +4,7 @@
 {% block title %}Avances{% endblock %}
 
 {% block content %}
-{% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
+{% if request.user.role == "ADMIN" or request.user.role == "APOYO" or request.user.role == "DOCENTE" %}
 <div class="container-fluid py-3">
 
     <!-- Botón volver -->
@@ -40,6 +40,21 @@
 
     <h4 class="mb-3">Meta: <strong>{{ meta.clave }}</strong> - {{ meta.nombre }}</h4>
 
+    <h5>Avances registrados</h5>
+{% if meta.acumulable %}
+  <div class="alert alert-info">
+    <strong>Total acumulado:</strong>
+    {{ meta.total_avance_display }}
+
+    <div class="float-end">
+      <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#modalInfoAcumulable">
+        <i class="fas fa-info-circle me-1"></i> Ayuda
+      </button>
+    </div>
+  </div>
+  
+{% endif %}
+
     <!-- ========== AVANCES ========== -->
     <div class="card shadow-sm">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
@@ -64,7 +79,7 @@
                         {% for avance in avances %}
                         <tr>
                             <td>{{ avance.id }}</td>
-                            <td>{{ avance.avance }}</td>
+                            <td>{{ avance.avance_display }}</td>
                             <td>{{ avance.fecha_registro }}</td>
                             <td>{{ avance.departamento.nombre|default:"-" }}</td>
                             <td>
@@ -170,7 +185,7 @@
 
           <!-- Campo Avance -->
           <div class="mb-3">
-            <label class="form-label">Avance (%)</label>
+            <label class="form-label">Avance</label>
             <input type="number" step="0.01" min="0" max="100" 
                    class="form-control" id="id_avance_editar" name="avance" required>
           </div>
@@ -190,6 +205,37 @@
     </div>
   </div>
 </div>
+
+{% if meta.acumulable %}
+<div class="modal fade" id="modalInfoAcumulable" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-info text-white">
+        <h5 class="modal-title">Información sobre metas acumulables</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>
+          Esta meta es <strong>acumulable</strong>.  
+          Al registrar un avance no debes ingresar el total, sino únicamente el valor que deseas <strong>sumar al acumulado</strong>.
+        </p>
+        <ul>
+          <li>Ejemplo: si el acumulado actual es <strong>30</strong> y necesitas llegar a <strong>40</strong>, no pongas 40, sino <strong>10</strong>.</li>
+          <li>El sistema se encarga de <strong>sumarlo automáticamente</strong> al total acumulado.</li>
+        </ul>
+        <div class="alert alert-secondary">
+          <i class="fas fa-info-circle"></i>
+          El total acumulado actual es: <strong>{{ meta.total_avance_display }}</strong>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Entendido</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
 
 {% if request.user.role == "ADMIN" %}
 <!-- Eliminar Avance (fuera de la tabla para evitar errores de DataTables) -->
