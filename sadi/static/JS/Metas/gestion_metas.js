@@ -57,63 +57,66 @@ $(document).ready(function () {
             .attr('href', `/metas/${metaId}/comprometida/`);
     });
 
-    // Botón Editar -> cargar datos al modal de actividades
+    // Botón Editar -> cargar datos al modal de metas
     $('.btn-editar').on('click', function () {
-        // Obtener datos de la actividad
-        const actividadId = $(this).data('id');
-        const estado = $(this).data('estado');
-        const descripcion = $(this).data('descripcion');
-        const fechaInicio = $(this).data('fecha_inicio');
-        const fechaFin = $(this).data('fecha_fin');
-        const metaId = $(this).data('meta_id');
-        const responsableId = $(this).data('responsable_id');
-        const departamentoId = $(this).data('departamento_id');
+        const fila = $(this).closest('.fila-meta');
+
+        // Datos
+        const metaId = $(this).data('id');
+        const clave = $(this).data('clave');
+        const nombre = $(this).data('nombre');
+        const enunciado = $(this).data('enunciado');
+        const proyectoId = $(this).data('proyecto');
+        const departamentoId = $(this).data('departamento');
+        const indicador = $(this).data('indicador');
+        const acumulable = $(this).data('acumulable') === 'True';
+        const unidadMedida = $(this).data('unidadmedida');
+        const metodoCalculo = $(this).data('metodocalculo');
+        let lineabase = parseFloat($(this).data('lineabase'));
+        let metacumplir = parseFloat($(this).data('metacumplir'));
+        let variableB = parseFloat($(this).data('variableb'));
+        const cicloId = $(this).data('ciclo');
+        const activa = $(this).data('activa') === 'True';
+        const porcentages = $(this).data('porcentages') === 'True';
+
+        // Si está en modo porcentaje -> convertir de 0.8555 a 85.55
+        if (porcentages) {
+            lineabase = lineabase ? (lineabase * 100).toFixed(2) : '';
+            metacumplir = metacumplir ? (metacumplir * 100).toFixed(2) : '';
+            variableB = variableB ? (variableB * 100).toFixed(2) : '';
+        }
 
         // Llenar el formulario
-        $('#actividad_id').val(actividadId);
-        $('#id_estado').val(estado);
-        $('#id_descripcion').val(descripcion);
-        $('#id_fecha_inicio').val(fechaInicio);
-        $('#id_fecha_fin').val(fechaFin);
-        $('#id_meta').val(metaId);
-        $('#id_responsable').val(responsableId);
+        $('#meta_id').val(metaId);
+        $('#id_clave').val(clave);
+        $('#id_nombre').val(nombre);
+        $('#id_enunciado').val(enunciado);
+        $('#id_proyecto').val(proyectoId);
         $('#id_departamento').val(departamentoId);
+        $('#id_indicador').val(indicador);
+        $('#id_acumulable').prop('checked', acumulable);
+        $('#id_unidadmedida').val(unidadMedida);
+        $('#id_metodocalculo').val(metodoCalculo);
+        $('#id_lineabase').val(lineabase);
+        $('#id_metacumplir').val(metacumplir);
+        $('#id_variableb').val(variableB);
+        $('#id_ciclo').val(cicloId);
+        $('#id_activa').prop('checked', activa);
+        $('#id_porcentages').prop('checked', porcentages);
 
-        // Obtener evidencias via AJAX
-        $.ajax({
-            url: `/actividades/${actividadId}/evidencias/`,
-            method: 'GET',
-            success: function (data) {
-                const evidenciasContainer = $('#evidencias-existentes');
-                evidenciasContainer.empty();
+        // Mostrar ejemplo dinámico si está activado
+        togglePorcentajeUI(porcentages);
 
-                if (data.evidencias && data.evidencias.length > 0) {
-                    data.evidencias.forEach(function (evidencia) {
-                        evidenciasContainer.append(`
-                        <li class="d-flex justify-content-between align-items-center mb-2">
-                            <a href="${evidencia.url}" target="_blank" class="text-truncate" style="max-width: 70%;">
-                                <i class="fas fa-file-pdf text-danger me-2"></i>
-                                ${evidencia.nombre}
-                            </a>
-                            <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-evidencia" 
-                                    data-evidencia-id="${evidencia.id}">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </li>
-                    `);
-                    });
-                } else {
-                    evidenciasContainer.append(
-                        '<li class="text-muted">No hay evidencias subidas.</li>'
-                    );
-                }
-            },
-            error: function () {
-                $('#evidencias-existentes').html(
-                    '<li class="text-danger">Error al cargar evidencias</li>'
-                );
-            },
-        });
+        // Deshabilitar campos para docentes
+        if (usuarioRol === 'DOCENTE') {
+            $(
+                '#id_clave, #id_nombre, #id_proyecto, #id_departamento, #id_ciclo, #id_activa, #id_indicador, #id_unidadmedida, #id_metodocalculo, #id_enunciado'
+            ).prop('disabled', true);
+        } else {
+            $(
+                '#formEditar input, #formEditar select, #formEditar textarea'
+            ).prop('disabled', false);
+        }
 
         // Limpiar errores previos
         $('#erroresEditar').addClass('d-none').empty();
@@ -121,8 +124,47 @@ $(document).ready(function () {
             '#formEditar input, #formEditar select, #formEditar textarea'
         ).removeClass('is-invalid');
 
+        // Mostrar modal
         $('#modalEditar').modal('show');
     });
+
+    // Listener para cuando el usuario activa/desactiva porcentajes en el modal
+    $('#id_porcentages').on('change', function () {
+        togglePorcentajeUI(this.checked);
+    });
+
+    // Función para mostrar animación + símbolo de %
+    function togglePorcentajeUI(activar) {
+        const inputs = ['#id_lineabase', '#id_metacumplir', '#id_variableb'];
+
+        if (activar) {
+            inputs.forEach((sel) => {
+                const $input = $(sel);
+
+                // Añadir placeholder de ejemplo
+                $input.attr('placeholder', 'Ej: 85.55 %');
+
+                // Animación visual
+                $input
+                    .addClass('is-percentage')
+                    .animate({ backgroundColor: '#e8f5e9' }, 300);
+            });
+
+            $('#labelEjemplo')
+                .text('Formato en porcentaje (0 - 100)')
+                .fadeIn(300);
+        } else {
+            inputs.forEach((sel) => {
+                const $input = $(sel);
+                $input.attr('placeholder', 'Ej: 1500.50');
+                $input
+                    .removeClass('is-percentage')
+                    .animate({ backgroundColor: '#fff' }, 300);
+            });
+
+            $('#labelEjemplo').text('Formato en cantidad').fadeIn(300);
+        }
+    }
 
     // Validación Crear
     $('#formCrear').on('submit', function (e) {
@@ -142,6 +184,7 @@ $(document).ready(function () {
             'indicador',
             'unidadMedida',
             'metodoCalculo',
+            'acumulable',
         ];
 
         camposRequeridos.forEach(
@@ -186,7 +229,7 @@ $(document).ready(function () {
             'nombre',
             'enunciado',
             'proyecto',
-
+            'acumulable',
             'indicador',
             'unidadMedida',
             'metodoCalculo',

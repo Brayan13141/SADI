@@ -44,12 +44,6 @@ $(document).ready(function () {
         if (!avance.val().trim()) {
             errores.push('El campo Avance es obligatorio.');
             camposInvalidos.push(avance);
-        } else {
-            const valorAvance = parseFloat(avance.val());
-            if (isNaN(valorAvance) || valorAvance < 0 || valorAvance > 100) {
-                errores.push('El campo Avance debe estar entre 0 y 100.');
-                camposInvalidos.push(avance);
-            }
         }
 
         // Validar fecha

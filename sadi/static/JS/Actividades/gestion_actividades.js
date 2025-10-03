@@ -15,27 +15,74 @@ $(document).ready(function () {
         },
     });
 
+    // ===== FUNCIÓN PARA SINCRONIZAR DEPARTAMENTO Y RESPONSABLE =====
+    // ===== FUNCIONES EXISTENTES PARA EVIDENCIAS =====
+
+    function getFilenameFromPath(path) {
+        if (!path) return '';
+        return path.split('/').pop();
+    }
+
+    function truncateFilename(filename, maxLength = 50) {
+        if (filename.length <= maxLength) return filename;
+
+        var extension = filename.split('.').pop();
+        var name = filename.substring(
+            0,
+            filename.length - extension.length - 1
+        );
+        var truncated =
+            name.substring(0, maxLength - extension.length - 3) + '...';
+
+        return truncated + '.' + extension;
+    }
+
+    function getFileIcon(filename) {
+        const extension = filename.split('.').pop().toLowerCase();
+        const iconMap = {
+            pdf: 'fa-file-pdf text-danger',
+            doc: 'fa-file-word text-primary',
+            docx: 'fa-file-word text-primary',
+            xls: 'fa-file-excel text-success',
+            xlsx: 'fa-file-excel text-success',
+            ppt: 'fa-file-powerpoint text-warning',
+            pptx: 'fa-file-powerpoint text-warning',
+            jpg: 'fa-file-image text-info',
+            jpeg: 'fa-file-image text-info',
+            png: 'fa-file-image text-info',
+            gif: 'fa-file-image text-info',
+            zip: 'fa-file-archive text-secondary',
+            rar: 'fa-file-archive text-secondary',
+            txt: 'fa-file-alt text-muted',
+        };
+        return iconMap[extension] || 'fa-file text-secondary';
+    }
+
     // Manejar clic en botón Editar
-    $('.btn-editar').on('click', function () {
-        // Obtener datos del botón
+    $(document).on('click', '.btn-editar', function () {
+        // Obtener datos
         var actividadId = $(this).data('id');
+        var nombre = $(this).data('nombre');
         var estado = $(this).data('estado');
         var descripcion = $(this).data('descripcion');
         var fechaInicio = $(this).data('fecha_inicio');
         var fechaFin = $(this).data('fecha_fin');
-        var evidencia = $(this).data('evidencia'); // string "url|nombre,url|nombre"
+        var evidencia = $(this).data('evidencia');
         var metaId = $(this).data('meta_id');
         var responsableId = $(this).data('responsable_id');
-        var editable = $(this).data('editable'); // true/false
+        var departamentoId = $(this).data('departamento_id');
+        var editable = $(this).data('editable');
 
-        // Llenar el formulario
+        // Llenar formulario
         $('#actividad_id').val(actividadId);
-        $('#id_estado').val(estado);
+        $('#Eid_nombre').val(nombre);
+        $('#Eid_estado').val(estado);
         $('#id_descripcion').val(descripcion);
-        $('#id_fecha_inicio').val(fechaInicio);
-        $('#id_fecha_fin').val(fechaFin);
+        $('#Eid_fecha_inicio').val(fechaInicio);
+        $('#Eid_fecha_fin').val(fechaFin);
         $('#id_meta').val(metaId);
-        $('#id_responsable').val(responsableId);
+        $('#Eid_responsable').val(responsableId);
+        $('#Eid_departamento').val(departamentoId);
 
         // Limpiar errores previos
         $('#erroresEditar').addClass('d-none').empty();
@@ -43,14 +90,25 @@ $(document).ready(function () {
             '#formEditar input, #formEditar select, #formEditar textarea'
         ).removeClass('is-invalid');
 
-        // Mostrar evidencias en el modal
+        // Renderizar evidencias
         var evidenciasHtml = '';
         if (evidencia && evidencia.length > 0) {
             var archivos = evidencia.split(',');
             archivos.forEach(function (item) {
                 var partes = item.split('|');
                 if (partes.length === 2) {
-                    evidenciasHtml += `<li><a href="${partes[0]}" target="_blank">${partes[1]}</a></li>`;
+                    var url = partes[0];
+                    var nombre = partes[1];
+                    var icono = getFileIcon(nombre);
+                    var nombreReal = getFilenameFromPath(nombre);
+                    var nombreTruncado = truncateFilename(nombreReal, 30);
+                    evidenciasHtml += `
+                        <li class="mb-1 d-flex align-items-center">
+                            <i class="fas ${icono} me-2"></i>
+                            <a href="${url}" download="${nombre}" class="text-decoration-none">
+                                ${nombreTruncado}
+                            </a>
+                        </li>`;
                 }
             });
         } else {
@@ -59,7 +117,7 @@ $(document).ready(function () {
         }
         $('#listaEvidencias').html(evidenciasHtml);
 
-        // Manejar editable
+        // Manejo editable
         if (editable) {
             $('#editarInputs').show();
             $('#noEditableMsg').hide();
@@ -67,6 +125,21 @@ $(document).ready(function () {
             $(
                 '#formEditar input, #formEditar textarea, #formEditar select'
             ).prop('disabled', false);
+
+            var departamentoInput = $('#id_departamento');
+            var responsableInput = $('#id_responsable');
+
+            if (departamentoInput.length > 1 && responsableInput.length > 1) {
+                var departamentoActual = departamentoInput.val();
+                if (departamentoActual) {
+                    filtrarResponsablesPorDepartamento(
+                        departamentoActual,
+                        '#id_responsable'
+                    );
+                    // Asegurar que el responsable actual esté seleccionado
+                    responsableInput.val(responsableId);
+                }
+            }
         } else {
             $('#editarInputs').hide();
             $('#noEditableMsg').show();
@@ -75,7 +148,9 @@ $(document).ready(function () {
                 '#formEditar input, #formEditar textarea, #formEditar select'
             ).prop('disabled', true);
         }
-
+        $('#csrf_token').prop('disabled', false);
+        $('#actividad_id').prop('disabled', false);
+        $('#id_estado').prop('disabled', false);
         // Mostrar modal
         $('#modalEditar').modal('show');
     });
@@ -109,6 +184,10 @@ $(document).ready(function () {
         if (!$('[name="responsable"]', this).val()) {
             errores.push('Debe seleccionar un responsable.');
             camposInvalidos.responsable = $('[name="responsable"]', this);
+        }
+        if (!$('[name="departamento"]', this).val()) {
+            errores.push('Debe seleccionar un departamento.');
+            camposInvalidos.departamento = $('[name="departamento"]', this);
         }
 
         // Validar que fecha fin sea posterior a fecha inicio
@@ -155,11 +234,11 @@ $(document).ready(function () {
             errores.push('El campo Descripción es obligatorio.');
             camposInvalidos.descripcion = $('#id_descripcion');
         }
-        if (!$('#id_fecha_inicio').val()) {
+        if (!$('#Eid_fecha_inicio').val()) {
             errores.push('El campo Fecha inicio es obligatorio.');
             camposInvalidos.fecha_inicio = $('#id_fecha_inicio');
         }
-        if (!$('#id_fecha_fin').val()) {
+        if (!$('#Eid_fecha_fin').val()) {
             errores.push('El campo Fecha fin es obligatorio.');
             camposInvalidos.fecha_fin = $('#id_fecha_fin');
         }
@@ -167,9 +246,13 @@ $(document).ready(function () {
             errores.push('Debe seleccionar una meta.');
             camposInvalidos.meta = $('#id_meta');
         }
-        if (!$('#id_responsable').val()) {
+        if (!$('#Eid_responsable').val()) {
             errores.push('Debe seleccionar un responsable.');
-            camposInvalidos.responsable = $('#id_responsable');
+            camposInvalidos.responsable = $('#Eid_responsable');
+        }
+        if (!$('#Eid_departamento').val()) {
+            errores.push('Debe seleccionar un departamento.');
+            camposInvalidos.departamento = $('#Eid_departamento');
         }
 
         // Validar que fecha fin sea posterior a fecha inicio
