@@ -3,8 +3,8 @@
     --bs-primary: #09a43c;
     --bs-secondary: #eccb4f;
     --bs-success: #09a43c;
-    --bs-info: #487a49;
-    --bs-warning: #a18c46;
+    --bs-info: #4fc7e2;
+    --bs-warning: #eccb4f;
     --bs-light: #f8f9fa;
     --bs-dark: #212529;
     --bs-gray: #7c849c;
@@ -51,6 +51,9 @@
 .bg-info {
     background-color: var(--bs-info) !important;
 }
+.bg-gob-local {
+    background-color: var(--oficial-gob) !important;
+}
 .text-info {
     color: var(--bs-info) !important;
 }
@@ -93,7 +96,7 @@
 .table th {
     white-space: nowrap;
     vertical-align: middle;
-    min-width: 80px !important;
+    min-width: auto !important;
 }
 .table td {
     vertical-align: middle;
