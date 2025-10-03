@@ -10,7 +10,6 @@ class CicloSerializer(serializers.ModelSerializer):
 
 
 class ProgramaEstrategicoSerializer(serializers.ModelSerializer):
-    ciclos = CicloSerializer(many=True, read_only=True)
 
     class Meta:
         model = ProgramaEstrategico

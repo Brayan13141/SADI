@@ -9,9 +9,6 @@ class MitigacionDetailSerializer(serializers.ModelSerializer):
 
 
 class RiesgoDetailSerializer(serializers.ModelSerializer):
-    mitigaciones = MitigacionDetailSerializer(
-        source="mitigacion_set", many=True, read_only=True
-    )
 
     class Meta:
         model = Riesgo
@@ -22,5 +19,4 @@ class RiesgoDetailSerializer(serializers.ModelSerializer):
             "probabilidad",
             "impacto",
             "riesgo",
-            "mitigaciones",
         ]
