@@ -1,4 +1,5 @@
 from .models import Usuario
+from rest_framework import viewsets, permissions
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from .forms import UsuarioEditForm, UsuarioForm
@@ -52,3 +53,34 @@ def gestion_usuarios(request):
         "usuarios/gestion_usuarios.html",
         {"usuarios": usuarios, "form": form, "abrir_modal_crear": abrir_modal_crear},
     )
+
+
+from rest_framework import viewsets, permissions
+from .models import Usuario
+from .serializers import UsuarioSerializer
+
+
+class UsuarioViewSet(viewsets.ModelViewSet):
+
+    queryset = Usuario.objects.all()
+    serializer_class = UsuarioSerializer
+
+    def get_permissions(self):
+        if self.request.user.role == "ADMIN":
+            return [permissions.IsAuthenticated()]  # Admin puede todo
+        else:
+            return [permissions.IsAuthenticatedOrReadOnly()]  # Lectura para otros roles
+
+    def get_queryset(self):
+        user = self.request.user
+        # Filtrar según rol
+        if user.role == "ADMIN":
+            return Usuario.objects.all()
+        elif user.role == "APOYO":
+            return (
+                Usuario.objects.all()
+            )  # Apoyo puede ver todo, no editar (depende del permiso)
+        elif user.role == "DOCENTE":
+            return Usuario.objects.filter(departamento=user.departamento)
+        else:  # INVITADO
+            return Usuario.objects.none()
