@@ -1,4 +1,5 @@
 from django.db import models
+from django.forms import ValidationError
 from metas.models import Meta
 from departamentos.models import Departamento
 from usuarios.models import Usuario
@@ -6,7 +7,22 @@ from simple_history.models import HistoricalRecords
 
 
 class Actividad(models.Model):
-    estado = models.BooleanField(default=False)
+    ESTADOS = [
+        ("Activa", "Activa"),
+        ("En Proceso", "En Proceso"),
+        ("Cumplida", "Cumplida"),
+        ("No Cumplida", "No Cumplida"),
+    ]
+
+    estado = models.CharField(
+        max_length=15,
+        choices=ESTADOS,
+        default="Activa",
+        help_text="Estado actual de la actividad",
+    )
+    nombre = models.CharField(
+        max_length=255, null=True, blank=True, help_text="Nombre corto de la actividad"
+    )
     descripcion = models.TextField()
     fecha_inicio = models.DateField()
     fecha_fin = models.DateField()
@@ -20,7 +36,7 @@ class Actividad(models.Model):
     history = HistoricalRecords()
 
     def __str__(self):
-        return self.descripcion
+        return f"{self.descripcion} ({self.get_estado_display()})"
 
 
 class Evidencia(models.Model):
@@ -50,6 +66,21 @@ class SolicitudReapertura(models.Model):
     )
     fecha_solicitud = models.DateTimeField(auto_now_add=True)
     aprobada = models.BooleanField(default=False)
+    terminada = models.BooleanField(default=False)
+
+    def clean(self):
+        if not self.aprobada:
+            existe = (
+                SolicitudReapertura.objects.filter(
+                    actividad=self.actividad, aprobada=False
+                )
+                .exclude(pk=self.pk)
+                .exists()
+            )
+            if existe:
+                raise ValidationError(
+                    "Ya existe una solicitud pendiente para esta actividad."
+                )
 
     def __str__(self):
         return f"Solicitud de {self.usuario.username} para {self.actividad.descripcion}"

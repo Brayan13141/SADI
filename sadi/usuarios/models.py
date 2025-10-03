@@ -13,7 +13,9 @@ class Usuario(AbstractUser):
     ]
 
     role = models.CharField(max_length=15, choices=ROLE_CHOICES)
-    departamento = models.ForeignKey(Departamento, on_delete=models.RESTRICT, null=True)
+    departamento = models.ForeignKey(
+        Departamento, on_delete=models.RESTRICT, null=True, unique=True
+    )
     history = HistoricalRecords()
 
     def __str__(self):
