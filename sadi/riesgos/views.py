@@ -11,8 +11,12 @@ from usuarios.permissions import IsAdmin, IsApoyo, IsDocente, IsInvitado
 
 @role_required("ADMIN", "APOYO", "DOCENTE")
 def gestion_riesgos(request):
-    riesgos = Riesgo.objects.all().select_related("meta")
-    form = RiesgoForm()
+    riesgos = (
+        Riesgo.objects.all()
+        .select_related("meta")
+        .filter(meta__activa=True, meta__departamento=request.user.departamento)
+    )
+    form = RiesgoForm(request.POST, user=request.user)
     abrir_modal_crear = False
     abrir_modal_editar = False
     riesgo_editar_id = None
@@ -24,7 +28,7 @@ def gestion_riesgos(request):
 
     if request.method == "POST":
         if "crear_riesgo" in request.POST and puede_crear:
-            form = RiesgoForm(request.POST)
+            form = RiesgoForm(request.POST, user=request.user)
             if form.is_valid():
                 form.save()  # cálculo automático en el modelo
                 messages.success(request, "Riesgo creado correctamente.")
@@ -39,7 +43,7 @@ def gestion_riesgos(request):
             if riesgo_id:
                 try:
                     riesgo = get_object_or_404(Riesgo, id=riesgo_id)
-                    form = RiesgoForm(request.POST, instance=riesgo)
+                    form = RiesgoForm(request.POST, instance=riesgo, user=request.user)
                     if form.is_valid():
                         form.save()
                         messages.success(request, "Riesgo editado correctamente.")
@@ -75,7 +79,13 @@ def gestion_riesgos(request):
 
 @role_required("ADMIN", "APOYO", "DOCENTE")
 def gestion_mitigaciones(request):
-    mitigaciones = Mitigacion.objects.all().select_related("responsable", "riesgo")
+    if request.user.role == "DOCENTE":
+        mitigaciones = Mitigacion.objects.filter(
+            riesgo__meta__departamento=request.user.departamento
+        ).select_related("responsable", "riesgo")
+    else:
+        mitigaciones = Mitigacion.objects.all().select_related("responsable", "riesgo")
+
     form = MitigacionForm()
     abrir_modal_crear = False
     abrir_modal_editar = False

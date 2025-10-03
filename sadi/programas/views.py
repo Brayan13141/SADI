@@ -6,6 +6,7 @@ from .forms import ProgramaEstrategicoForm, CicloForm
 from django.contrib import messages
 from usuarios.permissions import IsAdmin, IsApoyo, IsDocente, IsInvitado
 from usuarios.decorators import role_required
+from rest_framework.exceptions import PermissionDenied
 
 
 @role_required("ADMIN", "APOYO")
@@ -134,29 +135,34 @@ def gestion_ciclos(request):
 
 
 # ========================API========================
+
+
 class ProgramaEstrategicoViewSet(viewsets.ModelViewSet):
     serializer_class = ProgramaEstrategicoSerializer
 
     def get_queryset(self):
         user = self.request.user
+
         if user.role in ["ADMIN", "APOYO", "INVITADO"]:
             return ProgramaEstrategico.objects.all()
+
         elif user.role == "DOCENTE":
             return ProgramaEstrategico.objects.filter(
-                ciclos__objetivos__proyecto__departamento=user.departamento
+                objetivos__proyecto__meta__departamento=user.departamento
             ).distinct()
+
         return ProgramaEstrategico.objects.none()
 
-    def get_permissions(self):
-        if self.request.user.role == "ADMIN":
-            return [IsAdmin()]
-        elif self.request.user.role == "APOYO":
-            return [IsApoyo()]
-        elif self.request.user.role == "DOCENTE":
-            return [IsDocente()]
-        elif self.request.user.role == "INVITADO":
-            return [IsInvitado()]
-        return [permissions.IsAuthenticated()]
+    def get_object(self):
+        obj = super().get_object()
+        user = self.request.user
+        if user.role == "DOCENTE":
+            if not ProgramaEstrategico.objects.filter(
+                id=obj.id,
+                objetivos__proyecto__meta__departamento=user.departamento,
+            ).exists():
+                raise PermissionDenied("No tienes acceso a este programa.")
+        return obj
 
 
 class CicloViewSet(viewsets.ModelViewSet):

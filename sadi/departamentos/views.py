@@ -3,7 +3,7 @@ from .models import Departamento
 from .serializers import DepartamentoSerializer
 from django.contrib import messages
 from django.shortcuts import get_object_or_404
-from usuarios.permissions import IsAdmin, IsApoyo
+from usuarios.permissions import IsAdmin, IsApoyo, IsDocente
 from usuarios.decorators import role_required
 
 # ======================CRUD=======================
@@ -77,6 +77,8 @@ class DepartamentoViewSet(viewsets.ModelViewSet):
             return [IsAdmin()]
         elif self.request.user.role == "APOYO":
             return [IsApoyo()]
+        elif self.request.user.role == "DOCENTE":
+            return [IsDocente()]
         return [permissions.IsAuthenticated()]
 
     def get_queryset(self):
@@ -85,4 +87,6 @@ class DepartamentoViewSet(viewsets.ModelViewSet):
 
         if user.role in ["ADMIN", "APOYO"]:
             return queryset
+        elif user.role == "DOCENTE":
+            return queryset.filter(id=user.departamento_id)
         return Departamento.objects.none()

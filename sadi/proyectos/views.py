@@ -1,11 +1,11 @@
 from django.contrib import messages
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets
 from usuarios.decorators import role_required
-from usuarios.permissions import IsAdmin, IsApoyo, IsDocente, IsInvitado
 from .models import Proyecto
 from .serializers import ProyectoSerializer
 from django.shortcuts import render, redirect, get_object_or_404
 from .forms import ProyectoForm
+from rest_framework.exceptions import PermissionDenied
 
 
 @role_required("ADMIN", "APOYO")
@@ -78,21 +78,23 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+
         if user.role in ["ADMIN", "APOYO", "INVITADO"]:
             return Proyecto.objects.all()
+
         elif user.role == "DOCENTE":
             return Proyecto.objects.filter(
-                objetivo__programa__ciclos__objetivos__proyecto__departamento=user.departamento
+                meta__departamento=user.departamento
             ).distinct()
+
         return Proyecto.objects.none()
 
-    def get_permissions(self):
-        if self.request.user.role == "ADMIN":
-            return [IsAdmin()]
-        elif self.request.user.role == "APOYO":
-            return [IsApoyo()]
-        elif self.request.user.role == "DOCENTE":
-            return [IsDocente()]
-        elif self.request.user.role == "INVITADO":
-            return [IsInvitado()]
-        return [permissions.IsAuthenticated()]
+    def get_object(self):
+        obj = super().get_object()
+        user = self.request.user
+        if user.role == "DOCENTE":
+            if not Proyecto.objects.filter(
+                id=obj.id, meta__departamento=user.departamento
+            ).exists():
+                raise PermissionDenied("No tienes acceso a este proyecto.")
+        return obj
