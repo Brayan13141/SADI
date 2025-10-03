@@ -7,4 +7,4 @@ psycopg2-binary==2.9.10
 python-decouple==3.8
 sqlparse==0.5.3
 tzdata==2025.2
-Python==3.12.10
+#Python==3.12.10

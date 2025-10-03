@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>Informe de Programa de Trabajo</title>
+    <style>
+        /* Estilos básicos compatibles con xhtml2pdf */
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.3;
+            color: #000000;
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* Encabezado formal */
+        .header {
+            border-bottom: 2px solid #2c3e50;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            font-size: 16pt;
+            text-align: center;
+            margin: 0 0 10px 0;
+            font-weight: bold;
+        }
+        
+        .header-info {
+            width: 100%;
+        }
+        
+        .header-left {
+            width: 50%;
+            float: left;
+        }
+        
+        .header-right {
+            width: 50%;
+            float: right;
+            text-align: right;
+        }
+        
+        .info-item {
+            margin: 2px 0;
+            font-size: 9pt;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .clearfix {
+            clear: both;
+        }
+        
+        /* Tarjetas de departamento */
+        .departamento-section {
+            margin-bottom: 25px;
+        }
+        
+        .departamento-title {
+            background-color: #34495e;
+            color: white;
+            padding: 8px 12px;
+            font-size: 11pt;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        /* Tarjetas de meta */
+        .meta-card {
+            border: 1px solid #bdc3c7;
+            margin-bottom: 20px;
+            background: #ffffff;
+        }
+        
+        .meta-header {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 15px;
+        }
+        
+        .meta-title {
+            font-size: 10.5pt;
+            font-weight: bold;
+            margin: 0;
+            display: inline-block;
+            width: 70%;
+        }
+        
+        .meta-progress {
+            background: #ffffff;
+            color: #2c3e50;
+            padding: 4px 8px;
+            font-size: 9pt;
+            font-weight: bold;
+            display: inline-block;
+            text-align: right;
+            width: 25%;
+        }
+        
+        .meta-body {
+            padding: 15px;
+        }
+        
+        /* Tabla de actividades */
+        .actividades-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 9pt;
+        }
+        
+        .actividad-row {
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        .actividad-cell {
+            padding: 8px 6px;
+            vertical-align: top;
+        }
+        
+        .actividad-content {
+            width: 60%;
+        }
+        
+        .actividad-status {
+            width: 15%;
+            text-align: center;
+        }
+        
+        .actividad-dates {
+            width: 25%;
+            font-size: 8.5pt;
+        }
+        
+        .actividad-descripcion {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+        
+        .actividad-responsable {
+            color: #7f8c8d;
+            font-style: italic;
+        }
+        
+        .status-badge {
+            padding: 3px 6px;
+            font-size: 8pt;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status-cumplida { 
+            background-color: #27ae60; 
+            color: white; 
+        }
+        .status-proceso { 
+            background-color: #f39c12; 
+            color: #2c3e50; 
+        }
+        .status-nocumplida { 
+            background-color: #e74c3c; 
+            color: white; 
+        }
+        .status-activa { 
+            background-color: #95a5a6; 
+            color: white; 
+        }
+        
+        .date-info {
+            margin: 2px 0;
+        }
+        
+        .date-label {
+            font-weight: bold;
+            color: #7f8c8d;
+        }
+        
+        /* Estados vacíos */
+        .empty-state {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+            font-style: italic;
+            background: #ecf0f1;
+            margin: 10px 0;
+        }
+        
+        /* Footer */
+        .footer {
+            margin-top: 40px;
+            padding-top: 15px;
+            border-top: 1px solid #bdc3c7;
+            text-align: center;
+            font-size: 8.5pt;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <!-- ENCABEZADO FORMAL -->
+    <div class="header">
+        <h1>INFORME DE PROGRAMA DE TRABAJO</h1>
+        <div class="header-info">
+            <div class="header-left">
+                <div class="info-item">
+                <span class="info-label">Tipo de Reporte:</span> Programa de Trabajo <br>
+                <span class="info-label">Fecha de Generación:</span> {% now "d/m/Y H:i" %} <br>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="info-item">
+                <span class="info-label">Usuario:</span> {{ user.username }} <br>
+                <span class="info-label">Departamento:</span> {% if user.departamento %}{{ user.departamento.nombre }}{% else %}N/A{% endif %} <br>
+                <span class="info-label">Rol:</span> {{ user.role }}
+                </div>
+            </div>
+        </div>
+        <div class="clearfix"></div>
+    </div>
+
+    <!-- CONTENIDO PARA ADMIN/APOYO -->
+    {% if actividades_por_depto %}
+        {% for depto, metas in actividades_por_depto.items %}
+            <div class="departamento-section">
+                <div class="departamento-title">
+                    DEPARTAMENTO: {{ depto.nombre }}
+                </div>
+                
+                {% if metas %}
+                    {% for meta, datos in metas.items %}
+                        <div class="meta-card">
+                            <div class="meta-header">
+                                <h3 class="meta-title">META: {{ meta.nombre }}</h3>
+                                <div class="data-card progress-card">
+                                    <div class="progress-number">Progreso Total: {{ datos.porcentaje }}%</div>
+                                </div>
+                            </div>
+
+                            <div class="meta-body">
+                                <table class="actividades-table">
+                                    {% for act in datos.actividades %}
+                                        <tr class="actividad-row">
+                                            <td class="actividad-cell actividad-content">
+                                                <div class="actividad-descripcion">{{ act.descripcion }}</div>
+                                                {% if act.responsable %}
+                                                    <div class="actividad-responsable">Responsable: {{ act.responsable }}</div>
+                                                {% endif %}
+                                            </td>
+                                            <td class="actividad-cell actividad-status">
+                                                <span class="status-badge 
+                                                    {% if act.estado == 'Cumplida' %}status-cumplida
+                                                    {% elif act.estado == 'En Proceso' %}status-proceso
+                                                    {% elif act.estado == 'No Cumplida' %}status-nocumplida
+                                                    {% else %}status-activa{% endif %}">
+                                                    {{ act.estado }}
+                                                </span>
+                                            </td>
+                                            <td class="actividad-cell actividad-dates">
+                                                <div class="date-info">
+                                                    <span class="date-label">Inicio:</span>
+                                                    {{ act.fecha_inicio }}
+                                                </div>
+                                                <div class="date-info">
+                                                    <span class="date-label">Fin:</span>
+                                                    {{ act.fecha_fin }}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="3" class="empty-state">
+                                                No hay actividades registradas para esta meta.
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </table>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        No hay metas registradas en este departamento.
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+    <!-- CONTENIDO PARA DOCENTES -->
+    {% elif actividades_por_meta %}
+        {% for meta, datos in actividades_por_meta.items %}
+            <div class="meta-card">
+                <div class="meta-header">
+                    <h3 class="meta-title">META: {{ meta.nombre }}</h3>
+                    <div class="data-card progress-card">
+                        <div class="progress-number">Progreso Total: {{ datos.porcentaje }}%</div>
+                    </div>
+                </div>
+                   <div class="card-col">
+                        <div class="data-card">
+                            <div class="card-header">
+                                <div class="card-title">Total de Actividades: {{ datos.total }}</div>
+                                <div class="card-title">Actividades Completadas: {{ datos.completadas }} | {{ datos.completadas|default:0 }}/{{ datos.total }} tareas completadas</div>
+                            </div>
+                        </div>
+                    </div>
+                <div class="meta-body">
+                    <table class="actividades-table">
+                        {% for act in datos.actividades %}
+                            <tr class="actividad-row">
+                                <td class="actividad-cell actividad-content">
+                                    <div class="actividad-descripcion">{{ act.descripcion }}</div>
+                                </td>
+                                <td class="actividad-cell actividad-status">
+                                    <span class="status-badge 
+                                        {% if act.estado == 'Cumplida' %}status-cumplida
+                                        {% elif act.estado == 'En Proceso' %}status-proceso
+                                        {% elif act.estado == 'No Cumplida' %}status-nocumplida
+                                        {% else %}status-activa{% endif %}">
+                                        {{ act.estado }}
+                                    </span>
+                                </td>
+                                <td class="actividad-cell actividad-dates">
+                                    <div class="date-info">
+                                        <span class="date-label">Inicio:</span>
+                                        {{ act.fecha_inicio }}
+                                    </div>
+                                    <div class="date-info">
+                                        <span class="date-label">Fin:</span>
+                                        {{ act.fecha_fin }}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="3" class="empty-state">
+                                    No hay actividades registradas para esta meta.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="footer">
+        Documento generado automáticamente - {% now "d/m/Y H:i" %}
+    </div>
+
+</body>
+</html>

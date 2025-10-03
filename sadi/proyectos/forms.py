@@ -8,7 +8,11 @@ class ProyectoForm(forms.ModelForm):
         model = Proyecto
         fields = ["clave", "nombre", "objetivo"]
         widgets = {
-            "nombre": forms.Textarea(attrs={"rows": 3}),
+            "clave": forms.TextInput(attrs={"class": "form-control", "required": True}),
+            "nombre": forms.Textarea(
+                attrs={"rows": 3, "class": "form-control", "required": True}
+            ),
+            "objetivo": forms.Select(attrs={"class": "form-select", "required": True}),
         }
 
     def __init__(self, *args, **kwargs):

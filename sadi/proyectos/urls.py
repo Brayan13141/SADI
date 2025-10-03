@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import ProyectoViewSet, gestion_proyectos
 
 router = DefaultRouter()
-router.register(r"api/proyectos", ProyectoViewSet)
+router.register(r"api/proyectos", ProyectoViewSet, basename="proyectos")
 
 urlpatterns = [
     path("", include(router.urls)),

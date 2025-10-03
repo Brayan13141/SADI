@@ -1,0 +1,302 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block head %}
+<!-- FontAwesome para iconos -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header Mejorado -->
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+        <div>
+            <h1 class="h3 mb-1 fw-bold text-primary">
+                <i class="fas fa-chart-line me-2"></i>Plan de Trabajo
+            </h1>
+            <p class="text-muted mb-0">Seguimiento de metas y actividades por departamento</p>
+        </div>
+        <a href="{% url 'programa_trabajo_pdf' %}?departamento={{ departamento_seleccionado }}" class="btn btn-danger">
+            <i class="fas fa-file-pdf me-2"></i>Exportar PDF
+        </a>
+    </div>
+
+    <!-- ADMIN / APOYO -->
+    {% if actividades_por_depto %}
+    <!-- Filtro de Departamentos -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-6 col-lg-4">
+                    <label for="departamento" class="form-label fw-semibold">
+                        <i class="fas fa-filter me-1"></i>Filtrar por Departamento:
+                    </label>
+                    <select name="departamento" id="departamento" class="form-select" onchange="this.form.submit()">
+                        <option value="">Todos los departamentos</option>
+                        {% for depto in departamentos %}
+                            <option value="{{ depto.id }}" {% if depto.id|stringformat:"s" == departamento_seleccionado %}selected{% endif %}>
+                                {{ depto.nombre }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Grid de Departamentos -->
+    <div class="row g-4" id="departamentosGrid">
+        {% for depto, metas in actividades_por_depto.items %}
+        <div class="col-12 col-xl-6">
+            <div class="card border-0 shadow-sm h-100 departamento-card">
+                <div class="card-header bg-gray text-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-building me-2"></i>{{ depto.nombre }}
+                        </h5>
+                        <span class="badge bg-light text-primary fs-6">{{ metas|length }} meta{{ metas|length|pluralize }}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if metas %}
+                    <div class="accordion accordion-flush" id="accordionMetas{{ depto.id }}">
+                        {% for meta, datos in metas.items %}
+                        <div class="accordion-item border-0">
+                            <div class="meta-card bg-light rounded p-3 mb-3">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div class="flex-grow-1">
+                                        <h6 class="fw-semibold mb-1 text-dark">
+                                            <i class="fas fa-bullseye me-2 text-warning"></i>
+                                            {{ meta.nombre }}
+                                        </h6>
+                                    </div>
+                                </div>
+                                
+                                <!-- Barra de Progreso (usa porcentaje_int para width y aria) -->
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between align-items-center small text-muted mb-1">
+                                        <span>Progreso general</span>
+                                        <span>{{ datos.completadas }} de {{ datos.total }} ({{ datos.porcentaje|floatformat:1 }}%)</span>
+                                    </div>
+                                    <div class="progress" style="height: 8px;">
+                                        <!-- width inicial 0% para animar; data-value con entero -->
+                                        <div class="progress-bar bg-success progress-animate" role="progressbar"
+                                             data-value="{{ datos.porcentaje_int }}"
+                                             style="width: 0%;"
+                                             aria-valuenow="{{ datos.porcentaje_int }}"
+                                             aria-valuemin="0" aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Botón para actividades -->
+                                <button class="btn btn-sm btn-outline-primary w-100" type="button" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#actividades{{ meta.id }}" 
+                                        aria-expanded="false" 
+                                        aria-controls="actividades{{ meta.id }}">
+                                    <i class="fas fa-tasks me-1"></i>
+                                    Ver Actividades ({{ datos.actividades|length }})
+                                    <i class="fas fa-chevron-down ms-1"></i>
+                                </button>
+
+                                <!-- Lista de Actividades Colapsable -->
+                                <div class="collapse mt-3" id="actividades{{ meta.id }}">
+                                    <div class="border-top pt-3">
+                                        <h6 class="text-muted small mb-2">
+                                            <i class="fas fa-list-check me-1"></i>Actividades:
+                                        </h6>
+                                        <div class="list-group list-group-flush">
+                                            {% for act in datos.actividades %}
+                                            <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 py-2">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-circle-notch text-info me-2 small"></i>
+                                                    <span class="small">{{ act.descripcion }}</span>
+                                                </div>
+                                                <span class="badge {% if act.estado == 'Cumplida' %}bg-success
+                                                              {% elif act.estado == 'En Proceso' %}bg-warning text-dark
+                                                              {% elif act.estado == 'No Cumplida' %}bg-danger
+                                                              {% else %}bg-secondary{% endif %} small">
+                                                    {{ act.estado }}
+                                                </span>
+                                            </div>
+                                            {% if not forloop.last %}
+                                            <div class="border-bottom opacity-25 mx-3"></div>
+                                            {% endif %}
+                                            {% empty %}
+                                            <div class="text-center text-muted py-2">
+                                                <i class="fas fa-inbox me-1"></i>No hay actividades registradas
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% if not forloop.last %}
+                        <div class="border-bottom opacity-25 my-2"></div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-bullseye fa-2x mb-2"></i>
+                        <p class="mb-0">No hay metas registradas en este departamento</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fas fa-building fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">No hay departamentos para mostrar</h4>
+                <p class="text-muted">No se encontraron departamentos con los filtros seleccionados.</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- DOCENTES -->
+    {% elif actividades_por_meta %}
+    <div class="row">
+        <div class="col-12">
+            {% for meta, datos in actividades_por_meta.items %}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-primary text-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-bullseye me-2"></i>{{ meta.nombre|default:meta.nombre }}
+                        </h5>
+                        <span class="badge bg-light text-black fs-6">{{ datos.total }} actividad{{ datos.total|pluralize:"es" }}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Barra de Progreso -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center small text-muted mb-1">
+                            <span>Progreso general</span>
+                            <span>{{ datos.completadas }} de {{ datos.total }} ({{ datos.porcentaje|floatformat:1 }}%)</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar  progress-animate" role="progressbar"
+                                 data-value="{{ datos.porcentaje_int }}"
+                                 style="width: {{ datos.porcentaje_int }}%;"
+                                 aria-valuenow="{{ datos.porcentaje_int }}"
+                                 aria-valuemin="0" aria-valuemax="100">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actividades -->
+                    <button class="btn btn-outline-primary w-100" type="button" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#actividadesMeta{{ meta.id }}" 
+                            aria-expanded="false" 
+                            aria-controls="actividadesMeta{{ meta.id }}">
+                        <i class="fas fa-tasks me-1"></i>
+                        Ver Actividades
+                        <i class="fas fa-chevron-down ms-1"></i>
+                    </button>
+
+                    <div class="collapse mt-3" id="actividadesMeta{{ meta.id }}">
+                        <div class="border-top pt-3">
+                            <div class="list-group list-group-flush">
+                                {% for act in datos.actividades %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 py-2">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-circle-notch text-info me-2 small"></i>
+                                        <span>{{ act.descripcion }}</span>
+                                    </div>
+                                    <span class="badge {% if act.estado == 'Cumplida' %}bg-success
+                                                  {% elif act.estado == 'En Proceso' %}bg-warning text-dark
+                                                  {% elif act.estado == 'No Cumplida' %}bg-danger
+                                                  {% else %}bg-secondary{% endif %}">
+                                        {{ act.estado }}
+                                    </span>
+                                </div>
+                                {% if not forloop.last %}
+                                <div class="border-bottom opacity-25"></div>
+                                {% endif %}
+                                {% empty %}
+                                <div class="text-center text-muted py-3">
+                                    <i class="fas fa-inbox me-1"></i>No hay actividades registradas
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-5">
+                <i class="fas fa-bullseye fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">No tienes metas asignadas</h4>
+                <p class="text-muted">No se encontraron metas asignadas a tu perfil.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// Animar barras de progreso (asegura usar el entero en data-value)
+document.addEventListener('DOMContentLoaded', function() {
+    // anima progress bars
+    const progressBars = document.querySelectorAll('.progress-bar.progress-animate');
+    progressBars.forEach(bar => {
+        const value = parseInt(bar.getAttribute('data-value') || 0, 10);
+        // small timeout para que la transición sea visible
+        setTimeout(() => {
+            bar.style.width = value + '%';
+            bar.setAttribute('aria-valuenow', value);
+        }, 150);
+    });
+
+    // hover en tarjetas
+    const cards = document.querySelectorAll('.departamento-card');
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.transition = 'transform 0.3s ease, box-shadow 0.3s ease';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+
+    // icon toggle para collapse (mejor experiencia)
+    const collapseElements = document.querySelectorAll('.collapse');
+    collapseElements.forEach(collapse => {
+        collapse.addEventListener('show.bs.collapse', function() {
+            const button = document.querySelector('[data-bs-target="#' + this.id + '"]');
+            if (button) {
+                const icon = button.querySelector('.fa-chevron-down');
+                if (icon) {
+                    icon.classList.remove('fa-chevron-down');
+                    icon.classList.add('fa-chevron-up');
+                }
+            }
+        });
+        collapse.addEventListener('hide.bs.collapse', function() {
+            const button = document.querySelector('[data-bs-target="#' + this.id + '"]');
+            if (button) {
+                const icon = button.querySelector('.fa-chevron-up');
+                if (icon) {
+                    icon.classList.remove('fa-chevron-up');
+                    icon.classList.add('fa-chevron-down');
+                }
+            }
+        });
+    });
+});
+</script>
+
+{% endblock %}

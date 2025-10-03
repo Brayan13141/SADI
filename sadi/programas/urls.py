@@ -8,8 +8,10 @@ from .views import (
 )
 
 router = DefaultRouter()
-router.register(r"api/programas", ProgramaEstrategicoViewSet)
-router.register(r"api/ciclos", CicloViewSet)
+# programas/urls.py
+router.register(r"api/programas", ProgramaEstrategicoViewSet, basename="programas")
+router.register(r"api/ciclos", CicloViewSet, basename="ciclos")
+
 
 urlpatterns = [
     path("", include(router.urls)),

@@ -5,19 +5,24 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css"/>
-<style>
-    #proyectosTable th, #proyectosTable td {
-        font-size: 0.85rem;
-        white-space: nowrap;
-        vertical-align: middle;
-        text-align: center;
-    }
-    .btn-sm { font-size: 0.75rem; padding: 0.25rem 0.5rem; }
-</style>
+
 {% endblock %}
 
 {% block content %}
+{% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
 <div class="container-fluid py-3">
+    <!-- Mensajes de Django - Misma estructura que en usuarios -->
+    {% if messages %}
+    <div class="mb-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
             <h6 class="mb-0">Gestión de Proyectos</h6>
@@ -44,22 +49,26 @@
                             <td>{{ proyecto.id }}</td>
                             <td class="fw-semibold">{{ proyecto.clave }}</td>
                             <td class="text-start">{{ proyecto.nombre|truncatewords:10 }}</td>
-                            <td>{{ proyecto.objetivo.descripcion|truncatewords:5 }}</td>
+                            <td>{{ proyecto.objetivo.descripcion|truncatewords:10 }}</td>
                             <td>
-                                <button class="btn btn-sm btn-outline-primary btn-editar" 
-                                        data-id="{{ proyecto.id }}"
-                                        data-clave="{{ proyecto.clave }}"
-                                        data-nombre="{{ proyecto.nombre }}"
-                                        data-objetivo_id="{{ proyecto.objetivo.id }}">
-                                    Editar
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" 
-                                        data-bs-target="#modalEliminar{{ proyecto.id }}">
-                                    Eliminar
-                                </button>
+                                <div class="action-buttons">
+                                    <button class="btn btn-sm btn-outline-primary btn-editar" 
+                                            data-id="{{ proyecto.id }}"
+                                            data-clave="{{ proyecto.clave }}"
+                                            data-nombre="{{ proyecto.nombre }}"
+                                            data-objetivo_id="{{ proyecto.objetivo.id }}">
+                                        Editar
+                                    </button>
+                                    {% if request.user.role == "ADMIN" %}
+                                    <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" 
+                                            data-bs-target="#modalEliminar{{ proyecto.id }}">
+                                        Eliminar
+                                    </button>
+                                    {% endif %}
+                                </div>
                             </td>
                         </tr>
-
+                      {% if request.user.role == "ADMIN" %}
                         <!-- Modal Eliminar -->
                         <div class="modal fade" id="modalEliminar{{ proyecto.id }}" tabindex="-1">
                           <div class="modal-dialog">
@@ -83,6 +92,7 @@
                             </div>
                           </div>
                         </div>
+                        {% endif %}
                         {% endfor %}
                     </tbody>
                 </table>
@@ -91,53 +101,11 @@
     </div>
 </div>
 
-<!-- Modal Editar (Único para todos los registros) -->
-<div class="modal fade" id="modalEditar" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <form method="post" id="formEditar">
-        {% csrf_token %}
-        <input type="hidden" name="proyecto_id" id="proyecto_id">
-        <input type="hidden" name="editar_proyecto" value="1">
-        <div class="modal-header">
-          <h5 class="modal-title">Editar Proyecto</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label for="id_clave" class="form-label">Clave</label>
-              <input type="text" class="form-control" id="id_clave" name="clave" required>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label for="id_objetivo" class="form-label">Objetivo</label>
-              <select class="form-select" id="id_objetivo" name="objetivo" required>
-                <option value="">Seleccione un objetivo</option>
-                {% for objetivo in form.objetivo.field.queryset %}
-                <option value="{{ objetivo.id }}">{{ objetivo.descripcion|truncatewords:5 }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            <div class="col-12 mb-3">
-              <label for="id_nombre" class="form-label">Nombre</label>
-              <textarea class="form-control" id="id_nombre" name="nombre" rows="3" required></textarea>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-success">Guardar</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
 <!-- Modal Crear -->
 <div class="modal fade" id="modalCrear" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
-      <form method="post">
+      <form method="post" id="formCrear" novalidate>
         {% csrf_token %}
         <input type="hidden" name="crear_proyecto" value="1">
         <div class="modal-header">
@@ -145,7 +113,25 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          {{ form.as_p }}
+          <div id="erroresCrear" class="alert alert-danger d-none"></div>
+          
+          <div class="mb-3">
+            <label class="form-label">Clave</label>
+            <input type="text" class="form-control" name="clave" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Objetivo</label>
+            <select class="form-select" name="objetivo" required>
+              <option value="">Seleccione un objetivo</option>
+              {% for objetivo in form.objetivo.field.queryset %}
+              <option value="{{ objetivo.id }}">{{ objetivo.descripcion|truncatewords:5 }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Nombre</label>
+            <textarea class="form-control" name="nombre" rows="3" required></textarea>
+          </div>
         </div>
         <div class="modal-footer">
           <button type="submit" class="btn btn-primary">Guardar</button>
@@ -155,45 +141,66 @@
     </div>
   </div>
 </div>
+
+<!-- Modal Editar -->
+<div class="modal fade" id="modalEditar" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="post" id="formEditar" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="proyecto_id" id="proyecto_id">
+        <input type="hidden" name="editar_proyecto" value="1">
+        <div class="modal-header">
+          <h5 class="modal-title">Editar Proyecto</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="erroresEditar" class="alert alert-danger d-none"></div>
+          
+          <div class="mb-3">
+            <label class="form-label">Clave</label>
+            <input type="text" class="form-control" id="id_clave" name="clave" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Objetivo</label>
+            <select class="form-select" id="id_objetivo" name="objetivo" required>
+              <option value="">Seleccione un objetivo</option>
+              {% for objetivo in form.objetivo.field.queryset %}
+              <option value="{{ objetivo.id }}">{{ objetivo.descripcion|truncatewords:5 }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Nombre</label>
+            <textarea class="form-control" id="id_nombre" name="nombre" rows="3" required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Guardar cambios</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script src="{% static "JS/gestion_proyectos.js" %}"></script>
 <script>
-$(document).ready(function () {
-    // Inicializar DataTable
-    $('#proyectosTable').DataTable({
-        scrollX: true,
-        autoWidth: false,
-        paging: true,
-        searching: true,
-        info: true,
-        pageLength: 5,
-        lengthMenu: [5, 10, 20],
-        language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json',
-        }
-    });
-    
-    // Manejar clic en botón Editar
-    $('.btn-editar').on('click', function() {
-        // Obtener datos del botón
-        var proyectoId = $(this).data('id');
-        var clave = $(this).data('clave');
-        var nombre = $(this).data('nombre');
-        var objetivoId = $(this).data('objetivo_id');
-        
-        // Llenar el formulario con los datos del proyecto
-        $('#proyecto_id').val(proyectoId);
-        $('#id_clave').val(clave);
-        $('#id_nombre').val(nombre);
-        $('#id_objetivo').val(objetivoId);
-        
-        // Mostrar el modal de edición
-        $('#modalEditar').modal('show');
-    });
-});
+    // Auto abrir modal si hubo errores
+    {% if abrir_modal_crear %}
+        var modalCrear = new bootstrap.Modal(document.getElementById('modalCrear'));
+        modalCrear.show();
+    {% endif %}
+    {% if abrir_modal_editar %}
+        var modalEditar = new bootstrap.Modal(document.getElementById('modalEditar'));
+        modalEditar.show();
+    {% endif %}
 </script>
 {% endblock %}

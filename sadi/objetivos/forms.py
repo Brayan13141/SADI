@@ -8,11 +8,14 @@ class ObjetivoEstrategicoForm(forms.ModelForm):
         model = ObjetivoEstrategico
         fields = ["descripcion", "ciclo", "programa"]
         widgets = {
-            "descripcion": forms.Textarea(attrs={"rows": 3}),
+            "descripcion": forms.Textarea(
+                attrs={"rows": 3, "class": "form-control", "required": True}
+            ),
+            "ciclo": forms.Select(attrs={"class": "form-select", "required": True}),
+            "programa": forms.Select(attrs={"class": "form-select", "required": True}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Filtrar ciclos y programas relacionados
         self.fields["ciclo"].queryset = Ciclo.objects.all()
         self.fields["programa"].queryset = ProgramaEstrategico.objects.all()

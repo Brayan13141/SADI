@@ -9,12 +9,18 @@ class ProgramaEstrategico(models.Model):
     nombre_corto = models.CharField(max_length=20)
     fecha_inicio = models.DateField()
     fecha_fin = models.DateField()
-    duracion = models.IntegerField()
+    duracion = models.DecimalField(max_digits=3, decimal_places=1)
 
     history = HistoricalRecords()
 
     def __str__(self):
         return f"{self.clave} - {self.nombre}"
+
+    def save(self, *args, **kwargs):
+        if self.fecha_inicio and self.fecha_fin:
+            diff_days = (self.fecha_fin - self.fecha_inicio).days
+            self.duracion = round(diff_days / 365.25, 1)
+        super().save(*args, **kwargs)
 
 
 class Ciclo(models.Model):
@@ -29,3 +35,9 @@ class Ciclo(models.Model):
 
     def __str__(self):
         return f"{self.programa.nombre} ({self.fecha_inicio} - {self.fecha_fin})"
+
+    def save(self, *args, **kwargs):
+        if self.fecha_inicio and self.fecha_fin:
+            diff_days = (self.fecha_fin - self.fecha_inicio).days
+            self.duracion = round(diff_days / 365.25, 1)
+        super().save(*args, **kwargs)

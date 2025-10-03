@@ -2,9 +2,14 @@ $(document).ready(function () {
     // DataTable
     $('#usuariosTable').DataTable({
         scrollX: true,
+        scrollY: '250px',
+        scrollCollapse: true,
+        lengthMenu: [5, 10, 15, 20, 50],
         autoWidth: false,
+        paging: true,
+        searching: true,
+        info: true,
         pageLength: 5,
-        lengthMenu: [5, 10, 20],
         language: {
             url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json',
         },
@@ -17,6 +22,12 @@ $(document).ready(function () {
         $('#id_first_name').val($(this).data('first_name'));
         $('#id_last_name').val($(this).data('last_name'));
         $('#id_email').val($(this).data('email'));
+
+        if ($('#is_active').val() === 'true') {
+            $('#is_active').prop('checked', true);
+        } else {
+            $('#is_active').prop('checked', false);
+        }
         $('#id_role').val($(this).data('role'));
         $('#id_departamento').val($(this).data('departamento'));
         $('#erroresEditar').addClass('d-none').empty();
@@ -102,6 +113,7 @@ $(document).ready(function () {
             errores.push('El campo Correo es obligatorio.');
             camposInvalidos.push($('#id_email'));
         }
+
         if (!$('#id_role').val()) {
             errores.push('Debe seleccionar un rol.');
             camposInvalidos.push($('#id_role'));

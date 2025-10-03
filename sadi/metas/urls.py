@@ -1,35 +1,40 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from . import views
-
 from .views import (
     MetaViewSet,
     AvanceMetaViewSet,
     MetaComprometidaViewSet,
     TablaSeguimiento,
     gestion_metas,
-    gestion_avances_meta,
-    gestion_metas_comprometidas,
+    gestion_meta_avances,
+    gestion_meta_comprometida,
+    avance_meta_general_list,
+    meta_comprometida_general_list,
+    asignacion_metas,
 )
 
 router = DefaultRouter()
-router.register(r"api/metas", MetaViewSet)
-router.register(r"api/avances-meta", AvanceMetaViewSet)
-router.register(r"api/metas-comprometidas", MetaComprometidaViewSet)
+router.register(r"api/metas", MetaViewSet, basename="metas")
+router.register(r"api/avances-meta", AvanceMetaViewSet, basename="avances-meta")
+router.register(
+    r"api/metas-comprometidas", MetaComprometidaViewSet, basename="metas-comprometidas"
+)
 
 urlpatterns = [
     path("", include(router.urls)),
     path("tablaSeguimiento/", TablaSeguimiento, name="tabla_seguimiento"),
+    path("admin/asignacion/", asignacion_metas, name="asignacion_metas"),
     path("admin/", gestion_metas, name="gestion_metas"),
-    path("admin/<int:meta_id>/json/", views.meta_json, name="meta_json"),
+    path("admin/avances/", avance_meta_general_list, name="avance_meta_general_list"),
     path(
-        "admin/<int:meta_id>/avances/",
-        gestion_avances_meta,
-        name="gestion_avances_meta",
+        "admin/comprometidas/",
+        meta_comprometida_general_list,
+        name="meta_comprometida_general_list",
     ),
+    path("<int:meta_id>/detalle/", gestion_meta_avances, name="gestion_meta_avances"),
     path(
-        "admin/<int:meta_id>/comprometidas/",
-        gestion_metas_comprometidas,
-        name="gestion_metas_comprometidas",
+        "<int:meta_id>/comprometida/",
+        gestion_meta_comprometida,
+        name="gestion_meta_comprometida",
     ),
 ]

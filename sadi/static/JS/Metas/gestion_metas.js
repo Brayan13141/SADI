@@ -1,0 +1,276 @@
+$(document).ready(function () {
+    // DataTable
+    $('#metasTable').DataTable({
+        scrollX: true,
+        scrollY: '500px',
+        scrollCollapse: true,
+        fixedColumns: {
+            left: 1,
+        },
+        lengthMenu: [5, 10, 15, 20, 50],
+        autoWidth: false,
+        paging: true,
+        searching: true,
+        info: true,
+        pageLength: 5,
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json',
+        },
+        // Configuración adicional para mejorar el rendimiento con muchas columnas
+        deferRender: true,
+        scroller: true,
+        stateSave: true,
+    });
+
+    // Variable para guardar la fila seleccionada
+    var selectedRow = null;
+
+    // Cuando el usuario haga clic en una fila de la tabla
+    $('#metasTable tbody').on('click', 'tr.fila-meta', function () {
+        // Quitar selección previa
+        $('#metasTable tbody tr').removeClass('fila-seleccionada');
+
+        // Marcar la fila actual
+        $(this).addClass('fila-seleccionada');
+
+        // --- Tu lógica para mostrar la meta comprometida ---
+        let metaId = $(this).data('id');
+        let clave = $(this).data('clave');
+        let nombre = $(this).data('nombre');
+        let compId = $(this).data('comprometida-id');
+        let compValor = $(this).data('comprometida-valor');
+
+        if (compId) {
+            $('#infoComprometida').html(`
+            <p><strong>Meta:</strong> ${clave} - ${nombre}</p>
+            <p><strong>Valor comprometido:</strong> ${compValor}</p>
+        `);
+        } else {
+            $('#infoComprometida').html(`
+            <p><strong>Meta:</strong> ${clave} - ${nombre}</p>
+            <p class="text-danger">No tiene meta comprometida registrada.</p>
+        `);
+        }
+
+        $('#btnVerComprometida')
+            .removeClass('d-none')
+            .attr('href', `/metas/${metaId}/comprometida/`);
+    });
+
+    // Botón Editar -> cargar datos al modal de metas
+    $('.btn-editar').on('click', function () {
+        const fila = $(this).closest('.fila-meta');
+
+        // Datos
+        const metaId = $(this).data('id');
+        const clave = $(this).data('clave');
+        const nombre = $(this).data('nombre');
+        const enunciado = $(this).data('enunciado');
+        const proyectoId = $(this).data('proyecto');
+        const departamentoId = $(this).data('departamento');
+        const indicador = $(this).data('indicador');
+        const acumulable = $(this).data('acumulable') === 'True';
+        const unidadMedida = $(this).data('unidadmedida');
+        const metodoCalculo = $(this).data('metodocalculo');
+        let lineabase = parseFloat($(this).data('lineabase'));
+        let metacumplir = parseFloat($(this).data('metacumplir'));
+        let variableB = parseFloat($(this).data('variableb'));
+        const cicloId = $(this).data('ciclo');
+        const activa = $(this).data('activa') === 'True';
+        const porcentages = $(this).data('porcentages') === 'True';
+
+        // Si está en modo porcentaje -> convertir de 0.8555 a 85.55
+        if (porcentages) {
+            lineabase = lineabase ? (lineabase * 100).toFixed(2) : '';
+            metacumplir = metacumplir ? (metacumplir * 100).toFixed(2) : '';
+            variableB = variableB ? (variableB * 100).toFixed(2) : '';
+        }
+
+        // Llenar el formulario
+        $('#meta_id').val(metaId);
+        $('#id_clave').val(clave);
+        $('#id_nombre').val(nombre);
+        $('#id_enunciado').val(enunciado);
+        $('#id_proyecto').val(proyectoId);
+        $('#id_departamento').val(departamentoId);
+        $('#id_indicador').val(indicador);
+        $('#id_acumulable').prop('checked', acumulable);
+        $('#id_unidadmedida').val(unidadMedida);
+        $('#id_metodocalculo').val(metodoCalculo);
+        $('#id_lineabase').val(lineabase);
+        $('#id_metacumplir').val(metacumplir);
+        $('#id_variableb').val(variableB);
+        $('#id_ciclo').val(cicloId);
+        $('#id_activa').prop('checked', activa);
+        $('#id_porcentages').prop('checked', porcentages);
+
+        // Mostrar ejemplo dinámico si está activado
+        togglePorcentajeUI(porcentages);
+
+        // Deshabilitar campos para docentes
+        if (usuarioRol === 'DOCENTE') {
+            $(
+                '#id_clave, #id_nombre, #id_proyecto, #id_departamento, #id_ciclo, #id_activa, #id_indicador, #id_unidadmedida, #id_metodocalculo, #id_enunciado'
+            ).prop('disabled', true);
+        } else {
+            $(
+                '#formEditar input, #formEditar select, #formEditar textarea'
+            ).prop('disabled', false);
+        }
+
+        // Limpiar errores previos
+        $('#erroresEditar').addClass('d-none').empty();
+        $(
+            '#formEditar input, #formEditar select, #formEditar textarea'
+        ).removeClass('is-invalid');
+
+        // Mostrar modal
+        $('#modalEditar').modal('show');
+    });
+
+    // Listener para cuando el usuario activa/desactiva porcentajes en el modal
+    $('#id_porcentages').on('change', function () {
+        togglePorcentajeUI(this.checked);
+    });
+
+    // Función para mostrar animación + símbolo de %
+    function togglePorcentajeUI(activar) {
+        const inputs = ['#id_lineabase', '#id_metacumplir', '#id_variableb'];
+
+        if (activar) {
+            inputs.forEach((sel) => {
+                const $input = $(sel);
+
+                // Añadir placeholder de ejemplo
+                $input.attr('placeholder', 'Ej: 85.55 %');
+
+                // Animación visual
+                $input
+                    .addClass('is-percentage')
+                    .animate({ backgroundColor: '#e8f5e9' }, 300);
+            });
+
+            $('#labelEjemplo')
+                .text('Formato en porcentaje (0 - 100)')
+                .fadeIn(300);
+        } else {
+            inputs.forEach((sel) => {
+                const $input = $(sel);
+                $input.attr('placeholder', 'Ej: 1500.50');
+                $input
+                    .removeClass('is-percentage')
+                    .animate({ backgroundColor: '#fff' }, 300);
+            });
+
+            $('#labelEjemplo').text('Formato en cantidad').fadeIn(300);
+        }
+    }
+
+    // Validación Crear
+    $('#formCrear').on('submit', function (e) {
+        // Limpiar errores previos
+        $('#erroresCrear').addClass('d-none').empty();
+        $('input, select, textarea', this).removeClass('is-invalid');
+
+        let errores = [];
+        let camposInvalidos = [];
+
+        // Validar campos requeridos
+        const camposRequeridos = [
+            'clave',
+            'nombre',
+            'enunciado',
+            'proyecto',
+            'indicador',
+            'unidadMedida',
+            'metodoCalculo',
+            'acumulable',
+        ];
+
+        camposRequeridos.forEach(
+            function (campo) {
+                if (
+                    !$('[name="' + campo + '"]', this)
+                        .val()
+                        .trim()
+                ) {
+                    errores.push('El campo ' + campo + ' es obligatorio.');
+                    camposInvalidos.push($('[name="' + campo + '"]', this));
+                }
+            }.bind(this)
+        );
+
+        if (errores.length > 0) {
+            e.preventDefault();
+
+            // Aplicar clase is-invalid a los campos con error
+            camposInvalidos.forEach(function (campo) {
+                campo.addClass('is-invalid');
+            });
+
+            $('#erroresCrear')
+                .removeClass('d-none')
+                .html('<ul><li>' + errores.join('</li><li>') + '</li></ul>');
+        }
+    });
+
+    // Validación Editar
+    $('#formEditar').on('submit', function (e) {
+        // Limpiar errores previos
+        $('#erroresEditar').addClass('d-none').empty();
+        $('input, select, textarea', this).removeClass('is-invalid');
+
+        let errores = [];
+        let camposInvalidos = [];
+
+        // Validar campos requeridos
+        const camposRequeridos = [
+            'clave',
+            'nombre',
+            'enunciado',
+            'proyecto',
+            'acumulable',
+            'indicador',
+            'unidadMedida',
+            'metodoCalculo',
+        ];
+
+        camposRequeridos.forEach(function (campo) {
+            const field = $('#id_' + campo.toLowerCase());
+            if (!field.val().trim()) {
+                errores.push('El campo ' + campo + ' es obligatorio.');
+                camposInvalidos.push(field);
+            }
+        });
+
+        if (errores.length > 0) {
+            e.preventDefault();
+
+            // Aplicar clase is-invalid a los campos con error
+            camposInvalidos.forEach(function (campo) {
+                campo.addClass('is-invalid');
+            });
+
+            $('#erroresEditar')
+                .removeClass('d-none')
+                .html('<ul><li>' + errores.join('</li><li>') + '</li></ul>');
+        }
+    });
+
+    // Quitar el resaltado de error cuando el usuario empiece a escribir
+    $('input, select, textarea').on('input change', function () {
+        $(this).removeClass('is-invalid');
+    });
+
+    // Limpiar formularios al cerrar modales
+    $('#modalCrear').on('hidden.bs.modal', function () {
+        $(this).find('form')[0].reset();
+        $(this).find('.is-invalid').removeClass('is-invalid');
+        $('#erroresCrear').addClass('d-none').empty();
+    });
+
+    $('#modalEditar').on('hidden.bs.modal', function () {
+        $(this).find('.is-invalid').removeClass('is-invalid');
+        $('#erroresEditar').addClass('d-none').empty();
+    });
+});

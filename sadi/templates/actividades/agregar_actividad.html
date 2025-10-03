@@ -6,40 +6,122 @@
   <h3>Agregar Actividad a la meta: {{ meta.nombre }}</h3>
   <a href="{% url 'ver_actividades' meta.id %}" class="btn btn-secondary mb-3">← Volver</a>
 
-  <form method="post">
+  <form id="formActividad" method="post" novalidate>
     {% csrf_token %}
-    
+
+    <!-- Errores de servidor -->
+    {% if form.errors %}
+      <div class="alert alert-danger">
+        <ul class="mb-0">
+          {% for field, errores in form.errors.items %}
+            {% for error in errores %}
+              <li><strong>{{ field|capfirst }}:</strong> {{ error }}</li>
+            {% endfor %}
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <!-- Errores JS -->
+    <div id="erroresActividad" class="alert alert-danger d-none"></div>
+
     <div class="mb-3">
       <label class="form-label">Descripción</label>
-      <textarea name="descripcion" class="form-control" required></textarea>
+      <textarea name="descripcion" id="id_descripcion" class="form-control" required>{{ request.POST.descripcion }}</textarea>
     </div>
 
     <div class="mb-3">
       <label class="form-label">Fecha inicio</label>
-      <input type="date" name="fecha_inicio" class="form-control" required>
+      <input type="date" name="fecha_inicio" id="id_fecha_inicio" class="form-control" value="{{ request.POST.fecha_inicio }}" required>
     </div>
 
     <div class="mb-3">
       <label class="form-label">Fecha fin</label>
-      <input type="date" name="fecha_fin" class="form-control" required>
+      <input type="date" name="fecha_fin" id="id_fecha_fin" class="form-control" value="{{ request.POST.fecha_fin }}" required>
     </div>
 
     <div class="mb-3">
       <label class="form-label">Responsable</label>
-      <select name="responsable" class="form-select" required>
+      <select name="responsable" id="id_responsable" class="form-select" required>
         <option value="">-- Selecciona un responsable --</option>
         {% for usuario in usuarios %}
-          <option value="{{ usuario.id }}">{{ usuario.get_full_name }}</option>
+          <option value="{{ usuario.id }}" {% if request.POST.responsable == usuario.id|stringformat:"s" %}selected{% endif %}>
+            {{ usuario.get_full_name }}
+          </option>
         {% endfor %}
       </select>
     </div>
 
     <div class="mb-3">
       <label class="form-label">Evidencia</label>
-      <input type="text" name="evidencia" class="form-control">
+      <input type="text" name="evidencia" id="id_evidencia" class="form-control" value="{{ request.POST.evidencia }}">
     </div>
 
     <button type="submit" class="btn btn-success">Guardar</button>
   </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script>
+$(document).ready(function () {
+  $("#formActividad").on("submit", function (e) {
+    let errores = [];
+    let camposInvalidos = [];
+
+    const descripcion = $("#id_descripcion");
+    const fechaInicio = $("#id_fecha_inicio");
+    const fechaFin = $("#id_fecha_fin");
+    const responsable = $("#id_responsable");
+
+    // Limpiar estados previos
+    $("input, textarea, select").removeClass("is-invalid");
+
+    // Validaciones
+    if (!descripcion.val().trim()) {
+      errores.push("La descripción es obligatoria.");
+      camposInvalidos.push(descripcion);
+    }
+
+    if (!fechaInicio.val()) {
+      errores.push("La fecha de inicio es obligatoria.");
+      camposInvalidos.push(fechaInicio);
+    }
+
+    if (!fechaFin.val()) {
+      errores.push("La fecha de fin es obligatoria.");
+      camposInvalidos.push(fechaFin);
+    }
+
+    if (fechaInicio.val() && fechaFin.val()) {
+      if (new Date(fechaFin.val()) < new Date(fechaInicio.val())) {
+        errores.push("La fecha de fin no puede ser anterior a la fecha de inicio.");
+        camposInvalidos.push(fechaFin);
+      }
+    }
+
+    if (!responsable.val()) {
+      errores.push("Debe seleccionar un responsable.");
+      camposInvalidos.push(responsable);
+    }
+
+    // Mostrar errores si existen
+    if (errores.length > 0) {
+      e.preventDefault();
+      $("#erroresActividad")
+        .removeClass("d-none")
+        .html("<ul><li>" + errores.join("</li><li>") + "</li></ul>");
+      camposInvalidos.forEach(campo => campo.addClass("is-invalid"));
+    } else {
+      $("#erroresActividad").addClass("d-none").empty();
+    }
+  });
+
+  // Quitar error al corregir campo
+  $("input, textarea, select").on("input change", function () {
+    $(this).removeClass("is-invalid");
+  });
+});
+</script>
 {% endblock %}

@@ -5,19 +5,24 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css"/>
-<style>
-    #riesgosTable th, #riesgosTable td {
-        font-size: 0.85rem;
-        white-space: nowrap;
-        vertical-align: middle;
-        text-align: center;
-    }
-    .btn-sm { font-size: 0.75rem; padding: 0.25rem 0.5rem; }
-</style>
+ 
 {% endblock %}
 
 {% block content %}
+ {% if request.user.role == "ADMIN" or request.user.role == "DOCENTE" or request.user.role == "APOYO" %}
 <div class="container-fluid py-3">
+    <!-- Mensajes de Django -->
+    {% if messages %}
+    <div class="mb-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
             <h6 class="mb-0">Gestión de Riesgos</h6>
@@ -35,7 +40,7 @@
                             <th>Enunciado</th>
                             <th>Probabilidad</th>
                             <th>Impacto</th>
-                            <th>Riesgo</th>
+                            <th>Nivel de Riesgo</th>
                             <th>Meta</th>
                             <th>Acciones</th>
                         </tr>
@@ -44,27 +49,39 @@
                         {% for riesgo in riesgos %}
                         <tr>
                             <td>{{ riesgo.id }}</td>
-                            <td class="text-start">{{ riesgo.enunciado|truncatewords:5 }}</td>
+                            <td class="text-start">{{ riesgo.enunciado|truncatewords:10 }}</td>
                             <td>{{ riesgo.probabilidad }}</td>
                             <td>{{ riesgo.impacto }}</td>
-                            <td>{{ riesgo.riesgo }}</td>
-                            <td>{{ riesgo.meta.clave }}</td>
                             <td>
-                                <button class="btn btn-sm btn-outline-primary btn-editar" 
-                                        data-id="{{ riesgo.id }}"
-                                        data-enunciado="{{ riesgo.enunciado }}"
-                                        data-probabilidad="{{ riesgo.probabilidad }}"
-                                        data-impacto="{{ riesgo.impacto }}"
-                                        data-meta_id="{{ riesgo.meta.id }}">
-                                    Editar
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" 
-                                        data-bs-target="#modalEliminar{{ riesgo.id }}">
-                                    Eliminar
-                                </button>
+                                {% if riesgo.riesgo <= 25 %}
+                                    <span class="badge bg-success">Bajo ({{ riesgo.riesgo }})</span>
+                                {% elif riesgo.riesgo <= 50 %}
+                                    <span class="badge bg-warning">Medio ({{ riesgo.riesgo }})</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Alto ({{ riesgo.riesgo }})</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ riesgo.meta.nombre|truncatewords:3 }}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn btn-sm btn-outline-primary btn-editar" 
+                                            data-id="{{ riesgo.id }}"
+                                            data-enunciado="{{ riesgo.enunciado }}"
+                                            data-probabilidad="{{ riesgo.probabilidad }}"
+                                            data-impacto="{{ riesgo.impacto }}"
+                                            data-meta_id="{{ riesgo.meta.id }}">
+                                        Editar
+                                    </button>
+                                    {% if request.user.role == "ADMIN" or request.user.role == "DOCENTE" %}
+                                    <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" 
+                                            data-bs-target="#modalEliminar{{ riesgo.id }}">
+                                        Eliminar
+                                    </button>
+                                    {% endif %}
+                                </div>
                             </td>
                         </tr>
-
+                        {% if request.user.role == "ADMIN" or request.user.role == "DOCENTE" %}
                         <!-- Modal Eliminar -->
                         <div class="modal fade" id="modalEliminar{{ riesgo.id }}" tabindex="-1">
                           <div class="modal-dialog">
@@ -88,6 +105,7 @@
                             </div>
                           </div>
                         </div>
+                        {% endif %}
                         {% endfor %}
                     </tbody>
                 </table>
@@ -96,57 +114,11 @@
     </div>
 </div>
 
-<!-- Modal Editar (Único para todos los registros) -->
-<div class="modal fade" id="modalEditar" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form method="post" id="formEditar">
-        {% csrf_token %}
-        <input type="hidden" name="riesgo_id" id="riesgo_id">
-        <input type="hidden" name="editar_riesgo" value="1">
-        <div class="modal-header">
-          <h5 class="modal-title">Editar Riesgo</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label for="id_meta" class="form-label">Meta</label>
-              <select class="form-select" id="id_meta" name="meta" required>
-                <option value="">Seleccione una meta</option>
-                {% for meta in form.meta.field.queryset %}
-                <option value="{{ meta.id }}">{{ meta.clave }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            <div class="col-md-3 mb-3">
-              <label for="id_probabilidad" class="form-label">Probabilidad</label>
-              <input type="number" class="form-control" id="id_probabilidad" name="probabilidad" min="1" max="5" required>
-            </div>
-            <div class="col-md-3 mb-3">
-              <label for="id_impacto" class="form-label">Impacto</label>
-              <input type="number" class="form-control" id="id_impacto" name="impacto" min="1" max="5" required>
-            </div>
-            <div class="col-12 mb-3">
-              <label for="id_enunciado" class="form-label">Enunciado</label>
-              <input type="text" class="form-control" id="id_enunciado" name="enunciado" required>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-success">Guardar</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
 <!-- Modal Crear -->
 <div class="modal fade" id="modalCrear" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form method="post">
+      <form method="post" id="formCrear" novalidate>
         {% csrf_token %}
         <input type="hidden" name="crear_riesgo" value="1">
         <div class="modal-header">
@@ -154,7 +126,28 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          {{ form.as_p }}
+          <div id="erroresCrear" class="alert alert-danger d-none"></div>
+          
+          <div class="mb-3">
+            <label class="form-label">Enunciado</label>
+            <input type="text" class="form-control" name="enunciado" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Probabilidad (1-10)</label>
+            <input type="number" class="form-control" name="probabilidad" min="1" max="10" required onchange="calcularRiesgo()">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Impacto (1-10)</label>
+            <input type="number" class="form-control" name="impacto" min="1" max="10" required onchange="calcularRiesgo()">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Nivel de Riesgo Calculado</label>
+            <div id="riesgo-calculado" class="form-control-plaintext fw-bold">0</div>
+          </div>
+          <div class="mb-3">
+              <label class="form-label">Meta</label>
+              {{ form.meta }}
+          </div>
         </div>
         <div class="modal-footer">
           <button type="submit" class="btn btn-primary">Guardar</button>
@@ -164,47 +157,68 @@
     </div>
   </div>
 </div>
+
+<!-- Modal Editar -->
+<div class="modal fade" id="modalEditar" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" id="formEditar" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="riesgo_id" id="riesgo_id">
+        <input type="hidden" name="editar_riesgo" value="1">
+        <div class="modal-header">
+          <h5 class="modal-title">Editar Riesgo</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="erroresEditar" class="alert alert-danger d-none"></div>
+          
+          <div class="mb-3">
+            <label class="form-label">Enunciado</label>
+            <input type="text" class="form-control" id="id_enunciado" name="enunciado" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Probabilidad (1-10)</label>
+            <input type="number" class="form-control" id="id_probabilidad" name="probabilidad" min="1" max="10" required onchange="calcularRiesgoEditar()">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Impacto (1-10)</label>
+            <input type="number" class="form-control" id="id_impacto" name="impacto" min="1" max="10" required onchange="calcularRiesgoEditar()">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Nivel de Riesgo Calculado</label>
+            <div id="riesgo-calculado-editar" class="form-control-plaintext fw-bold">0</div>
+          </div>
+        <div class="mb-3">
+              <label class="form-label">Meta</label>
+              {{ form.meta }}
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Guardar cambios</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script src="{% static "JS/Riesgos/gestion_riesgos.js" %}"></script>
 <script>
-$(document).ready(function () {
-    // Inicializar DataTable
-    $('#riesgosTable').DataTable({
-        scrollX: true,
-        autoWidth: false,
-        paging: true,
-        searching: true,
-        info: true,
-        pageLength: 5,
-        lengthMenu: [5, 10, 20],
-        language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json',
-        }
-    });
-    
-    // Manejar clic en botón Editar
-    $('.btn-editar').on('click', function() {
-        // Obtener datos del botón
-        var riesgoId = $(this).data('id');
-        var enunciado = $(this).data('enunciado');
-        var probabilidad = $(this).data('probabilidad');
-        var impacto = $(this).data('impacto');
-        var metaId = $(this).data('meta_id');
-        
-        // Llenar el formulario con los datos del riesgo
-        $('#riesgo_id').val(riesgoId);
-        $('#id_enunciado').val(enunciado);
-        $('#id_probabilidad').val(probabilidad);
-        $('#id_impacto').val(impacto);
-        $('#id_meta').val(metaId);
-        
-        // Mostrar el modal de edición
-        $('#modalEditar').modal('show');
-    });
-});
+// Auto abrir modal si hubo errores
+    {% if abrir_modal_crear %}
+        var modalCrear = new bootstrap.Modal(document.getElementById('modalCrear'));
+        modalCrear.show();
+    {% endif %}
+    {% if abrir_modal_editar %}
+        var modalEditar = new bootstrap.Modal(document.getElementById('modalEditar'));
+        modalEditar.show();
+    {% endif %}
 </script>
 {% endblock %}

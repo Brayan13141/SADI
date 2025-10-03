@@ -8,8 +8,8 @@ from .views import (
 )
 
 router = DefaultRouter()
-router.register(r"api/riesgos", RiesgoViewSet)
-router.register(r"api/mitigaciones", MitigacionViewSet)
+router.register(r"api/riesgos", RiesgoViewSet, basename="riesgos")
+router.register(r"api/mitigaciones", MitigacionViewSet, basename="mitigaciones")
 
 urlpatterns = [
     path("", include(router.urls)),

@@ -1,0 +1,79 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="h4 mb-4 text-primary">
+        <i class="fas fa-envelope-open-text me-2"></i>Solicitudes de Reapertura
+    </h1>
+
+    {% if solicitudes %}
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Actividad</th>
+                            <th>Docente</th>
+                            <th>Departamento</th>
+                            <th>Fecha Solicitud</th>
+                            <th>Estado</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for solicitud in solicitudes %}
+                        <tr>
+                            <td>{{ solicitud.actividad.descripcion }}</td>
+                            <td>{{ solicitud.usuario.username }}</td>
+                            <td>{{ solicitud.departamento.nombre|default:"-" }}</td>
+                            <td>{{ solicitud.fecha_solicitud|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                {% if solicitud.aprobada %}
+                                    <span class="badge bg-success">Aprobada</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">Pendiente</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if not solicitud.aprobada %}
+                                <form method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="solicitud_id" value="{{ solicitud.id }}">
+                                    <button type="submit" name="accion" value="aprobar" class="btn btn-sm btn-success">
+                                        <i class="fas fa-check"></i> Aprobar
+                                    </button>
+                                </form>
+                                <form method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="solicitud_id" value="{{ solicitud.id }}">
+                                    <button type="submit" name="accion" value="rechazar" class="btn btn-sm btn-danger">
+                                        <i class="fas fa-times"></i> Rechazar
+                                    </button>
+                                </form>
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                <i class="fas fa-inbox fa-2x d-block mb-2"></i>
+                                No hay solicitudes pendientes.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-1"></i> No hay solicitudes registradas.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
