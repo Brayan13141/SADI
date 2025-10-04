@@ -135,8 +135,7 @@ LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "dashboard"
 ACCOUNT_LOGOUT_REDIRECT_URL = "/accounts/login/"
 
-USE_L10N = False
-
+LANGUAGE_CODE = "es-MX"
 
 WSGI_APPLICATION = "sadi.wsgi.application"
 
@@ -163,7 +162,6 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 # CONFIGURACION PARA EL LENGUAJE Y LA ZONA HORARIA
-LANGUAGE_CODE = "es"
 TIME_ZONE = "America/Mexico_City"  # o la que corresponda
 USE_I18N = True
 USE_TZ = True
