@@ -1,3 +1,4 @@
+from decimal import Decimal
 import json
 from urllib import request
 from django.http import JsonResponse
@@ -441,20 +442,19 @@ def gestion_meta_comprometida(request, meta_id):
 @role_required("ADMIN", "APOYO")
 def TablaSeguimiento(request):
     # Obtener el ciclo activo o el más reciente
-    try:
-        ciclo = Ciclo.objects.filter(activo=True).first()
-        if not ciclo:
-            ciclo = Ciclo.objects.order_by("-fecha_inicio").first()
-    except Ciclo.DoesNotExist:
-        ciclo = None
-    # Obtener todas las metas y ordenarlas
-    if request.GET.get("view") == "simple":
-        metas = Meta.objects.all().order_by("id")
-    else:
-        metas = Meta.objects.all().order_by("id").filter(activa=True)
-    tabla = []
+    ciclo = (
+        Ciclo.objects.filter(activo=True).first()
+        or Ciclo.objects.order_by("-fecha_inicio").first()
+    )
 
-    # Obtener meses para el ciclo actual o usar meses por defecto
+    # Obtener todas las metas y ordenarlas
+    metas = (
+        Meta.objects.all().order_by("id")
+        if request.GET.get("view") == "simple"
+        else Meta.objects.filter(activa=True).order_by("id")
+    )
+
+    # Obtener lista de meses del ciclo
     meses = []
     if ciclo:
         current_date = ciclo.fecha_inicio
@@ -466,13 +466,13 @@ def TablaSeguimiento(request):
                     "anio": current_date.year,
                 }
             )
-            # Avanzar al siguiente mes
+            # Avanzar un mes
             if current_date.month == 12:
                 current_date = current_date.replace(year=current_date.year + 1, month=1)
             else:
                 current_date = current_date.replace(month=current_date.month + 1)
     else:
-        # Si no hay ciclo, usar los últimos 12 meses
+        # Si no hay ciclo activo, usar últimos 12 meses
         current_date = timezone.now()
         for i in range(12):
             month = current_date.month - i
@@ -489,65 +489,74 @@ def TablaSeguimiento(request):
             )
         meses.reverse()
 
-    # Calcular datos para cada meta
+    # Construir la tabla
+    tabla = []
     for meta in metas:
-        # Obtener avances para esta meta
         avances = AvanceMeta.objects.filter(metaCumplir=meta)
 
-        # Calcular total acumulado
-        total = avances.aggregate(total=Sum("avance"))["total"] or 0
+        # Total acumulado (suma de avances)
+        total = avances.aggregate(total=Sum("avance"))["total"] or Decimal("0")
 
-        # Calcular porcentaje de avance
+        # Calcular porcentaje de avance correctamente
         if meta.metacumplir and meta.metacumplir > 0:
-            porcentaje = min(100, (total / meta.metacumplir) * 100)
+            if meta.porcentages:
+                # Si la meta está en porcentajes, total y meta son fracciones (0.224 = 22.4%)
+                porcentaje = min(
+                    Decimal("100"), (total / meta.metacumplir) * Decimal("100")
+                )
+            else:
+                porcentaje = min(
+                    Decimal("100"), (total / meta.metacumplir) * Decimal("100")
+                )
         else:
-            porcentaje = 0
+            porcentaje = Decimal("0")
 
-        # Crear lista ordenada de valores por mes
+        # Lista ordenada de avances por mes (como porcentaje)
         valores_por_mes = []
         for mes_info in meses:
-            # Buscar si hay avance para este mes específico
-            avance_mes = None
-            for avance in avances:
-                if (
-                    avance.fecha_registro.year == mes_info["anio"]
-                    and avance.fecha_registro.month == mes_info["numero"]
-                ):
-                    avance_mes = avance.avance
-                    break
+            # Filtrar los avances de este mes y sumarlos
+            avances_mes = avances.filter(
+                fecha_registro__year=mes_info["anio"],
+                fecha_registro__month=mes_info["numero"],
+            ).aggregate(total_mes=Sum("avance"))["total_mes"] or Decimal("0")
+
+            if avances_mes > 0:
+                if meta.porcentages:
+                    valor = avances_mes * Decimal("100")
+                    avance_mes = f"{valor.quantize(Decimal('0.00'))} %"
+                else:
+                    avance_mes = f"{avances_mes.quantize(Decimal('0.00'))}"
+            else:
+                avance_mes = "-"
 
             valores_por_mes.append(avance_mes)
 
-        # Obtener actividades relacionadas
+        # Actividades relacionadas
         actividades = meta.actividad_set.all()
 
         tabla.append(
             {
                 "id": meta.id,
                 "meta": meta,
-                "valores_por_mes": valores_por_mes,  # Lista ordenada de valores
-                "total": total,
-                "porcentaje": round(porcentaje, 1),
+                "valores_por_mes": valores_por_mes,
+                "total": (
+                    f"{(total * Decimal('100')).quantize(Decimal('0.00'))} %"
+                    if meta.porcentages
+                    else f"{total.quantize(Decimal('0.00'))}"
+                ),
+                "porcentaje": porcentaje.quantize(Decimal("0.00")),
                 "actividades": actividades,
             }
         )
 
-    # Calcular avance promedio
-    if tabla:
-        avance_promedio = sum(item["porcentaje"] for item in tabla) / len(tabla)
-    else:
-        avance_promedio = 0
+    context = {"tabla": tabla, "ciclo": ciclo, "meses": meses}
 
-    context = {
-        "tabla": tabla,
-        "ciclo": ciclo,
-        "meses": meses,
-        "avance_promedio": round(avance_promedio, 1),
-    }
-    if request.GET.get("view") == "simple":
-        return render(request, "metas/tablaSeg_Completa.html", context)
-
-    return render(request, "metas/tablaSeguimiento.html", context)
+    template = (
+        "metas/tablaSeg_Completa.html"
+        if request.GET.get("view") == "simple"
+        else "metas/tablaSeguimiento.html"
+    )
+    return render(request, template, context)
 
 
 # ==========================ASIGNACION DE METAS=========================
