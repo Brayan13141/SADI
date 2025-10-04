@@ -53,22 +53,22 @@
             <div >
                 <table id="seguimientoTable" class="table table-striped table-hover table-bordered table-sm">
                     <thead >
-                        <tr>
+                        <tr class="text-nowrap">
                             <th>#</th>
                             <th>Meta</th>
                             <th>LB</th>
                             <th>Meta</th>
                             {% for mes in meses %}
-                                <th class="text-nowrap">{{ mes.nombre|slice:":3" }}</th>
+                                <th >{{ mes.nombre|slice:":3" }}</th>
                             {% endfor %}
-                            <th class="text-nowrap">Acumulado</th>
-                            <th>%</th>
-                            <th class="text-nowrap">Actividades</th>
+                            <th>Acumulado</th>
+                            <th>Completado</th>
+                            <th>Actividades</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for fila in tabla %}
-                        <tr>
+                        <tr class="align-middle">
                             <td>{{ fila.meta.id }}</td>
                             <td class="text-center text-nowrap">
                                 <div class="fw-semibold">{{ fila.meta.nombre }}</div>
@@ -79,7 +79,7 @@
                             <td><span class="badge bg-light text-dark">{{ fila.meta.lineabase_display }}</span></td>
                             <td><span class="badge bg-primary">{{ fila.meta.metacumplir_display }}</span></td>
                             {% for valor in fila.valores_por_mes %}
-                            <td>
+                            <td class="text-center text-nowrap">
                                 {% if valor %}
                                     <span class="text-success fw-semibold">{{ valor }}</span>
                                 {% else %}
@@ -88,8 +88,8 @@
                             </td>
                             {% endfor %}
                             <td class="fw-semibold text-center">{{ fila.total }}</td>
-                            <td>
-                                <div class="d-flex align-items-center gap-1">
+                            <td class="text-center ">
+                                <div class="d-flex align-items-center gap-1 ">
                                     <div class="progress flex-grow-1">
                                         <div class="progress-bar 
                                             {% if fila.porcentaje >= 80 %}bg-success
