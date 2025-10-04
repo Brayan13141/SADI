@@ -22,9 +22,6 @@ $(document).ready(function () {
         stateSave: true,
     });
 
-    // Variable para guardar la fila seleccionada
-    var selectedRow = null;
-
     // Cuando el usuario haga clic en una fila de la tabla
     $('#metasTable tbody').on('click', 'tr.fila-meta', function () {
         // Quitar selección previa
@@ -57,7 +54,6 @@ $(document).ready(function () {
             .attr('href', `/metas/${metaId}/comprometida/`);
     });
 
-    // Botón Editar -> cargar datos al modal de metas
     $('.btn-editar').on('click', function () {
         const fila = $(this).closest('.fila-meta');
 
@@ -69,21 +65,21 @@ $(document).ready(function () {
         const proyectoId = $(this).data('proyecto');
         const departamentoId = $(this).data('departamento');
         const indicador = $(this).data('indicador');
-        const acumulable = $(this).data('acumulable') === 'True';
+        const acumulable = $(this).data('acumulable');
         const unidadMedida = $(this).data('unidadmedida');
         const metodoCalculo = $(this).data('metodocalculo');
         let lineabase = parseFloat($(this).data('lineabase'));
-        let metacumplir = parseFloat($(this).data('metacumplir'));
-        let variableB = parseFloat($(this).data('variableb'));
+        let metacumplir = Number($(this).data('metacumplir'));
+        let variableB = Number($(this).data('variableb'));
         const cicloId = $(this).data('ciclo');
         const activa = $(this).data('activa') === 'True';
         const porcentages = $(this).data('porcentages') === 'True';
 
         // Si está en modo porcentaje -> convertir de 0.8555 a 85.55
         if (porcentages) {
-            lineabase = lineabase ? (lineabase * 100).toFixed(2) : '';
-            metacumplir = metacumplir ? (metacumplir * 100).toFixed(2) : '';
-            variableB = variableB ? (variableB * 100).toFixed(2) : '';
+            lineabase = lineabase ? lineabase * 100 : '';
+            metacumplir = metacumplir ? metacumplir * 100 : '';
+            variableB = variableB ? variableB * 100 : '';
         }
 
         // Llenar el formulario
@@ -126,10 +122,13 @@ $(document).ready(function () {
 
         // Mostrar modal
         $('#modalEditar').modal('show');
-    });
+    }); // Botón Editar -> cargar datos al modal de metas
 
     // Listener para cuando el usuario activa/desactiva porcentajes en el modal
     $('#id_porcentages').on('change', function () {
+        togglePorcentajeUI(this.checked);
+    });
+    $('#Eid_porcentages').on('change', function () {
         togglePorcentajeUI(this.checked);
     });
 
