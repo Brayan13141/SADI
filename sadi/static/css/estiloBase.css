@@ -92,16 +92,6 @@
     margin-top: 0.25rem !important;
 }
 
-/* TABLAS */
-.table th {
-    white-space: nowrap;
-    vertical-align: middle;
-    min-width: auto !important;
-}
-.table td {
-    vertical-align: middle;
-}
-
 /* Botón toggle del sidebar */
 #toggleSidebar {
     height: 30px;
@@ -321,13 +311,6 @@ table.dataTable {
 }
 
 /* Prevenir que las celdas se expandan demasiado */
-.dataTable th,
-.dataTable td {
-    max-width: 250px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
 
 /* Asegurar que el contenedor principal no cause problemas de layout */
 .main-content {
