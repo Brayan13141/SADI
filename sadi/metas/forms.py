@@ -17,6 +17,7 @@ class MetaForm(forms.ModelForm):
             "proyecto",
             "departamento",
             "indicador",
+            "acumulable",
             "unidadMedida",
             "porcentages",
             "activa",
@@ -35,6 +36,9 @@ class MetaForm(forms.ModelForm):
                 attrs={"rows": 3, "class": "form-control", "required": True}
             ),
             "proyecto": forms.Select(attrs={"class": "form-select", "required": True}),
+            "acumulable": forms.CheckboxInput(
+                attrs={"class": "form-check-input", "required": True}
+            ),
             "departamento": forms.Select(attrs={"class": "form-select"}),
             "indicador": forms.Textarea(
                 attrs={"rows": 3, "class": "form-control", "required": True}
