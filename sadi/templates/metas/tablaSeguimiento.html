@@ -61,7 +61,7 @@
                             {% for mes in meses %}
                                 <th >{{ mes.nombre|slice:":3" }}</th>
                             {% endfor %}
-                            <th>Acumulado</th>
+                            <th>Categoria</th>
                             <th>Completado</th>
                             <th>Actividades</th>
                         </tr>
@@ -87,7 +87,16 @@
                                 {% endif %}
                             </td>
                             {% endfor %}
-                            <td class="fw-semibold text-center">{{ fila.total }}</td>
+                            <td class="fw-semibold text-center">
+                                {{ fila.meta.total_acumulado }}
+                                <br>
+                                {% if fila.meta.acumulable %}
+                                    <small class="text-muted fw-normal">Acumulado</small>
+                                {% else %}
+                                    <small class="text-muted fw-normal">Incremental</small>
+                                {% endif %}
+                            </td>
+
                             <td class="text-center ">
                                 <div class="d-flex align-items-center gap-1 ">
                                     <div class="progress flex-grow-1">

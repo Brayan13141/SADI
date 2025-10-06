@@ -136,7 +136,7 @@
                               data-proyecto="{{ meta.proyecto.id }}"
                               data-departamento="{{ meta.departamento.id|default_if_none:'' }}"
                               data-activa="{{ meta.activa }}"
-                              data-acumulable="{{ meta.acumulable|yesno:'True,False' }}"
+                              data-acumulable="{{ meta.acumulable }}"
                               data-enunciado="{{ meta.enunciado|default:'' }}"
                               data-indicador="{{ meta.indicador|default:'' }}"
                               data-unidadmedida="{{ meta.unidadMedida|default:'' }}"
@@ -144,7 +144,7 @@
                               data-lineabase="{{ meta.lineabase }}"
                               data-metacumplir="{{ meta.metacumplir }}"
                               data-variableb="{{ meta.variableB|default:0 }}"
-                              data-porcentages="{{ meta.porcentages|yesno:'True,False' }}">
+                              data-porcentages="{{ meta.porcentages}}">
                         Editar
                       </button>
                       {% if request.user.role == "ADMIN" %}
@@ -405,7 +405,7 @@
           <div class="mb-2">
            <label class="form-label">Incremental/Acumulable</label>
                 <div class="form-check form-switch mt-2">
-                  <input class="form-check-input" type="checkbox" name="acumulable" id="id_acumulable">
+                  <input class="form-check-input" type="checkbox" name="acumulable" id="Eid_acumulable">
                   <label class="form-check-label">Acumulable</label>
                 </div>
           </div>
@@ -466,7 +466,7 @@
                   </div>
                 {% if request.user.role == "ADMIN" %}
                   <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="id_porcentages" name="porcentages">
+                    <input class="form-check-input" type="checkbox" id="Eid_porcentages" name="porcentages">
                     <label class="form-check-label" for="id_porcentages">Porcentajes</label>
                   </div>
                 {% else %}
