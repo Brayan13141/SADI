@@ -499,15 +499,9 @@ def TablaSeguimiento(request):
 
         # Calcular porcentaje de avance correctamente
         if meta.metacumplir and meta.metacumplir > 0:
-            if meta.porcentages:
-                # Si la meta está en porcentajes, total y meta son fracciones (0.224 = 22.4%)
-                porcentaje = min(
-                    Decimal("100"), (total / meta.metacumplir) * Decimal("100")
-                )
-            else:
-                porcentaje = min(
-                    Decimal("100"), (total / meta.metacumplir) * Decimal("100")
-                )
+            porcentaje = min(
+                Decimal("100"), (total / meta.metacumplir) * Decimal("100")
+            )
         else:
             porcentaje = Decimal("0")
 
