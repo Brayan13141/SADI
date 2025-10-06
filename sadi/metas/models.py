@@ -99,13 +99,35 @@ class Meta(models.Model):
         return f"{valor} %" if self.porcentages else f"{valor}"
 
     @property
-    def total_avance_display(self):
-        total = self.total_avance
-        if total is None:
-            return "-"
-        valor = Decimal(total) * Decimal("100") if self.porcentages else Decimal(total)
-        valor = valor.quantize(Decimal("0.00"))
-        return f"{valor} %" if self.porcentages else f"{valor}"
+    def total_avances(self):
+        """
+        Devuelve la suma total de todos los avances de la meta.
+        Si la meta usa porcentajes, el total también se maneja como fracción (0.85 = 85%).
+        """
+        total = self.avancemeta_set.aggregate(suma=Sum("avance"))["suma"] or Decimal(
+            "0"
+        )
+        return total
+
+    @property
+    def total_acumulado(self):
+        """
+        Devuelve el valor total acumulado según si la meta es acumulable o no.
+        Si es acumulable, suma todos los avances.
+        Si no es acumulable, devuelve el último avance registrado.
+        Si trabaja con porcentajes, multiplica por 100 para mostrar en porcentaje.
+        """
+        if self.acumulable:
+            total = self.total_avances
+        else:
+            ultimo = self.avancemeta_set.order_by("-fecha_registro").first()
+            total = ultimo.avance if ultimo else Decimal("0")
+
+        # Ajustar formato si la meta es porcentual
+        if self.porcentages:
+            total = total * Decimal("100")
+
+        return total.quantize(Decimal("0.00"))
 
 
 class AvanceMeta(models.Model):
