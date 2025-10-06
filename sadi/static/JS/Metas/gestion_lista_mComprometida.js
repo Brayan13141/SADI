@@ -25,7 +25,6 @@ $(document).ready(function () {
 
         $('#comprometida_id_editar').val(id);
         $('#id_programa_editar').val(programa);
-        $('#id_valor_editar').val(valor);
         $('#id_meta_editar').val(meta);
         $('#meta_nombre_editar').val(metaNombre);
 

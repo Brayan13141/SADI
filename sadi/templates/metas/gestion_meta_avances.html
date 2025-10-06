@@ -44,7 +44,7 @@
 {% if meta.acumulable %}
   <div class="alert alert-info">
     <strong>Total acumulado:</strong>
-    {{ meta.total_avance_display }}
+    {{ meta.total_acumulado }}{% if meta.porcentages %}%{% endif %}
 
     <div class="float-end">
       <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#modalInfoAcumulable">
@@ -225,7 +225,7 @@
         </ul>
         <div class="alert alert-secondary">
           <i class="fas fa-info-circle"></i>
-          El total acumulado actual es: <strong>{{ meta.total_avance_display }}</strong>
+          El total acumulado actual es: <strong>{{ meta.total_acumulado }}</strong>
         </div>
       </div>
       <div class="modal-footer">

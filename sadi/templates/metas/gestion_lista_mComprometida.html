@@ -43,9 +43,8 @@
             <div class="table-responsive">
                 <table id="comprometidasTable" class="table table-striped table-hover table-bordered table-sm">
                     <thead>
-                        <tr>
+                        <tr class="text-center text-nowrap">
                             <th>Meta</th>
-
                             <th>Valor</th>
                             <th>Acciones</th>
                         </tr>
@@ -54,7 +53,7 @@
                         {% for comprometida in comprometidas %}
                         <tr>
                             <td>{{ comprometida.meta.clave }}</td>
-                            <td>{{ comprometida.valor }}</td>
+                            <td>{{ comprometida.valor_display }}</td>
                             <td>
                                 <button class="btn btn-sm btn-outline-primary btn-editar-comprometida"
                                         data-id="{{ comprometida.id }}"
