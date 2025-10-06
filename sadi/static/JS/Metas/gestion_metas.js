@@ -65,7 +65,6 @@ $(document).ready(function () {
         const proyectoId = $(this).data('proyecto');
         const departamentoId = $(this).data('departamento');
         const indicador = $(this).data('indicador');
-        const acumulable = $(this).data('acumulable');
         const unidadMedida = $(this).data('unidadmedida');
         const metodoCalculo = $(this).data('metodocalculo');
         let lineabase = parseFloat($(this).data('lineabase'));
@@ -73,6 +72,7 @@ $(document).ready(function () {
         let variableB = Number($(this).data('variableb'));
         const cicloId = $(this).data('ciclo');
         const activa = $(this).data('activa') === 'True';
+        const acumulable = $(this).data('acumulable') === 'True';
         const porcentages = $(this).data('porcentages') === 'True';
 
         // Si está en modo porcentaje -> convertir de 0.8555 a 85.55
@@ -98,7 +98,8 @@ $(document).ready(function () {
         $('#id_variableb').val(variableB);
         $('#id_ciclo').val(cicloId);
         $('#id_activa').prop('checked', activa);
-        $('#id_porcentages').prop('checked', porcentages);
+        $('#Eid_porcentages').prop('checked', porcentages);
+        $('#Eid_acumulable').prop('checked', acumulable);
 
         // Mostrar ejemplo dinámico si está activado
         togglePorcentajeUI(porcentages);
