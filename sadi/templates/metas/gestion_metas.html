@@ -83,7 +83,13 @@
                   </thead>
                  <tbody>
                 {% for meta in metas %}
-                <tr class="fila-meta align-middle">
+                <tr class="fila-meta align-middle"
+                  data-id="{{ meta.id }}"
+                  data-clave="{{ meta.clave }}"
+                  data-nombre="{{ meta.nombre }}"
+                  data-comprometida-id="{{ meta.metacomprometida.id|default:'' }}"
+                  data-comprometida-valor="{{ meta.metacomprometida.valor|default:'' }}"
+                >
                     
                     <td class="text-center">{{ meta.id }}</td>
                     <td class="text-center">{{ meta.clave }}</td>
@@ -132,6 +138,7 @@
                               data-id="{{ meta.id }}"
                               data-clave="{{ meta.clave }}"
                               data-nombre="{{ meta.nombre }}"
+                              data-variableb="{{ meta.variableB|default:0 }}"
                               data-ciclo="{{ meta.ciclo.id|default:'' }}"
                               data-proyecto="{{ meta.proyecto.id }}"
                               data-departamento="{{ meta.departamento.id|default_if_none:'' }}"
@@ -191,6 +198,7 @@
   </div>
 </div>
 
+{% if request.user.role == "ADMIN" %}
 <!-- Modal Crear -->
 <div class="modal fade" id="modalCrear" tabindex="-1">
   <div class="modal-dialog modal-lg">
@@ -334,6 +342,7 @@
     </div>
   </div>
 </div>
+{% endif %}
 
 
 
@@ -426,11 +435,18 @@
 
           <div class="row">
             <div class="col-md-4">
+              {% if request.user.role == "ADMIN" %}
               <div class="mb-2">
                 <label class="form-label">Línea Base(LB)</label>
-                <input type="number" step="0.0001" class="form-control" id="id_lineabase" name="lineabase">
+                <input type="number" class="form-control" id="id_lineabase" name="lineabase">
                 <small id="labelEjemplo" class="form-text text-muted"></small>  
               </div>
+              {% else %}
+              <div class="mb-2">
+                <input type="hidden" class="form-control" id="id_lineabase" name="lineabase">
+              </div>
+              {% endif %}
+
             </div>
             <div class="col-md-4">
               <div class="mb-2">
@@ -477,10 +493,14 @@
                 </div>
 
               </div>
-
               <div class="mb-2">
-
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="id_variableb" name="variableB">
+                  <label class="form-check-label" for="Eid_variableb">Variable B (Habilitar edición)</label>
+                  <small class="form-text text-muted d-block">Si está desactivada, los docentes no podrán editar esta meta</small>
+                </div>
               </div>
+
             </div>
 
           </div>
