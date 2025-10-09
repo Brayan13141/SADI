@@ -11,11 +11,15 @@ from usuarios.permissions import IsAdmin, IsApoyo, IsDocente, IsInvitado
 
 @role_required("ADMIN", "APOYO", "DOCENTE")
 def gestion_riesgos(request):
-    riesgos = (
-        Riesgo.objects.all()
-        .select_related("meta")
-        .filter(meta__activa=True, meta__departamento=request.user.departamento)
-    )
+    if request.user.role == "DOCENTE":
+        riesgos = (
+            Riesgo.objects.filter(meta__departamento=request.user.departamento)
+            .select_related("meta")
+            .filter(meta__activa=True)
+        )
+    else:
+        riesgos = Riesgo.objects.all().select_related("meta").filter(meta__activa=True)
+
     form = RiesgoForm(request.POST, user=request.user)
     abrir_modal_crear = False
     abrir_modal_editar = False
