@@ -64,7 +64,9 @@ class MitigacionForm(forms.ModelForm):
             "responsable": forms.Select(
                 attrs={"class": "form-select", "required": True}
             ),
-            "riesgo": forms.Select(attrs={"class": "form-select", "required": True}),
+            "riesgo": forms.Select(
+                attrs={"class": "form-select", "required": True, "id": "Eid_riesgo"}
+            ),
         }
 
     def __init__(self, *args, **kwargs):

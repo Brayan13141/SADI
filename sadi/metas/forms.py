@@ -7,7 +7,7 @@ from proyectos.models import Proyecto
 from departamentos.models import Departamento
 
 
-class MetaForm(forms.ModelForm):
+class MetaFormAdmin(forms.ModelForm):
     class Meta:
         model = Meta
         fields = [
@@ -36,9 +36,7 @@ class MetaForm(forms.ModelForm):
                 attrs={"rows": 3, "class": "form-control", "required": True}
             ),
             "proyecto": forms.Select(attrs={"class": "form-select", "required": True}),
-            "acumulable": forms.CheckboxInput(
-                attrs={"class": "form-check-input", "required": True}
-            ),
+            "acumulable": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "departamento": forms.Select(attrs={"class": "form-select"}),
             "indicador": forms.Textarea(
                 attrs={"rows": 3, "class": "form-control", "required": True}
@@ -46,20 +44,14 @@ class MetaForm(forms.ModelForm):
             "unidadMedida": forms.TextInput(
                 attrs={"class": "form-control", "required": True}
             ),
-            "porcentages": forms.CheckboxInput(
-                attrs={"class": "form-check-input", "required": True}
-            ),
-            "activa": forms.CheckboxInput(
-                attrs={"class": "form-check-input", "required": True}
-            ),
+            "porcentages": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            "activa": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "metodoCalculo": forms.Textarea(
                 attrs={"rows": 3, "class": "form-control", "required": True}
             ),
-            "lineabase": forms.NumberInput(
-                attrs={"step": "0.0001", "class": "form-control"}
-            ),
+            "lineabase": forms.NumberInput(attrs={"class": "form-control"}),
             "metacumplir": forms.NumberInput(attrs={"class": "form-control"}),
-            "variableB": forms.NumberInput(attrs={"class": "form-control"}),
+            "variableB": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "ciclo": forms.Select(attrs={"class": "form-select"}),
         }
 
@@ -67,6 +59,84 @@ class MetaForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["proyecto"].queryset = Proyecto.objects.all()
         self.fields["departamento"].queryset = Departamento.objects.all()
+
+
+# forms.py
+class MetaFormDocente(forms.ModelForm):
+    class Meta:
+        model = Meta
+        fields = [
+            "nombre",
+            "clave",
+            "enunciado",
+            "proyecto",
+            "departamento",
+            "indicador",
+            "acumulable",
+            "unidadMedida",
+            "porcentages",
+            "activa",
+            "metodoCalculo",
+            "lineabase",
+            "metacumplir",
+            "variableB",
+            "ciclo",
+        ]
+        widgets = {
+            "clave": forms.TextInput(attrs={"class": "form-control", "readonly": True}),
+            "nombre": forms.TextInput(
+                attrs={"class": "form-control", "required": True}
+            ),
+            "enunciado": forms.Textarea(
+                attrs={"rows": 3, "class": "form-control", "required": True}
+            ),
+            "proyecto": forms.Select(attrs={"class": "form-select", "disabled": True}),
+            "acumulable": forms.CheckboxInput(
+                attrs={"class": "form-check-input", "disabled": True}
+            ),
+            "departamento": forms.Select(
+                attrs={"class": "form-select", "disabled": True}
+            ),
+            "indicador": forms.Textarea(
+                attrs={"rows": 3, "class": "form-control", "required": True}
+            ),
+            "unidadMedida": forms.TextInput(
+                attrs={"class": "form-control", "required": True}
+            ),
+            "porcentages": forms.CheckboxInput(
+                attrs={"class": "form-check-input", "disabled": True}
+            ),
+            "activa": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            "metodoCalculo": forms.Textarea(
+                attrs={"rows": 3, "class": "form-control", "required": True}
+            ),
+            "lineabase": forms.NumberInput(attrs={"class": "form-control"}),
+            "metacumplir": forms.NumberInput(attrs={"class": "form-control"}),
+            "variableB": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            "ciclo": forms.Select(attrs={"class": "form-select", "disabled": True}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Para campos con disabled, debemos asegurar que se use el valor inicial
+        for field_name in [
+            "clave",
+            "nombre",
+            "lineaBase",
+            "enunciado",
+            "indicador",
+            "unidadMedida",
+            "metodoCalculo",
+            "proyecto",
+            "activa",
+            "departamento",
+            "ciclo",
+            "acumulable",
+            "porcentages",
+            "variableB",
+        ]:
+            if field_name in self.initial:
+                self.fields[field_name].disabled = True
 
 
 # ========================FORMULARIOS DE AVANCE Y COMPROMETIDA UNICA========================#
