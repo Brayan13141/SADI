@@ -28,9 +28,7 @@ class Meta(models.Model):
     metacumplir = models.DecimalField(
         max_digits=11, decimal_places=4, blank=True, null=True
     )
-    variableB = models.DecimalField(
-        max_digits=11, decimal_places=4, blank=True, null=True
-    )
+    variableB = models.BooleanField(default=True, verbose_name="Variable B")
     ciclo = models.ForeignKey(Ciclo, on_delete=models.CASCADE, blank=True, null=True)
 
     history = HistoricalRecords()
