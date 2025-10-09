@@ -21,7 +21,7 @@ $(document).ready(function () {
         $('#id_accion').val($(this).data('accion'));
         $('#id_fecha_accion').val($(this).data('fecha_accion'));
         $('#id_responsable').val($(this).data('responsable_id'));
-        $('#id_riesgo').val($(this).data('riesgo_id'));
+        $('#Eid_riesgo').val($(this).data('riesgo_id'));
 
         // Limpiar errores previos
         $('#erroresEditar').addClass('d-none').empty();
