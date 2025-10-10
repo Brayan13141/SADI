@@ -30,9 +30,17 @@ from .forms import (
 
 @role_required("ADMIN", "APOYO", "DOCENTE")
 def gestion_metas(request):
-    metas = Meta.objects.select_related("proyecto", "departamento", "ciclo").all()
-    ciclos = Ciclo.objects.all()
+    usuario = request.user
+    # Si el usuario es DOCENTE → solo sus metas
+    if usuario.role == "DOCENTE":
+        metas = Meta.objects.select_related("proyecto", "departamento", "ciclo").filter(
+            departamento=usuario.departamento
+        )
+    else:
+        # Si es ADMIN, JEFE, etc. → ve todas
+        metas = Meta.objects.select_related("proyecto", "departamento", "ciclo").all()
 
+    ciclos = Ciclo.objects.all()
     # Obtener meta comprometida para cada meta
     for meta in metas:
         try:
@@ -48,6 +56,7 @@ def gestion_metas(request):
     puede_crear = request.user.role in ["ADMIN", "APOYO"]
     puede_editar = request.user.role in ["ADMIN", "APOYO", "DOCENTE"]
     puede_eliminar = request.user.role in ["ADMIN"]
+    editables = Meta.objects.first()
 
     if request.method == "POST":
         post_data = request.POST.copy()
@@ -57,6 +66,19 @@ def gestion_metas(request):
             FormClass = MetaFormAdmin
         else:
             FormClass = MetaFormDocente
+
+        if "activar_edicion" in request.POST and request.user.role == "ADMIN":
+            # Activar todas las metas
+            Meta.objects.update(variableB=True)
+            messages.success(
+                request, "Edición de metas activada para todos los docentes."
+            )
+        elif "desactivar_edicion" in request.POST and request.user.role == "ADMIN":
+            # Desactivar todas las metas
+            Meta.objects.update(variableB=False)
+            messages.success(
+                request, "Edición de metas desactivada para todos los docentes."
+            )
 
         # Crear meta (solo ADMIN y APOYO)
         if "crear_meta" in request.POST and puede_crear:
@@ -103,6 +125,8 @@ def gestion_metas(request):
                             "ciclo",
                             "acumulable",
                             "porcentages",
+                            "variableB",
+                            "activa",
                         ]:
                             if hasattr(meta, field):
                                 setattr(meta_instance, field, getattr(meta, field))
@@ -150,6 +174,7 @@ def gestion_metas(request):
             "abrir_modal_crear": abrir_modal_crear,
             "abrir_modal_editar": abrir_modal_editar,
             "meta_editar_id": meta_editar_id,
+            "editables": editables.variableB,
             "puede_crear": puede_crear,
             "puede_editar": puede_editar,
             "puede_eliminar": puede_eliminar,
@@ -320,7 +345,7 @@ def meta_comprometida_general_list(request):
 
 
 # ====================== VISTAS POR META ======================
-@login_required
+@role_required("ADMIN", "APOYO", "DOCENTE")
 def gestion_meta_avances(request, meta_id):
     meta = get_object_or_404(Meta, id=meta_id)
     avances = AvanceMeta.objects.filter(metaCumplir=meta).order_by("-fecha_registro")
@@ -330,8 +355,8 @@ def gestion_meta_avances(request, meta_id):
     abrir_modal_avance = False
 
     # permisos por rol
-    puede_crear = request.user.role in ["ADMIN", "APOYO"]
-    puede_editar = request.user.role in ["ADMIN", "APOYO"]
+    puede_crear = request.user.role in ["ADMIN", "APOYO", "DOCENTE"]
+    puede_editar = request.user.role in ["ADMIN", "APOYO", "DOCENTE"]
     puede_eliminar = request.user.role == "ADMIN"
 
     if request.method == "POST":

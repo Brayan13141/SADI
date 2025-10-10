@@ -83,12 +83,20 @@ def gestion_riesgos(request):
 
 @role_required("ADMIN", "APOYO", "DOCENTE")
 def gestion_mitigaciones(request):
-    if request.user.role == "DOCENTE":
-        mitigaciones = Mitigacion.objects.filter(
-            riesgo__meta__departamento=request.user.departamento
-        ).select_related("responsable", "riesgo")
+    user = request.user
+    if user.role == "DOCENTE":
+        # Solo mostrar mitigaciones de riesgos cuyas metas pertenecen
+        # al departamento del docente actual.
+        riesgos = Riesgo.objects.filter(meta__departamento=user.departamento)
+        mitigaciones = Mitigacion.objects.select_related(
+            "responsable", "riesgo", "riesgo__meta"
+        ).filter(riesgo__meta__departamento=user.departamento)
     else:
-        mitigaciones = Mitigacion.objects.all().select_related("responsable", "riesgo")
+        riesgos = Riesgo.objects.all()
+        # Admins, jefes, apoyo, etc. ven todas las mitigaciones
+        mitigaciones = Mitigacion.objects.select_related(
+            "responsable", "riesgo", "riesgo__meta"
+        )
 
     form = MitigacionForm()
     abrir_modal_crear = False
@@ -142,6 +150,7 @@ def gestion_mitigaciones(request):
         request,
         "riesgos/gestion_mitigaciones.html",
         {
+            "riesgos": riesgos,
             "mitigaciones": mitigaciones,
             "form": form,
             "abrir_modal_crear": abrir_modal_crear,
