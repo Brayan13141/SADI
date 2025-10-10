@@ -1,4 +1,6 @@
 from django import forms
+
+
 from .models import Usuario
 from departamentos.models import Departamento
 
@@ -109,14 +111,7 @@ class UsuarioEditForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        usados = (
-            Usuario.objects.exclude(departamento__isnull=True)
-            .exclude(id=self.instance.id)
-            .values_list("departamento_id", flat=True)
-        )
-        self.fields["departamento"].queryset = Departamento.objects.exclude(
-            id__in=usados
-        )
+        self.fields["departamento"].queryset = Departamento.objects.all()
 
     def clean_departamento(self):
         departamento = self.cleaned_data.get("departamento")
@@ -133,8 +128,14 @@ class UsuarioEditForm(forms.ModelForm):
 
     def save(self, commit=True):
         usuario = super().save(commit=False)
-        if self.cleaned_data.get("password"):
-            usuario.set_password(self.cleaned_data["password"])
+
+        # Mantener contraseña anterior si no se ingresa una nueva
+        nueva_pass = self.cleaned_data.get("password")
+        if nueva_pass:
+            usuario.set_password(nueva_pass)
+        else:
+            usuario.password = Usuario.objects.get(pk=self.instance.pk).password
+
         if commit:
             usuario.save()
         return usuario

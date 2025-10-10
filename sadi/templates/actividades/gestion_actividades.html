@@ -43,13 +43,15 @@
                             <th>Fecha Inicio</th>
                             <th>Fecha Fin</th>
                             <th>Meta</th>
+                            {% if request.user.role != "DOCENTE" %}
                             <th>Responsable</th>
+                            {% endif %}
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for actividad in actividades %}
-                        <tr>
+                        <tr class="text-nowrap">
                             <td>{{ actividad.id }}</td>
                             <td>{{ actividad.nombre }}</td>
                             <td class="text-start">{{ actividad.descripcion|truncatewords:10 }}</td>
@@ -68,8 +70,10 @@
                             <td>{{ actividad.departamento.nombre }}</td>
                             <td>{{ actividad.fecha_inicio|date:"d/m/Y" }}</td>
                             <td>{{ actividad.fecha_fin|date:"d/m/Y" }}</td>
-                            <td class="text-nowrap">{{ actividad.meta.clave }}</td>
+                            <td>{{ actividad.meta.clave }}</td>
+                            {% if request.user.role != "DOCENTE" %}
                             <td>{{ actividad.responsable.username }}</td>
+                            {% endif %}
                             <td>
                                 <div class="action-buttons">
                                   <button class="btn btn-sm btn-outline-primary btn-editar" 

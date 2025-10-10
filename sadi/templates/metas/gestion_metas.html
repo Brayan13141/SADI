@@ -56,12 +56,29 @@
 
   <div class="card shadow-sm">
       <div class="card-header d-flex justify-content-between bg-primary text-white">
-          <h6 class="mb-0">Gestión de Metas</h6>
-          {% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
-          <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#modalCrear">
-              + Agregar Meta
-          </button>
-          {% endif %}
+        <h6 class="mb-0">Gestión de Metas</h6>
+        <div class="d-flex align-items-center">
+          <div class="me-2">
+            {% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
+            <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#modalCrear">
+                + Agregar Meta
+            </button>
+            
+            <form method="post" class="d-inline">
+                {% csrf_token %}
+                {% if editables == False %}
+                     <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#confirmarActivar">
+                        Activar edición
+                    </button>
+                {% else %}
+                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#confirmarDesactivar">
+                        Desactivar edición
+                    </button>
+                {% endif %}
+            </form>
+            {% endif %}
+        </div>
+        </div>
       </div>
       <div class="card-body">
           <div class="table-responsive">
@@ -83,7 +100,13 @@
                   </thead>
                  <tbody>
                 {% for meta in metas %}
-                <tr class="fila-meta align-middle">
+                <tr class="fila-meta align-middle"
+                  data-id="{{ meta.id }}"
+                  data-clave="{{ meta.clave }}"
+                  data-nombre="{{ meta.nombre }}"
+                  data-comprometida-id="{{ meta.metacomprometida.id|default:'' }}"
+                  data-comprometida-valor="{{ meta.metacomprometida.valor|default:'' }}"
+                >
                     
                     <td class="text-center">{{ meta.id }}</td>
                     <td class="text-center">{{ meta.clave }}</td>
@@ -128,10 +151,12 @@
                     <!-- Acciones -->
                     <td class="text-center text-wrap">
                       <a href="{% url 'gestion_meta_avances' meta.id %}" class="btn btn-sm btn-outline-info">Avances</a>
+                      {% if meta.variableB == true or request.user.role == "ADMIN" %}
                       <button class="btn btn-sm btn-outline-primary btn-editar"
                               data-id="{{ meta.id }}"
                               data-clave="{{ meta.clave }}"
                               data-nombre="{{ meta.nombre }}"
+                              data-variableb="{{ meta.variableB|default:0 }}"
                               data-ciclo="{{ meta.ciclo.id|default:'' }}"
                               data-proyecto="{{ meta.proyecto.id }}"
                               data-departamento="{{ meta.departamento.id|default_if_none:'' }}"
@@ -147,6 +172,7 @@
                               data-porcentages="{{ meta.porcentages}}">
                         Editar
                       </button>
+                      {% endif %}
                       {% if request.user.role == "ADMIN" %}
                       <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
                               data-bs-target="#modalEliminar{{ meta.id }}">
@@ -191,6 +217,7 @@
   </div>
 </div>
 
+{% if request.user.role == "ADMIN" %}
 <!-- Modal Crear -->
 <div class="modal fade" id="modalCrear" tabindex="-1">
   <div class="modal-dialog modal-lg">
@@ -301,7 +328,7 @@
                   {% for ciclo in ciclos %}
                     <option value="{{ ciclo.id }}">
                       {% if ciclo %}
-                        {{ ciclo.fecha_inicio|date:"M Y" }} - {{ ciclo.fecha_fin|date:"M Y" }}
+                    {{ciclo.nombre}}
                       {% else %}
                         No definido
                       {% endif %}
@@ -334,6 +361,7 @@
     </div>
   </div>
 </div>
+{% endif %}
 
 
 
@@ -426,11 +454,18 @@
 
           <div class="row">
             <div class="col-md-4">
+              {% if request.user.role == "ADMIN" %}
               <div class="mb-2">
                 <label class="form-label">Línea Base(LB)</label>
-                <input type="number" step="0.0001" class="form-control" id="id_lineabase" name="lineabase">
+                <input type="number" class="form-control" id="id_lineabase" name="lineabase">
                 <small id="labelEjemplo" class="form-text text-muted"></small>  
               </div>
+              {% else %}
+              <div class="mb-2">
+                <input type="hidden" class="form-control" id="id_lineabase" name="lineabase">
+              </div>
+              {% endif %}
+
             </div>
             <div class="col-md-4">
               <div class="mb-2">
@@ -448,7 +483,7 @@
                   <option value="">Selecciona un ciclo</option>
                   {% for ciclo in form.fields.ciclo.queryset %}
                     <option value="{{ ciclo.id }}"> {% if ciclo %}
-                                    {{ ciclo.fecha_inicio|date:"M Y" }} - {{ ciclo.fecha_fin|date:"M Y" }}
+                                    {{ciclo.nombre}}
                                 {% else %}
                                     No definido
                                 {% endif %}</option>
@@ -477,10 +512,7 @@
                 </div>
 
               </div>
-
-              <div class="mb-2">
-
-              </div>
+             
             </div>
 
           </div>
@@ -494,6 +526,51 @@
   </div>
 </div>
 
+<!-- Modal Confirmar Activar -->
+<div class="modal fade" id="confirmarActivar" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-success">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title">Confirmar activación</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        ¿Estás seguro de que deseas <strong>activar la edición</strong> para todos los docentes?
+      </div>
+      <div class="modal-footer">
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="activar_edicion" value="1">
+          <button type="submit" class="btn btn-success">Sí, activar</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Confirmar Desactivar -->
+<div class="modal fade" id="confirmarDesactivar" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-danger">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">Confirmar desactivación</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        ¿Estás seguro de que deseas <strong>desactivar la edición</strong> para todos los docentes?
+      </div>
+      <div class="modal-footer">
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="desactivar_edicion" value="1">
+          <button type="submit" class="btn btn-danger">Sí, desactivar</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 
 {% endif %}
 {% endblock %}

@@ -145,7 +145,12 @@
           {% endif %}
           <div class="mb-3">
             <label class="form-label">Riesgo a mitigar</label>
-           {{ form.riesgo }}
+             <select class="form-select" name="riesgo" required>
+              <option value="">Seleccione un riesgo</option>
+              {% for riesgo in riesgos %}
+              <option value="{{ riesgo.id }}">{{ riesgo.enunciado|truncatewords:10 }}</option>
+              {% endfor %}
+            </select>
           </div>
         </div>
         <div class="modal-footer">
@@ -183,20 +188,20 @@
 {% if request.user.role == "ADMIN" %}
           <div class="mb-3">
             <label class="form-label">Responsable</label>
-            <select class="form-select" id="id_responsable" name="responsable" required>
+            <select class="form-select" id="Eid_responsable" name="responsable" required>
               <option value="">Seleccione un responsable</option>
               {% for usuario in form.responsable.field.queryset %}
               <option value="{{ usuario.id }}">{{ usuario.username }}</option>
               {% endfor %}
             </select>
           </div>
-{% else %}
-          <input type="hidden" name="responsable" value="{{ request.user.id }}">
-{% endif %}
+          {% else %}
+                    <input type="hidden" id="Eid_responsable" name="responsable" value="{{ request.user.id }}">
+          {% endif %}
 
           <div class="mb-3">
             <label class="form-label">Riesgo a mitigar</label>
-           {{ form.riesgo }}
+            {{ form.riesgo }}
           </div>
         </div>
         <div class="modal-footer">

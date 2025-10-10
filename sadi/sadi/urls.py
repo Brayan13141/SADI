@@ -16,6 +16,7 @@ urlpatterns = [
     path("metas/", include("metas.urls")),
     path("actividades/", include("actividades.urls")),
     path("riesgos/", include("riesgos.urls")),
+    path("reportes/", include("reportes.urls")),
 ]
 
 # Esto solo en entorno de desarrollo

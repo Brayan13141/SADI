@@ -1,6 +1,5 @@
 from decimal import Decimal
 import json
-from urllib import request
 from django.http import JsonResponse
 from django.shortcuts import redirect, render, get_object_or_404
 from usuarios.decorators import role_required
@@ -20,7 +19,8 @@ from .serializers import (
     MetaComprometidaSerializer,
 )
 from .forms import (
-    MetaForm,
+    MetaFormAdmin,
+    MetaFormDocente,
     AvanceMetaForm,
     MetaComprometidaForm,
     AvanceMetaGeneralForm,
@@ -28,11 +28,19 @@ from .forms import (
 )
 
 
-@role_required("ADMIN", "APOYO")
+@role_required("ADMIN", "APOYO", "DOCENTE")
 def gestion_metas(request):
-    metas = Meta.objects.select_related("proyecto", "departamento", "ciclo").all()
-    ciclos = Ciclo.objects.all()
+    usuario = request.user
+    # Si el usuario es DOCENTE → solo sus metas
+    if usuario.role == "DOCENTE":
+        metas = Meta.objects.select_related("proyecto", "departamento", "ciclo").filter(
+            departamento=usuario.departamento
+        )
+    else:
+        # Si es ADMIN, JEFE, etc. → ve todas
+        metas = Meta.objects.select_related("proyecto", "departamento", "ciclo").all()
 
+    ciclos = Ciclo.objects.all()
     # Obtener meta comprometida para cada meta
     for meta in metas:
         try:
@@ -40,35 +48,41 @@ def gestion_metas(request):
         except MetaComprometida.DoesNotExist:
             meta.metacomprometida = None
 
-    form = MetaForm()
     abrir_modal_crear = False
     abrir_modal_editar = False
     meta_editar_id = None
 
     # Permisos según rol
     puede_crear = request.user.role in ["ADMIN", "APOYO"]
-    puede_editar = request.user.role in ["ADMIN", "APOYO"]
+    puede_editar = request.user.role in ["ADMIN", "APOYO", "DOCENTE"]
     puede_eliminar = request.user.role in ["ADMIN"]
+    editables = Meta.objects.first()
 
     if request.method == "POST":
         post_data = request.POST.copy()
-        defaults = {
-            "enunciado": "Por definir",
-            "indicador": "Por definir",
-            "unidadMedida": "Por definir",
-            "metodoCalculo": "Por definir",
-            "lineabase": 0,
-            "metacumplir": 0,
-            "variableB": 0,
-            "porcentages": False,
-        }
-        for key, value in defaults.items():
-            if key not in post_data:
-                post_data[key] = value
 
-        # Crear meta
+        # Determinar qué formulario usar según el rol
+        if request.user.role in ["ADMIN", "APOYO"]:
+            FormClass = MetaFormAdmin
+        else:
+            FormClass = MetaFormDocente
+
+        if "activar_edicion" in request.POST and request.user.role == "ADMIN":
+            # Activar todas las metas
+            Meta.objects.update(variableB=True)
+            messages.success(
+                request, "Edición de metas activada para todos los docentes."
+            )
+        elif "desactivar_edicion" in request.POST and request.user.role == "ADMIN":
+            # Desactivar todas las metas
+            Meta.objects.update(variableB=False)
+            messages.success(
+                request, "Edición de metas desactivada para todos los docentes."
+            )
+
+        # Crear meta (solo ADMIN y APOYO)
         if "crear_meta" in request.POST and puede_crear:
-            form = MetaForm(post_data)
+            form = FormClass(post_data)
             if form.is_valid():
                 try:
                     form.save()
@@ -87,10 +101,39 @@ def gestion_metas(request):
         elif "editar_meta" in request.POST and puede_editar:
             meta_id = request.POST.get("meta_id")
             meta = get_object_or_404(Meta, id=meta_id)
-            form = MetaForm(post_data, instance=meta)
+            form = FormClass(post_data, instance=meta)
+            # Verificar si la meta puede ser editada (variableB debe ser True para docentes)
+            if request.user.role == "DOCENTE" and not meta.variableB:
+                messages.error(request, "Esta meta ya no está disponible para edición.")
+                return redirect("gestion_metas")
+
             if form.is_valid():
                 try:
-                    form.save()
+                    # Para el formulario de docente, necesitamos manejar campos disabled
+                    if request.user.role == "DOCENTE":
+                        meta_instance = form.save(commit=False)
+                        # Preservar valores de campos disabled que no se envían
+                        for field in [
+                            "clave",
+                            "lineaBase",
+                            "enunciado",
+                            "indicador",
+                            "unidadMedida",
+                            "metodoCalculo",
+                            "proyecto",
+                            "departamento",
+                            "ciclo",
+                            "acumulable",
+                            "porcentages",
+                            "variableB",
+                            "activa",
+                        ]:
+                            if hasattr(meta, field):
+                                setattr(meta_instance, field, getattr(meta, field))
+                        meta_instance.save()
+                    else:
+                        form.save()
+
                     messages.success(request, "Meta actualizada correctamente.")
                     return redirect("gestion_metas")
                 except Exception as e:
@@ -104,7 +147,7 @@ def gestion_metas(request):
                     for error in errors:
                         messages.error(request, f"{field}: {error}")
 
-        # Eliminar meta
+        # Eliminar meta (solo ADMIN)
         elif "eliminar_meta" in request.POST and puede_eliminar:
             meta_id = request.POST.get("meta_id")
             meta = get_object_or_404(Meta, id=meta_id)
@@ -114,6 +157,12 @@ def gestion_metas(request):
                 return redirect("gestion_metas")
             except Exception as e:
                 messages.error(request, f"Error al eliminar la meta: {str(e)}")
+
+    # Para GET requests, determinar qué formulario usar
+    if request.user.role in ["ADMIN", "APOYO"]:
+        form = MetaFormAdmin()
+    else:
+        form = MetaFormDocente()
 
     return render(
         request,
@@ -125,6 +174,10 @@ def gestion_metas(request):
             "abrir_modal_crear": abrir_modal_crear,
             "abrir_modal_editar": abrir_modal_editar,
             "meta_editar_id": meta_editar_id,
+            "editables": editables.variableB,
+            "puede_crear": puede_crear,
+            "puede_editar": puede_editar,
+            "puede_eliminar": puede_eliminar,
         },
     )
 
@@ -292,7 +345,7 @@ def meta_comprometida_general_list(request):
 
 
 # ====================== VISTAS POR META ======================
-@login_required
+@role_required("ADMIN", "APOYO", "DOCENTE")
 def gestion_meta_avances(request, meta_id):
     meta = get_object_or_404(Meta, id=meta_id)
     avances = AvanceMeta.objects.filter(metaCumplir=meta).order_by("-fecha_registro")
@@ -302,8 +355,8 @@ def gestion_meta_avances(request, meta_id):
     abrir_modal_avance = False
 
     # permisos por rol
-    puede_crear = request.user.role in ["ADMIN", "APOYO"]
-    puede_editar = request.user.role in ["ADMIN", "APOYO"]
+    puede_crear = request.user.role in ["ADMIN", "APOYO", "DOCENTE"]
+    puede_editar = request.user.role in ["ADMIN", "APOYO", "DOCENTE"]
     puede_eliminar = request.user.role == "ADMIN"
 
     if request.method == "POST":

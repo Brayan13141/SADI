@@ -15,7 +15,7 @@
           <th>Responsable</th>
           <th>Fecha de registro</th>
           <th>Fecha de finalización</th>
-          <th>Evidencia</th>
+          <th>estado</th>
         </tr>
       </thead>
       <tbody>
@@ -25,7 +25,7 @@
             <td>{{ act.responsable }}</td>
             <td>{{ act.fecha_inicio|date:"d/m/Y" }}</td>
             <td>{{ act.fecha_fin|date:"d/m/Y" }}</td>
-            <td>{{ act.evidencia }}</td>
+            <td>{{ act.estado }}</td>
           </tr>
         {% endfor %}
       </tbody>

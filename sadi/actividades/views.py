@@ -25,9 +25,14 @@ import io
 @role_required("ADMIN", "APOYO", "DOCENTE")
 def gestion_actividades(request):
     departamentos = Departamento.objects.all()
-    actividades = filter_actividades_by_role(request.user).select_related(
-        "meta", "responsable"
-    )
+    if request.user.role == "DOCENTE" and request.user.departamento:
+        actividades = Actividad.objects.all().filter(
+            departamento=request.user.departamento
+        )
+    else:
+        actividades = filter_actividades_by_role(request.user).select_related(
+            "meta", "responsable"
+        )
 
     puede_crear = request.user.role in ["ADMIN", "APOYO", "DOCENTE"]
     puede_editar = request.user.role in ["ADMIN", "APOYO", "DOCENTE"]
@@ -110,7 +115,7 @@ def gestion_actividades(request):
                     Evidencia.objects.create(actividad=actividad, archivo=archivo)
                 if archivos:
                     actividad.editable = False
-                    actividad.estado = "C"
+                    actividad.estado = "Cumplida"
                     actividad.save()
 
                 messages.success(request, "Actividad editada correctamente.")

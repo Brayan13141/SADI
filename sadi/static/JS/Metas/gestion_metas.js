@@ -29,8 +29,6 @@ $(document).ready(function () {
 
         // Marcar la fila actual
         $(this).addClass('fila-seleccionada');
-
-        // --- Tu lógica para mostrar la meta comprometida ---
         let metaId = $(this).data('id');
         let clave = $(this).data('clave');
         let nombre = $(this).data('nombre');
@@ -69,7 +67,7 @@ $(document).ready(function () {
         const metodoCalculo = $(this).data('metodocalculo');
         let lineabase = parseFloat($(this).data('lineabase'));
         let metacumplir = Number($(this).data('metacumplir'));
-        let variableB = Number($(this).data('variableb'));
+        let variableB = $(this).data('variableb') === 'True';
         const cicloId = $(this).data('ciclo');
         const activa = $(this).data('activa') === 'True';
         const acumulable = $(this).data('acumulable') === 'True';
@@ -79,7 +77,6 @@ $(document).ready(function () {
         if (porcentages) {
             lineabase = lineabase ? lineabase * 100 : '';
             metacumplir = metacumplir ? metacumplir * 100 : '';
-            variableB = variableB ? variableB * 100 : '';
         }
 
         // Llenar el formulario
@@ -95,7 +92,7 @@ $(document).ready(function () {
         $('#id_metodocalculo').val(metodoCalculo);
         $('#id_lineabase').val(lineabase);
         $('#id_metacumplir').val(metacumplir);
-        $('#id_variableb').val(variableB);
+        $('#Eid_variableb').prop('checked', variableB);
         $('#id_ciclo').val(cicloId);
         $('#id_activa').prop('checked', activa);
         $('#Eid_porcentages').prop('checked', porcentages);
@@ -107,7 +104,7 @@ $(document).ready(function () {
         // Deshabilitar campos para docentes
         if (usuarioRol === 'DOCENTE') {
             $(
-                '#id_clave, #id_nombre, #id_proyecto, #id_departamento, #id_ciclo, #id_activa, #id_indicador, #id_unidadmedida, #id_metodocalculo, #id_enunciado'
+                '#id_clave, #id_nombre, #id_proyecto, #id_departamento, #id_ciclo, #id_activa, #id_indicador, #id_unidadmedida, #id_metodocalculo, #id_enunciado, #Eid_variableb'
             ).prop('disabled', true);
         } else {
             $(

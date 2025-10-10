@@ -1,10 +1,24 @@
 $(document).ready(function () {
     $('#tabla-metas').DataTable({
-        pageLength: 8,
+        scrollX: true,
+        scrollY: '500px',
+        scrollCollapse: true,
+        fixedColumns: {
+            left: 1,
+        },
+        lengthMenu: [5, 10, 15, 20, 50],
+        autoWidth: false,
+        paging: true,
+        searching: true,
+        info: true,
+        pageLength: 5,
         language: {
             url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json',
         },
-        columnDefs: [{ orderable: false, targets: 3 }], // Ahora solo hay 4 columnas, la acción es la 4ta (índice 3)
+        // Configuración adicional para mejorar el rendimiento con muchas columnas
+        deferRender: true,
+        scroller: true,
+        stateSave: true,
     });
 
     let carrito = [];

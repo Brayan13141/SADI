@@ -28,9 +28,7 @@ class Meta(models.Model):
     metacumplir = models.DecimalField(
         max_digits=11, decimal_places=4, blank=True, null=True
     )
-    variableB = models.DecimalField(
-        max_digits=11, decimal_places=4, blank=True, null=True
-    )
+    variableB = models.BooleanField(default=True, verbose_name="Variable B")
     ciclo = models.ForeignKey(Ciclo, on_delete=models.CASCADE, blank=True, null=True)
 
     history = HistoricalRecords()
@@ -66,8 +64,6 @@ class Meta(models.Model):
                 self.lineabase = self.lineabase / divisor
             if self.metacumplir is not None:
                 self.metacumplir = self.metacumplir / divisor
-            if self.variableB is not None:
-                self.variableB = self.variableB / divisor
 
         self.full_clean()
         super().save(*args, **kwargs)
@@ -91,14 +87,6 @@ class Meta(models.Model):
         return f"{valor} %" if self.porcentages else f"{valor}"
 
     @property
-    def variableB_display(self):
-        if self.variableB is None:
-            return "-"
-        valor = self.variableB * Decimal("100") if self.porcentages else self.variableB
-        valor = valor.quantize(Decimal("0.00"))
-        return f"{valor} %" if self.porcentages else f"{valor}"
-
-    @property
     def total_avances(self):
         """
         Devuelve la suma total de todos los avances de la meta.
@@ -113,7 +101,7 @@ class Meta(models.Model):
     def total_acumulado(self):
         """
         Devuelve el valor total acumulado según si la meta es acumulable o no.
-        Si es acumulable, suma todos los avances.
+        Si la meta es acumulable, suma todos los avances.
         Si no es acumulable, devuelve el último avance registrado.
         Si trabaja con porcentajes, multiplica por 100 para mostrar en porcentaje.
         """
@@ -121,7 +109,11 @@ class Meta(models.Model):
             total = self.total_avances
         else:
             ultimo = self.avancemeta_set.order_by("-fecha_registro").first()
-            total = ultimo.avance if ultimo else Decimal("0")
+            total = (
+                Decimal(ultimo.avance)
+                if ultimo and ultimo.avance is not None
+                else Decimal("0")
+            )
 
         # Ajustar formato si la meta es porcentual
         if self.porcentages:

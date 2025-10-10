@@ -22,11 +22,11 @@ $(document).ready(function () {
         $('#id_first_name').val($(this).data('first_name'));
         $('#id_last_name').val($(this).data('last_name'));
         $('#id_email').val($(this).data('email'));
-
-        if ($('#is_active').val() === 'true') {
-            $('#is_active').prop('checked', true);
+        var a = $(this).data('activo');
+        if (a === 'True') {
+            $('#Eis_active').prop('checked', true);
         } else {
-            $('#is_active').prop('checked', false);
+            $('#Eis_active').prop('checked', false);
         }
         $('#id_role').val($(this).data('role'));
         $('#id_departamento').val($(this).data('departamento'));
