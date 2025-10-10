@@ -92,7 +92,7 @@ $(document).ready(function () {
         $('#id_metodocalculo').val(metodoCalculo);
         $('#id_lineabase').val(lineabase);
         $('#id_metacumplir').val(metacumplir);
-        $('#id_variableb').val(variableB);
+        $('#Eid_variableb').prop('checked', variableB);
         $('#id_ciclo').val(cicloId);
         $('#id_activa').prop('checked', activa);
         $('#Eid_porcentages').prop('checked', porcentages);

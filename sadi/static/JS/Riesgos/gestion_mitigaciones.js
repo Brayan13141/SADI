@@ -20,7 +20,7 @@ $(document).ready(function () {
         $('#mitigacion_id').val($(this).data('id'));
         $('#id_accion').val($(this).data('accion'));
         $('#id_fecha_accion').val($(this).data('fecha_accion'));
-        $('#id_responsable').val($(this).data('responsable_id'));
+        $('#Eid_responsable').val($(this).data('responsable_id'));
         $('#Eid_riesgo').val($(this).data('riesgo_id'));
 
         // Limpiar errores previos
@@ -89,13 +89,13 @@ $(document).ready(function () {
             errores.push('El campo Fecha Acción es obligatorio.');
             camposInvalidos.fecha_accion = $('#id_fecha_accion');
         }
-        if (!$('#id_responsable').val()) {
+        if (!$('#Eid_responsable').val()) {
             errores.push('Debe seleccionar un responsable.');
-            camposInvalidos.responsable = $('#id_responsable');
+            camposInvalidos.responsable = $('#Eid_responsable');
         }
-        if (!$('#id_riesgo').val()) {
+        if (!$('#Eid_riesgo').val()) {
             errores.push('Debe seleccionar un riesgo.');
-            camposInvalidos.riesgo = $('#id_riesgo');
+            camposInvalidos.riesgo = $('#Eid_riesgo');
         }
 
         if (errores.length > 0) {
