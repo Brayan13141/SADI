@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.humanize",
     # REST_FRAMEWORK
     "rest_framework",
     "rest_framework.authtoken",
@@ -56,6 +57,7 @@ INSTALLED_APPS = [
     "metas",
     "actividades",
     "riesgos",
+    "reportes",
 ]
 
 MIDDLEWARE = [
