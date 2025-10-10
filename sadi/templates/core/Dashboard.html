@@ -1,95 +1,143 @@
 {% extends "core/base.html" %}
 {% load static %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}Dashboard Institucional{% endblock %}
 
-
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="{% static 'css/estilos_dashboard.css' %}">
+<style>
+.dashboard-header {
+    background: linear-gradient(
+        135deg,
+        var(--primary-color),
+        var(--secondary-color)
+    ) !important;
+    color: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2.5rem;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}    
+</style>
+{% endblock %}
 
 {% block content %}
-    <!-- Mensajes de Django -->
-            {% if messages %}
-            <div class="mb-3">
-                {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-<div class="d-flex justify-content-between mb-4">
-    <h2 class="fw-bold text-primary">Resumen General</h2>
-</div>
+<!-- Mensajes de Django -->
+    {% if messages %}
+    <div class="mb-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+<div class="container-fluid py-4">
 
-<!-- Sección de Indicadores -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card bg-success text-white shadow-sm">
-            <div class="card-body">
-                <h5 class="card-title">Completadas</h5>
-                <p class="card-text fs-2 fw-bold">24</p>
-                <span class="small">Tareas finalizadas</span>
+    <!-- HEADER -->
+    <div class="dashboard-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1><i class="fas fa-chart-line me-3"></i>Seguimiento Estratégico</h1>
+                <p>Resumen del desempeño institucional</p>
+            </div>
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                <span class="badge bg-light text-dark fs-6 p-2 shadow-sm">
+                    <i class="fas fa-calendar-alt me-2"></i>Actualizado: {% now "d/m/Y" %}
+                </span>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card bg-info text-white shadow-sm">
-            <div class="card-body">
-                <h5 class="card-title">En Progreso</h5>
-                <p class="card-text fs-2 fw-bold">12</p>
-                <span class="small">Tareas activas</span>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-warning text-white shadow-sm">
-            <div class="card-body">
-                <h5 class="card-title">Pendientes</h5>
-                <p class="card-text fs-2 fw-bold">8</p>
-                <span class="small">Por iniciar</span>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-gray text-white shadow-sm">
-            <div class="card-body">
-                <h5 class="card-title">Total</h5>
-                <p class="card-text fs-2 fw-bold">44</p>
-                <span class="small">Actividades registradas</span>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- Sección de Actividades -->
-<div class="card border-0 shadow-sm">
-    <div class="card-header bg-white">
-        <h5 class="fw-bold text-primary mb-0">Últimas Actividades</h5>
-    </div>
-    <div class="card-body">
-        <div class="list-group">
-            <a href="#" class="list-group-item list-group-item-action">
-                <div class="d-flex w-100 justify-content-between">
-                    <h6 class="mb-1 fw-bold">Revisión de requisitos</h6>
-                    <small class="text-success">Completada</small>
+    <!-- MÉTRICAS -->
+    <div class="row mb-5 g-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card metric-card info">
+                <div class="card-body">
+                    <div class="metric-icon text-info"><i class="fas fa-tasks"></i></div>
+                    <div class="metric-label">Total de Actividades</div>
+                    <div class="metric-value text-info">{{ total_actividades }}</div>
+                    <div class="progress mt-3" style="height:8px;">
+                        <div class="progress-bar bg-info" style="width: {{ porcentaje_cumplidas|default:'0' }}%;"></div>
+                    </div>
+                    <small class="text-muted d-block mt-2">Cumplidas: {{ cumplidas }} ({{ porcentaje_cumplidas|default:"0" }}%)</small>
                 </div>
-                <small class="text-muted">Proyecto: Sistema de Gestión</small>
-            </a>
-            <a href="#" class="list-group-item list-group-item-action">
-                <div class="d-flex w-100 justify-content-between">
-                    <h6 class="mb-1 fw-bold">Diseño de interfaz</h6>
-                    <small class="text-info">En progreso</small>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card metric-card success">
+                <div class="card-body">
+                    <div class="metric-icon text-success"><i class="fas fa-bullseye"></i></div>
+                    <div class="metric-label">Total de Metas</div>
+                    <div class="metric-value text-success">{{ total_metas }}</div>
+                    <div class="progress mt-3" style="height:8px;">
+                        <div class="progress-bar bg-success" style="width: {{ porcentaje_metas_cumplidas|default:'0' }}%;"></div>
+                    </div>
+                    <small class="text-muted d-block mt-2">Cumplidas: {{ metas_cumplidas }} ({{ porcentaje_metas_cumplidas|default:"0" }}%)</small>
                 </div>
-                <small class="text-muted">Proyecto: Portal Clientes</small>
-            </a>
-            <a href="#" class="list-group-item list-group-item-action">
-                <div class="d-flex w-100 justify-content-between">
-                    <h6 class="mb-1 fw-bold">Pruebas de integración</h6>
-                    <small class="text-warning">Pendiente</small>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card metric-card warning">
+                <div class="card-body">
+                    <div class="metric-icon text-warning"><i class="fas fa-project-diagram"></i></div>
+                    <div class="metric-label">Total de Proyectos</div>
+                    <div class="metric-value text-warning">{{ total_proyectos }}</div>
+                    <div class="progress mt-3" style="height:8px;">
+                        <div class="progress-bar bg-warning" style="width: {{ porcentaje_proyectos_cumplidos|default:'0' }}%;"></div>
+                    </div>  
+                    <small class="text-muted d-block mt-2">Cumplidos: {{ proyectos_cumplidos }} ({{ porcentaje_proyectos_cumplidos|default:"0" }}%)</small>
                 </div>
-                <small class="text-muted">Proyecto: API Servicios</small>
-            </a>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card metric-card danger">
+                <div class="card-body">
+                    <div class="metric-icon text-danger"><i class="fas fa-flag"></i></div>
+                    <div class="metric-label">Total de Objetivos</div>
+                    <div class="metric-value text-danger">{{ total_objetivos }}</div>
+             <div class="progress mt-3" style="height:8px;">
+                        <div class="progress-bar bg-danger" style="width: {{ porcentaje_objetivos_cumplidos|default:'0' }}%;"></div>
+                    </div>
+                    <small class="text-muted d-block mt-2">Cumplidos: {{ objetivos_cumplidos }} ({{ porcentaje_objetivos_cumplidos|default:"0" }}%)</small>
+                </div>
+            </div>
         </div>
     </div>
+
+    <!-- GRÁFICOS -->
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="chart-container">
+                <div class="chart-header"><h5 class="section-title"><i class="fas fa-tasks me-2"></i>Actividades</h5></div>
+                {{ grafico_actividades_html|safe }}
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="chart-container">
+                <div class="chart-header"><h5 class="section-title"><i class="fas fa-bullseye me-2"></i>Metas</h5></div>
+                {{ grafico_metas_html|safe }}
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="chart-container">
+                <div class="chart-header"><h5 class="section-title"><i class="fas fa-project-diagram me-2"></i>Proyectos</h5></div>
+                {{ grafico_proyectos_html|safe }}
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="chart-container">
+                <div class="chart-header"><h5 class="section-title"><i class="fas fa-flag me-2"></i>Objetivos</h5></div>
+                {{ grafico_objetivos_html|safe }}
+            </div>
+        </div>
+    </div>
+
 </div>
 {% endblock %}

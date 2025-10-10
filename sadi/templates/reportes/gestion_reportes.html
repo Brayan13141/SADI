@@ -1,0 +1,148 @@
+{% extends "core/base.html" %}
+{% block content %}
+<div class="container py-4">
+    <!-- Header Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="d-flex align-items-center mb-3">
+                <i class="bi bi-graph-up fs-1 text-primary me-3"></i>
+                <div>
+                    <h1 class="h2 mb-1 fw-bold">Centro de Reportes</h1>
+                    <p class="text-muted mb-0">Selecciona el reporte que deseas generar para visualizar los datos del sistema</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reports Grid -->
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+        <!-- Metas por Departamento Card -->
+        <div class="col">
+            <div class="card h-100 border-0 shadow-sm hover-shadow">
+                <div class="card-body text-center p-4">
+                    <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                        <i class="bi bi-building fs-3 text-primary"></i>
+                    </div>
+                    <h5 class="card-title fw-semibold">Metas por Departamento</h5>
+                    <p class="card-text text-muted small">Reporte detallado de metas organizadas por departamento</p>
+                </div>
+                <div class="card-footer border-0 bg-transparent pt-0">
+                    <a href="{% url 'reporte_metas_departamento' %}" class="btn btn-primary w-100">Generar Reporte</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Avances por Meta Card -->
+        <div class="col">
+            <div class="card h-100 border-0 shadow-sm hover-shadow">
+                <div class="card-body text-center p-4">
+                    <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                        <i class="bi bi-clipboard-data fs-3 text-success"></i>
+                    </div>
+                    <h5 class="card-title fw-semibold">Avances por Meta</h5>
+                    <p class="card-text text-muted small">Seguimiento de progreso y cumplimiento de metas</p>
+                    <span class="badge bg-warning text-dark">En desarrollo</span>
+                </div>
+                <div class="card-footer border-0 bg-transparent pt-0">
+                    <a href="#" class="btn btn-outline-secondary w-100 disabled">Próximamente</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Proyectos Estratégicos Card -->
+        <div class="col">
+            <div class="card h-100 border-0 shadow-sm hover-shadow">
+                <div class="card-body text-center p-4">
+                    <div class="bg-info bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                        <i class="bi bi-diagram-3 fs-3 text-info"></i>
+                    </div>
+                    <h5 class="card-title fw-semibold">Proyectos Estratégicos</h5>
+                    <p class="card-text text-muted small">Estado y avance de proyectos estratégicos institucionales</p>
+                </div>
+                <div class="card-footer border-0 bg-transparent pt-0">
+                    <a href="#" class="btn btn-outline-secondary w-100 disabled">Próximamente</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Riesgos y Mitigaciones Card -->
+        <div class="col">
+            <div class="card h-100 border-0 shadow-sm hover-shadow">
+                <div class="card-body text-center p-4">
+                    <div class="bg-danger bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                        <i class="bi bi-exclamation-triangle fs-3 text-danger"></i>
+                    </div>
+                    <h5 class="card-title fw-semibold">Riesgos y Mitigaciones</h5>
+                    <p class="card-text text-muted small">Identificación y control de riesgos institucionales</p>
+                </div>
+                <div class="card-footer border-0 bg-transparent pt-0">
+                    <a href="#" class="btn btn-outline-secondary w-100 disabled">Próximamente</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats Section -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card border-0 bg-light">
+                <div class="card-body">
+                    <h6 class="card-title fw-semibold mb-3">Resumen Rápido</h6>
+                    <div class="row text-center">
+                        <div class="col-md-3 mb-3 mb-md-0">
+                            <div class="d-flex align-items-center justify-content-center">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <div>
+                                    <div class="fw-bold fs-5">1</div>
+                                    <small class="text-muted">Reporte Disponible</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3 mb-md-0">
+                            <div class="d-flex align-items-center justify-content-center">
+                                <i class="bi bi-clock-fill text-warning me-2"></i>
+                                <div>
+                                    <div class="fw-bold fs-5">3</div>
+                                    <small class="text-muted">En Desarrollo</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3 mb-md-0">
+                            <div class="d-flex align-items-center justify-content-center">
+                                <i class="bi bi-building-fill text-primary me-2"></i>
+                                <div>
+                                    <div class="fw-bold fs-5">4+</div>
+                                    <small class="text-muted">Departamentos</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="d-flex align-items-center justify-content-center">
+                                <i class="bi bi-graph-up-arrow text-info me-2"></i>
+                                <div>
+                                    <div class="fw-bold fs-5">50+</div>
+                                    <small class="text-muted">Metas Activas</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.hover-shadow {
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+.hover-shadow:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 .5rem 1.5rem rgba(0,0,0,.15) !important;
+}
+.card {
+    border-radius: 12px;
+}
+</style>
+{% endblock %}

@@ -45,10 +45,10 @@
                     </thead>
                     <tbody>
                         {% for objetivo in objetivos %}
-                        <tr>
+                        <tr class="text-nowrap">
                             <td>{{ objetivo.id }}</td>
                             <td class="text-start">{{ objetivo.descripcion|truncatewords:10 }}</td>
-                            <td>{{ objetivo.ciclo.programa.nombre }} ({{ objetivo.ciclo.fecha_inicio|date:"Y" }})</td>
+                            <td>{{ objetivo.ciclo.nombre }} </td>
                             <td>{{ objetivo.programa.nombre }}</td>
                             <td>
                                 {% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
@@ -123,7 +123,7 @@
             <select class="form-select" name="ciclo" required>
               <option value="">Seleccione un ciclo</option>
               {% for ciclo in form_crear.ciclo.field.queryset %}
-              <option value="{{ ciclo.id }}">{{ ciclo.programa.nombre }} ({{ ciclo.fecha_inicio|date:"Y" }})</option>
+              <option value="{{ ciclo.id }}">{{ ciclo.nombre }}</option>
               {% endfor %}
             </select>
           </div>
@@ -170,7 +170,7 @@
             <select class="form-select" id="id_ciclo" name="ciclo" required>
               <option value="">Seleccione un ciclo</option>
               {% for ciclo in form_crear.ciclo.field.queryset %}
-              <option value="{{ ciclo.id }}">{{ ciclo.programa.nombre }} ({{ ciclo.fecha_inicio|date:"Y" }})</option>
+              <option value="{{ ciclo.id }}">{{ ciclo.nombre }}</option>
               {% endfor %}
             </select>
           </div>

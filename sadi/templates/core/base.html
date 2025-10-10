@@ -63,27 +63,7 @@
 
             <!-- Bloque 2 -->
        <div class="d-flex gap-4 text-center">
-        <div class="d-flex flex-column align-items-center">
-            <span class="d-block text-white-75 small">PROGRESO META</span>
-            <span class="fw-bold fs-5">75%</span>
-            <div class="progress w-100" style="height: 6px;">
-            <div class="progress-bar bg-light" style="width: 75%;"></div>
-            </div>
-        </div>
-        <div class="d-flex flex-column align-items-center">
-            <span class="d-block text-white-75 small">PROGRESO OBJETIVO</span>
-            <span class="fw-bold fs-5">60%</span>
-            <div class="progress w-100" style="height: 6px;">
-            <div class="progress-bar bg-light" style="width: 60%;"></div>
-            </div>
-        </div>
-        <div class="d-flex flex-column align-items-center">
-            <span class="d-block text-white-75 small">PROGRESO PROYECTO</span>
-            <span class="fw-bold fs-5">85%</span>
-            <div class="progress w-100" style="height: 6px;">
-            <div class="progress-bar bg-light" style="width: 85%;"></div>
-            </div>
-        </div>
+   
        </div>
 
          <!-- Bloque 3 -->
@@ -262,8 +242,7 @@
                     {% endif %}
 
 
-                    <li class="nav-item mb-2">
-                        <a class="nav-link text-dark" href="#">
+                    <li><a class="nav-link text-dark {% if request.resolver_match.url_name == 'reportes' %}active{% endif %}" href="{% url 'reportes' %}" >
                             <i class="bi bi-bar-chart me-2"></i> Reportes
                         </a>
                     </li>
@@ -386,7 +365,6 @@
     {% endif %}
 
     <!-- Reportes -->
-    
     <a class="sidebar-link {% if request.resolver_match.url_name == 'reportes' %}active{% endif %}"
        href="#" data-bs-toggle="tooltip" data-bs-placement="right" title="Reportes">
         <i class="bi bi-bar-chart"></i>
