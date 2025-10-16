@@ -5,12 +5,13 @@ from programas.models import Ciclo
 from departamentos.models import Departamento
 from django.db.models import Sum
 from decimal import Decimal
+from django.utils.text import slugify
 from simple_history.models import HistoricalRecords
 
 
 class Meta(models.Model):
     nombre = models.CharField(max_length=250, blank=True, null=True)
-    clave = models.CharField(max_length=50, unique=True, blank=False, null=False)
+    clave = models.CharField(max_length=50, unique=True, blank=True, null=True)
     enunciado = models.TextField(blank=False, null=False)
     proyecto = models.ForeignKey(Proyecto, on_delete=models.RESTRICT)
     departamento = models.ForeignKey(
@@ -64,6 +65,12 @@ class Meta(models.Model):
                 self.lineabase = self.lineabase / divisor
             if self.metacumplir is not None:
                 self.metacumplir = self.metacumplir / divisor
+
+        # --- GENERAR CLAVE AUTOMÁTICA ---
+        if not self.clave or self.clave.strip().upper() == "AUTO":
+            idP = self.proyecto.id
+            count = Meta.objects.filter(proyecto=self.proyecto).count() + 1
+            self.clave = f"{"P"+str(idP)}-{"META" + str(count)}"
 
         self.full_clean()
         super().save(*args, **kwargs)
