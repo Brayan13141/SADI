@@ -33,11 +33,12 @@ def gestion_metas(request):
     usuario = request.user
     # Si el usuario es DOCENTE → solo sus metas
     if usuario.role == "DOCENTE":
-        metas = Meta.objects.select_related("proyecto", "departamento", "ciclo").filter(
-            departamento=usuario.departamento
+        metas = (
+            Meta.objects.select_related("proyecto", "departamento", "ciclo")
+            .filter(departamento=usuario.departamento)
+            .filter(activa=True)
         )
     else:
-        # Si es ADMIN, JEFE, etc. → ve todas
         metas = Meta.objects.select_related("proyecto", "departamento", "ciclo").all()
 
     ciclos = Ciclo.objects.all()
@@ -85,7 +86,11 @@ def gestion_metas(request):
             form = FormClass(post_data)
             if form.is_valid():
                 try:
-                    form.save()
+                    meta = form.save(commit=False)
+                    # Si el usuario dejó la clave vacía o con “AUTO”, el modelo la generará
+                    if not meta.clave:
+                        meta.clave = "AUTO"
+                    meta.save()
                     messages.success(request, "Meta creada correctamente.")
                     return redirect("gestion_metas")
                 except Exception as e:
@@ -188,6 +193,9 @@ def avance_meta_general_list(request):
     avances = AvanceMeta.objects.select_related("metaCumplir", "departamento").order_by(
         "-fecha_registro"
     )
+    for a in avances:
+        print(a.metaCumplir_id)
+
     departamentos = Departamento.objects.all()
     metas = Meta.objects.select_related("departamento").all().order_by("id")
     avance_form = AvanceMetaGeneralForm()
@@ -492,8 +500,9 @@ def gestion_meta_comprometida(request, meta_id):
 
 
 # ================VISTA PARA TABLA DE SEGUIMIENTO=========================
-@role_required("ADMIN", "APOYO")
+@role_required("ADMIN", "APOYO", "DOCENTE")
 def TablaSeguimiento(request):
+    user = request.user
     # Obtener el ciclo activo o el más reciente
     ciclo = (
         Ciclo.objects.filter(activo=True).first()
@@ -506,6 +515,18 @@ def TablaSeguimiento(request):
         if request.GET.get("view") == "simple"
         else Meta.objects.filter(activa=True).order_by("id")
     )
+    # --- Filtrar metas según rol del usuario ---
+    if user.role == "ADMIN":
+        metas = metas  # Ve todo
+    elif user.role == "APOYO":
+        # APOYO solo ve las metas de su departamento
+        metas = metas
+    elif user.role == "DOCENTE":
+        # DOCENTE ve solo las metas asignadas directamente a él o a su departamento
+        metas = metas.filter(departamento=user.departamento)
+    else:
+        # Cualquier otro rol no debería ver nada
+        metas = Meta.objects.none()
 
     # Obtener lista de meses del ciclo
     meses = []
@@ -552,9 +573,8 @@ def TablaSeguimiento(request):
 
         # Calcular porcentaje de avance correctamente
         if meta.metacumplir and meta.metacumplir > 0:
-            porcentaje = min(
-                Decimal("100"), (total / meta.metacumplir) * Decimal("100")
-            )
+            porcentaje = (total / meta.metacumplir) * Decimal("100")
+
         else:
             porcentaje = Decimal("0")
 
