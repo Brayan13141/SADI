@@ -1,92 +1,180 @@
 {% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Reporte de Metas{% endblock %}
+
+{% block extra_css %}
+<style>
+    .resumen-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        padding: 20px;
+        text-align: center;
+        transition: transform 0.2s;
+    }
+    .resumen-card:hover {
+        transform: scale(1.03);
+    }
+    .resumen-card h3 {
+        font-size: 1.8rem;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+    .resumen-card span {
+        font-size: 1.2rem;
+        color: #555;
+    }
+    .table thead {
+        background-color: #0d6efd;
+        color: white;
+    }
+    .estado-cumplida {
+        color: #198754;
+        font-weight: bold;
+    }
+    .estado-progreso {
+        color: #ffc107;
+        font-weight: bold;
+    }
+    .estado-rezagada {
+        color: #dc3545;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-  <h3>📈 Reporte de Metas por Departamento</h3>
+    <!-- BOTÓN VOLVER -->
+    <div class="mb-3">
+    <a href="{% url 'reportes' %}" class="btn btn-sm btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i> Volver a Reportes
+    </a>
+    </div>
+    <div class="container py-4">
+        <h2 class="mb-4 text-center">📊 Reporte de Metas por Departamento</h2>
 
-  <form method="get" class="mb-3">
-    <label>Filtrar por departamento:</label>
-    <select name="departamento" onchange="this.form.submit()" class="form-select">
-      <option value="">-- Todos --</option>
-      {% for d in departamentos %}
-      <option value="{{ d.id }}" {% if request.GET.departamento == d.id|stringformat:"s" %}selected{% endif %}>{{ d.nombre }}</option>
-      {% endfor %}
-    </select>
-    <button name="exportar" value="1" class="btn btn-success mt-2">Exportar a Excel</button>
-  </form>
+    <!-- Filtro por Departamento -->
+    <form method="get" class="mb-4 text-center">
+        <div class="d-flex justify-content-center align-items-center gap-2">
+            <select name="departamento" class="form-select w-auto">
+                <option value="">Todos los Departamentos</option>
+                {% for depto in departamentos %}
+                    <option value="{{ depto.id }}" {% if request.GET.departamento == depto.id|stringformat:"s" %}selected{% endif %}>
+                        {{ depto.nombre }}
+                    </option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary">
+                <i class="fa-solid fa-filter"></i> Filtrar
+            </button>
+            <a href="?exportar=1{% if request.GET.departamento %}&departamento={{ request.GET.departamento }}{% endif %}" class="btn btn-success">
+                <i class="fa-solid fa-file-excel"></i> Exportar a Excel
+            </a>
+        </div>
+    </form>
 
-  <table id="tablareportes" class="table table-striped table-bordered">
-    <thead>
-      <tr class="text-center text-nowrap">
-        <th>Departamento</th>
-        <th>Meta</th>
-        <th>Proyecto</th>
-        <th>Objetivo</th>
-        <th>Ciclo</th>
-        <th>Indicador</th>
-        <th>Línea Base</th>
-        <th>Meta a Cumplir</th>
-        <th>Acumulado</th>
-        <th>Cumplimiento</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for m in metas %}
-      <tr class="text-center align-middle">
-        <td>{{ m.departamento }}</td>
-        <td>{{ m.nombre }}</td>
-        <td>{{ m.proyecto }}</td>
-        <td>{{ m.objetivo }}</td>
-        <td>{{ m.ciclo }}</td>
-        <td>{{ m.indicador }}</td>
-        <td>{{ m.lineabase }}</td>
-        <td>{{ m.metacumplir }}</td>
-        <td>{{ m.total_acumulado }}</td>
-         <td class="text-center ">
-            <div class="d-flex align-items-center gap-1 ">
-                <div class="progress flex-grow-1">
-                    <div class="progress-bar 
-                        {% if m.cumplimiento >= 80 %}bg-success
-                        {% elif m.cumplimiento >= 50 %}bg-info
-                        {% elif m.cumplimiento >= 25 %}bg-warning
-                        {% else %}bg-danger{% endif %}" 
-                        style="width: {{ m.cumplimiento }}%">
-                    </div>
-                </div>
-                <small class="fw-semibold">{{ m.cumplimiento }}%</small>
+    <!-- Tarjetas de resumen -->
+    <div class="row text-center mb-4">
+        <div class="col-md-4">
+            <div class="resumen-card border-success">
+                <h3 class="text-success">{{ metas_completadas }}</h3>
+                <span>Metas Cumplidas ✅</span>
             </div>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+        </div>
+        <div class="col-md-4">
+            <div class="resumen-card border-warning">
+                <h3 class="text-warning">{{ metas_en_progreso }}</h3>
+                <span>Metas en Progreso ⚙️</span>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="resumen-card border-danger">
+                <h3 class="text-danger">{{ metas_rezagadas }}</h3>
+                <span>Metas Rezagadas ⏳</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Metas -->
+    <div class="table-responsive" >
+        <table id="reporteMetas" class="table table-hover align-middle" >
+            <thead>
+                <tr class="text-nowrap text-center">
+                    <th>Departamento</th>
+                    <th>Clave</th>
+                    <th>Nombre</th>
+                    <th>Proyecto</th>
+                    <th>Objetivo</th>
+                    <th>Ciclo</th>
+                    <th>Indicador</th>
+                    <th>Línea Base</th>
+                    <th>Meta a Cumplir</th>
+                    <th>Total Acumulado</th>
+                    <th>Cumplimiento</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for meta in metas %}
+                    <tr class="text-wrap">
+                        <td>{{ meta.departamento }}</td>
+                        <td class="text-nowrap">{{ meta.meta }}</td>
+                        <td>{{ meta.nombre }}</td>
+                        <td>{{ meta.proyecto }}</td>
+                        <td>{{ meta.objetivo }}</td>
+                        <td>{{ meta.ciclo }}</td>
+                        <td>{{ meta.indicador }}</td>
+                        <td>{{ meta.lineabase }}</td>
+                        <td>{{ meta.metacumplir }}</td>
+                        <td>{{ meta.total_acumulado }}</td>
+                        <td>{{ meta.cumplimiento }}</td>
+                        <td class="text-nowrap">
+                            {% if meta.estado == "Cumplida" %}
+                                <span class="estado-cumplida">✔ {{ meta.estado }}</span>
+                            {% elif meta.estado == "En progreso" %}
+                                <span class="estado-progreso">⚙️ {{ meta.estado }}</span>
+                            {% else %}
+                                <span class="estado-rezagada">❌ {{ meta.estado }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="12" class="text-center text-muted">
+                            No se encontraron metas registradas.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}
-
 {% block extra_js %}
-
-<script>
-$(document).ready(function () {
-    var table = $('#tablareportes').DataTable({
-        scrollX: true,
-        scrollY: '500px',
-        scrollCollapse: true,
-        fixedColumns: {
-            left: 1,
-        },
-        lengthMenu: [5, 10, 15, 20, 50],
-        autoWidth: false,
-        paging: true,
-        searching: true,
-        info: true,
-        pageLength: 5,
-        language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json',
-        },
-        // Configuración adicional para mejorar el rendimiento con muchas columnas
-        deferRender: true,
-        scroller: true,
-        stateSave: true,
+    <script>
+    $(document).ready(function() {
+    $('#reporteMetas').DataTable({
+            scrollX: true,
+            scrollY: '500px',
+            scrollCollapse: true,
+            fixedColumns: {
+                left: 1,
+            },
+            lengthMenu: [5, 10, 15, 20, 50],
+            autoWidth: false,
+            paging: true,
+            searching: true,
+            info: true,
+            pageLength: 5,
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json',
+            },
+            deferRender: true,
+            scroller: true,
+            stateSave: true,
+        });
     });
-});
-</script>
-{% endblock %}
+    
+    </script>
+    {% endblock %}

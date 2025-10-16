@@ -5,15 +5,20 @@
     <div class="row mb-5">
         <div class="col-12">
             <div class="d-flex align-items-center mb-3">
-                <i class="bi bi-graph-up fs-1 text-primary me-3"></i>
+                <i class="bi bi-bar-chart fs-1 text-primary me-3"></i>
                 <div>
                     <h1 class="h2 mb-1 fw-bold">Centro de Reportes</h1>
+                    {% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
                     <p class="text-muted mb-0">Selecciona el reporte que deseas generar para visualizar los datos del sistema</p>
+                    {% else %}
+                    <p class="text-muted mb-0">Reportes disponibles</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 
+    {% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
     <!-- Reports Grid -->
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
         <!-- Metas por Departamento Card -->
@@ -21,7 +26,7 @@
             <div class="card h-100 border-0 shadow-sm hover-shadow">
                 <div class="card-body text-center p-4">
                     <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
-                        <i class="bi bi-building fs-3 text-primary"></i>
+                        <i class="bi bi-graph-up fs-3 text-white"></i>
                     </div>
                     <h5 class="card-title fw-semibold">Metas por Departamento</h5>
                     <p class="card-text text-muted small">Reporte detallado de metas organizadas por departamento</p>
@@ -37,14 +42,13 @@
             <div class="card h-100 border-0 shadow-sm hover-shadow">
                 <div class="card-body text-center p-4">
                     <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
-                        <i class="bi bi-clipboard-data fs-3 text-success"></i>
+                        <i class="bi bi-clipboard-data fs-3 text-white"></i>
                     </div>
                     <h5 class="card-title fw-semibold">Avances por Meta</h5>
-                    <p class="card-text text-muted small">Seguimiento de progreso y cumplimiento de metas</p>
-                    <span class="badge bg-warning text-dark">En desarrollo</span>
+                    <p class="card-text text-muted small">Seguimiento de progreso de metas</p>
                 </div>
                 <div class="card-footer border-0 bg-transparent pt-0">
-                    <a href="#" class="btn btn-outline-secondary w-100 disabled">Próximamente</a>
+                    <a href="{% url 'reporte_avances_metas' %}" class="btn btn-primary w-100">Generar Reporte</a>
                 </div>
             </div>
         </div>
@@ -54,13 +58,13 @@
             <div class="card h-100 border-0 shadow-sm hover-shadow">
                 <div class="card-body text-center p-4">
                     <div class="bg-info bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
-                        <i class="bi bi-diagram-3 fs-3 text-info"></i>
+                        <i class="bi bi-diagram-3 fs-3 text-white"></i>
                     </div>
-                    <h5 class="card-title fw-semibold">Proyectos Estratégicos</h5>
-                    <p class="card-text text-muted small">Estado y avance de proyectos estratégicos institucionales</p>
+                    <h5 class="card-title fw-semibold">Proyectos</h5>
+                    <p class="card-text text-muted small">Estado y avance de proyectos institucionales</p>
                 </div>
                 <div class="card-footer border-0 bg-transparent pt-0">
-                    <a href="#" class="btn btn-outline-secondary w-100 disabled">Próximamente</a>
+                    <a href="{% url 'reporte_programas' %}" class="btn btn-primary w-100">Generar Reporte</a>
                 </div>
             </div>
         </div>
@@ -76,11 +80,33 @@
                     <p class="card-text text-muted small">Identificación y control de riesgos institucionales</p>
                 </div>
                 <div class="card-footer border-0 bg-transparent pt-0">
-                    <a href="#" class="btn btn-outline-secondary w-100 disabled">Próximamente</a>
+                    <a href="{% url 'reporte_riesgos' %}" class="btn btn-primary w-100">Generar Reporte</a>
                 </div>
             </div>
         </div>
     </div>
+
+    {% elif request.user.role == "DOCENTE" %}
+     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+       
+    <div class="col">
+            <div class="card h-100 border-0 shadow-sm hover-shadow">
+                <div class="card-body text-center p-4">
+                    <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                        <i class="bi bi-graph-up fs-3 text-white"></i>
+                    </div>
+                    <h5 class="card-title fw-semibold">Metas por Departamento</h5>
+                    <p class="card-text text-muted small">Reporte detallado de metas organizadas por departamento</p>
+                </div>
+                <div class="card-footer border-0 bg-transparent pt-0">
+                    <a href="{% url 'reporte_docente' %}" class="btn btn-primary w-100">Generar Reporte</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+
 
     <!-- Quick Stats Section -->
     <div class="row mt-5">
@@ -93,8 +119,8 @@
                             <div class="d-flex align-items-center justify-content-center">
                                 <i class="bi bi-check-circle-fill text-success me-2"></i>
                                 <div>
-                                    <div class="fw-bold fs-5">1</div>
-                                    <small class="text-muted">Reporte Disponible</small>
+                                    <div class="fw-bold fs-5">{{ objetivos }}</div>
+                                    <small class="text-muted"> Objetivos </small>
                                 </div>
                             </div>
                         </div>
@@ -102,8 +128,8 @@
                             <div class="d-flex align-items-center justify-content-center">
                                 <i class="bi bi-clock-fill text-warning me-2"></i>
                                 <div>
-                                    <div class="fw-bold fs-5">3</div>
-                                    <small class="text-muted">En Desarrollo</small>
+                                    <div class="fw-bold fs-5">{{ proyectos }}</div>
+                                    <small class="text-muted"> Proyectos </small>
                                 </div>
                             </div>
                         </div>
@@ -111,7 +137,7 @@
                             <div class="d-flex align-items-center justify-content-center">
                                 <i class="bi bi-building-fill text-primary me-2"></i>
                                 <div>
-                                    <div class="fw-bold fs-5">4+</div>
+                                    <div class="fw-bold fs-5">{{ departamentos }}</div>
                                     <small class="text-muted">Departamentos</small>
                                 </div>
                             </div>
@@ -120,7 +146,7 @@
                             <div class="d-flex align-items-center justify-content-center">
                                 <i class="bi bi-graph-up-arrow text-info me-2"></i>
                                 <div>
-                                    <div class="fw-bold fs-5">50+</div>
+                                    <div class="fw-bold fs-5">{{ metas }}</div>
                                     <small class="text-muted">Metas Activas</small>
                                 </div>
                             </div>
@@ -130,6 +156,7 @@
             </div>
         </div>
     </div>
+
 </div>
 
 <style>

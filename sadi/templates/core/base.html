@@ -366,7 +366,7 @@
 
     <!-- Reportes -->
     <a class="sidebar-link {% if request.resolver_match.url_name == 'reportes' %}active{% endif %}"
-       href="#" data-bs-toggle="tooltip" data-bs-placement="right" title="Reportes">
+       href="{% url 'reportes' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Reportes">
         <i class="bi bi-bar-chart"></i>
     </a>
     

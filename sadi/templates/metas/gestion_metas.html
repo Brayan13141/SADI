@@ -235,10 +235,11 @@
           <!-- Campos principales -->
           <div class="row">
             <div class="col-md-6">
-              <div class="mb-2">
-                <label class="form-label">Clave</label>
-                <input type="text" class="form-control" name="clave" required>
-              </div>
+            <div class="mb-2">
+              <label class="form-label">Clave</label>
+              <input type="text" class="form-control" id="inputclave" placeholder="Dejar blanco para generar automáticamente">
+              <input type="hidden" name="clave_oculta" id="inputclaveoculta" name="clave" value="AUTO">
+            </div>
             </div>
             <div class="col-md-6">
               <div class="mb-2">
