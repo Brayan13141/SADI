@@ -11,6 +11,7 @@ from .views import (
     avance_meta_general_list,
     meta_comprometida_general_list,
     asignacion_metas,
+    activar_metas,
 )
 
 router = DefaultRouter()
@@ -37,4 +38,5 @@ urlpatterns = [
         gestion_meta_comprometida,
         name="gestion_meta_comprometida",
     ),
+    path("admin/activar/", activar_metas, name="activar_metas"),
 ]
