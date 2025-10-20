@@ -59,6 +59,7 @@
         <h6 class="mb-0">Gestión de Metas</h6>
         <div class="d-flex align-items-center">
           <div class="me-2">
+
             {% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
             <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#modalCrear">
                 + Agregar Meta
@@ -67,7 +68,7 @@
             <form method="post" class="d-inline">
                 {% csrf_token %}
                 {% if editables == False %}
-                     <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#confirmarActivar">
+                     <button type="button" class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#confirmarActivar">
                         Activar edición
                     </button>
                 {% else %}
@@ -76,7 +77,13 @@
                     </button>
                 {% endif %}
             </form>
+          <a href="{% url 'activar_metas' %}" class="btn btn-sm btn-light text-black">
+            Activar Metas
+          </a>
+
             {% endif %}
+
+
         </div>
         </div>
       </div>
