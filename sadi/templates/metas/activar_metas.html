@@ -1,0 +1,325 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Activacion{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+<style>
+    .badge-active { background-color: #28a745; color: #fff; }
+    .badge-inactive { background-color: #dc3545; color: #fff; }
+    .btn-added { background-color: #6c757d; border-color: #6c757d; }
+    .cart-item { transition: all 0.3s ease; }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Activación/Desactivación de Metas</h1>
+
+    <div class="row g-4">
+        <!-- Tabla de Metas -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h3 class="text-primary border-bottom pb-2 mb-3">
+                        <i class="fas fa-bullseye"></i> Metas disponibles
+                    </h3>
+                    <div class="table-responsive">
+                        <table id="tabla-metas" class="table table-hover align-middle">
+                            <thead class="table-primary">
+                                <tr class="text-center">
+                                    <th>Clave</th>
+                                    <th>Nombre</th>
+                                    <th>Estado</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for meta in metas %}
+                                <tr>
+                                    <td><strong>{{ meta.clave }}</strong></td>
+                                    <td>{{ meta.nombre }}</td>
+                                    <td class="text-center">
+                                        <span class="badge {% if meta.activa %}badge-active{% else %}badge-inactive{% endif %}">
+                                            {% if meta.activa %}Activa{% else %}Inactiva{% endif %}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if meta.id in request.session.carrito_activacion|default:list %}
+
+                                        <button class="btn btn-sm btn-added" disabled>
+                                            <i class="fas fa-check"></i> En carrito
+                                        </button>
+                                        
+                                        {% else %}
+                                        <button class="btn btn-sm btn-outline-primary btn-add" 
+                                                data-id="{{ meta.id }}" 
+                                                data-clave="{{ meta.clave }}" 
+                                                data-nombre="{{ meta.nombre }}">
+                                            <i class="fas fa-plus"></i> Agregar
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Carrito de Activación -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                        <h5 class="mb-0"> Metas seleccionadas</h5>
+                        <span class="badge bg-primary" id="cart-count">{{ request.session.carrito_activacion|length }}</span>
+                    </div>
+
+                    <!-- Lista del Carrito -->
+                    <ul class="list-group flex-grow-1 overflow-auto mb-3" id="carrito-lista" style="max-height: 300px;">
+                        {% if metas_carrito %}
+                            {% for meta in metas_carrito %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center cart-item">
+                                <div>
+                                    <strong>{{ meta.clave }}</strong><br>
+                                    <small class="text-muted">{{ meta.nombre }}</small>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-danger btn-remover" data-id="{{ meta.id }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </li>
+                            {% endfor %}
+                        {% else %}
+                            <li class="list-group-item text-center text-muted">
+                                <p class="mb-0">Vacío</p>
+                                <small>Selecciona metas de la tabla para agregarlas</small>
+                            </li>
+                        {% endif %}
+                    </ul>
+
+                   <form id="formMetas" method="post">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="estado" class="form-label">Estado</label>
+                            <select class="form-select" id="estado" name="accion" required>
+                                <option value="" selected disabled>Selecciona un estado</option>
+                                <option value="activar">Activar</option>
+                                <option value="desactivar">Desactivar</option>
+                            </select>
+                        <button type="submit" class="btn btn-primary">Enviar</button>
+                    </form>
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-warning" role="alert">
+    No tienes permisos para acceder a esta página.
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+<script>
+$(document).ready(function() {
+    // Inicializar DataTable
+    $('#tabla-metas').DataTable({ 
+        pageLength: 10,
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+        }
+    });
+
+    // Array para almacenar las metas seleccionadas
+    let metasSeleccionadas = [];
+    
+    // Elementos del DOM
+    const $carritoLista = $('#carrito-lista');
+    const $cartCount = $('#cart-count');
+    const $activarBtn = $('#btn-activar');
+    const $desactivarBtn = $('#btn-desactivar');
+
+    const $form = $('#formMetas');
+
+
+    // Función para mostrar notificación
+    function showToast(msg, type = "success") {
+        const backgroundColor = type === "error" ? "#dc3545" : 
+                              type === "warning" ? "#ffc107" : "#198754";
+        
+        Toastify({
+            text: msg,
+            duration: 3000,
+            gravity: "top",
+            position: "right",
+            backgroundColor: backgroundColor,
+            stopOnFocus: true
+        }).showToast();
+    }
+
+    // Función para actualizar la vista del carrito
+    function actualizarCarrito() {
+        const cantidad = metasSeleccionadas.length;
+        $cartCount.text(cantidad);
+        
+        if (cantidad === 0) {
+            $carritoLista.html(`
+                <li class="list-group-item text-center text-muted">
+                    <p class="mb-0">Vacío</p>
+                    <small>Selecciona metas de la tabla para agregarlas</small>
+                </li>
+            `);
+            $activarBtn.prop('disabled', true);
+            $desactivarBtn.prop('disabled', true);
+        } else {
+            let html = '';
+            metasSeleccionadas.forEach(meta => {
+                html += `
+                <li class="list-group-item d-flex justify-content-between align-items-center cart-item">
+                    <div>
+                        <strong>${meta.clave}</strong><br>
+                        <small class="text-muted">${meta.nombre}</small>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-danger btn-remover" data-id="${meta.id}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </li>
+                `;
+            });
+            
+            $activarBtn.prop('disabled', false);
+            $desactivarBtn.prop('disabled', false);
+            $carritoLista.html(html);
+            
+            // Habilitar botón si hay ciclo y departamento seleccionados
+            const cicloVal = $('#ciclo').val();
+            const deptoVal = $('#departamento').val();
+            $aplicarBtn.prop('disabled', !(cicloVal && deptoVal));
+        }
+    }
+
+    // Agregar meta al carrito
+    $(document).on('click', '.btn-add', function() {
+        const $btn = $(this);
+        const metaId = $btn.data('id');
+        const metaClave = $btn.data('clave');
+        const metaNombre = $btn.data('nombre');
+        
+        // Verificar si ya está en el carrito
+        if (metasSeleccionadas.some(meta => meta.id === metaId)) {
+            showToast('Esta meta ya está en el carrito', 'warning');
+            return;
+        }
+        
+        // Agregar al array
+        metasSeleccionadas.push({
+            id: metaId,
+            clave: metaClave,
+            nombre: metaNombre
+        });
+        
+        // Actualizar interfaz
+        actualizarCarrito();
+        showToast(`Meta "${metaClave}" agregada al carrito`);
+        
+        // Cambiar estado del botón
+        $btn.prop('disabled', true)
+            .removeClass('btn-outline-primary')
+            .addClass('btn-added')
+            .html('<i class="fas fa-check"></i> Agregada');
+    });
+
+    // Remover meta del carrito
+    $(document).on('click', '.btn-remover', function() {
+        const metaId = $(this).data('id');
+        
+        // Remover del array
+        metasSeleccionadas = metasSeleccionadas.filter(meta => meta.id !== metaId);
+        
+        // Actualizar interfaz
+        actualizarCarrito();
+        
+        // Reactivar botón en la tabla
+        $(`.btn-add[data-id="${metaId}"]`)
+            .prop('disabled', false)
+            .removeClass('btn-added')
+            .addClass('btn-outline-primary')
+            .html('<i class="fas fa-plus"></i> Agregar');
+        
+        showToast('Meta removida del carrito');
+    });
+
+    // Enviar formulario
+    // Enviar formulario
+    $form.on('submit', function(e) {
+        e.preventDefault();
+        
+        if (metasSeleccionadas.length === 0) {
+            showToast('No hay metas seleccionadas', 'error');
+            return;
+        }
+
+        // Obtener valor del select "estado"
+        const estadoSeleccionado = $('#estado').val();
+        if (!estadoSeleccionado) {
+            showToast('Selecciona si deseas activar o desactivar las metas', 'warning');
+            return;
+        }
+
+        // Preparar datos para enviar
+        const metaIds = metasSeleccionadas.map(meta => meta.id);
+        const formData = new FormData(this);
+        formData.append('meta_ids', JSON.stringify(metaIds));
+        formData.append('accion', estadoSeleccionado);
+        // Enviar petición
+        fetch('', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message || `¡${metasSeleccionadas.length} metas ${estadoSeleccionado === 'activar' ? 'activadas' : 'desactivadas'} correctamente!`);
+                
+                metasSeleccionadas = [];
+                actualizarCarrito();
+                $form[0].reset();
+                
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                showToast(data.message || 'Error al procesar la solicitud', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error de conexión', 'error');
+        });
+    });
+
+
+    // Inicializar carrito
+    actualizarCarrito();
+});
+</script>
+{% endblock %}
