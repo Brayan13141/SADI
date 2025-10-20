@@ -140,6 +140,10 @@ AUTHENTICATION_BACKENDS = (
     "django.contrib.auth.backends.ModelBackend",
     "allauth.account.auth_backends.AuthenticationBackend",
 )
+
+# Configuración del backend de correo electrónico para desarrollo
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
 # CONFIGURACIONES PARA DJANGO ALLAUTH
 SITE_ID = 1
 ACCOUNT_LOGIN_METHODS = {"username", "email"}  # Permite usuario o email
@@ -150,6 +154,7 @@ ACCOUNT_SIGNUP_FIELDS = [
     "password1*",
     "password2*",
 ]  # Campos obligatorios
+
 LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "dashboard"
 ACCOUNT_LOGOUT_REDIRECT_URL = "/accounts/login/"
@@ -181,7 +186,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 # CONFIGURACION PARA EL LENGUAJE Y LA ZONA HORARIA
-TIME_ZONE = "America/Mexico_City"  # o la que corresponda
+TIME_ZONE = "America/Mexico_City"
 USE_I18N = True
 USE_TZ = True
 
