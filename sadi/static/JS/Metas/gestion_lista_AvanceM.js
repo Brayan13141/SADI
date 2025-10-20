@@ -136,11 +136,15 @@ document.addEventListener('DOMContentLoaded', function () {
             const avance = this.getAttribute('data-avance');
             const fecha = this.getAttribute('data-fecha');
             const meta = this.getAttribute('data-meta');
+            const metaNombre = this.getAttribute('data-meta-nombre');
             const departamento = this.getAttribute('data-departamento');
 
             document.getElementById('avance_id_editar').value = id;
             document.getElementById('id_fecha_registro_editar').value = fecha;
-            document.getElementById('id_metaCumplir_editar').value = meta;
+            //document.getElementById('id_avance_editar').value = avance;
+            document.getElementById('id_metaCumplir_editar').value = metaNombre;
+            document.getElementById('id_metaCumplir_editar_hidden').value =
+                meta;
 
             // Establecer el valor del departamento en el select deshabilitado y en el campo oculto
             document.getElementById('id_departamento_editar').value =

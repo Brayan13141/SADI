@@ -58,7 +58,8 @@
                                         data-id="{{ avance.id }}"
                                         data-avance="{{ avance.avance }}"
                                         data-fecha="{{ avance.fecha_registro|date:'Y-m-d' }}"
-                                        data-meta="{{ avance.metaCumplir.nombre }}"
+                                        data-meta-nombre="{{ avance.metaCumplir.nombre }}"
+                                        data-meta="{{ avance.metaCumplir_id }}"
                                         data-departamento="{{ avance.departamento.id|default:'' }}">
                                     Editar
                                 </button>
@@ -194,8 +195,9 @@
                 <div class="modal-body">
                     <div id="erroresEditarAvance" class="alert alert-danger d-none"></div>
                     <div class="mb-3">
-                        <label class="form-label">Meta a Cumplir <span class="text-danger">*</span></label>
-                        <input class="form-select" name="metaCumplir" id="id_metaCumplir_editar" readonly disabled>
+                        <label for="id_metaCumplir_editar" class="form-label">Meta a Cumplir <span class="text-danger">*</span></label>
+                        <input type="hidden" class="form-control" id="id_metaCumplir_editar_hidden" name="metaCumplir" value="" readonly>
+                        <input class="form-select" id="id_metaCumplir_editar" readonly disabled>
                         </input>
                         <div class="invalid-feedback" id="error-metaCumplir-editar"></div>
                     </div>

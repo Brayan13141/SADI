@@ -101,8 +101,8 @@
                                 <div class="d-flex align-items-center gap-1 ">
                                     <div class="progress flex-grow-1">
                                         <div class="progress-bar 
-                                            {% if fila.porcentaje >= 80 %}bg-success
-                                            {% elif fila.porcentaje >= 50 %}bg-info
+                                            {% if fila.porcentaje >= 110 %}bg-info
+                                            {% elif fila.porcentaje >= 85 %}bg-success
                                             {% elif fila.porcentaje >= 25 %}bg-warning
                                             {% else %}bg-danger{% endif %}" 
                                             style="width: {{ fila.porcentaje }}%">

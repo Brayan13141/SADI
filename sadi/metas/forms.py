@@ -28,7 +28,7 @@ class MetaFormAdmin(forms.ModelForm):
             "ciclo",
         ]
         widgets = {
-            "clave": forms.TextInput(attrs={"class": "form-control", "required": True}),
+            "clave": forms.TextInput(attrs={"class": "form-control"}),
             "nombre": forms.TextInput(
                 attrs={"class": "form-control", "required": True}
             ),
@@ -61,7 +61,6 @@ class MetaFormAdmin(forms.ModelForm):
         self.fields["departamento"].queryset = Departamento.objects.all()
 
 
-# forms.py
 class MetaFormDocente(forms.ModelForm):
     class Meta:
         model = Meta
@@ -83,7 +82,7 @@ class MetaFormDocente(forms.ModelForm):
             "ciclo",
         ]
         widgets = {
-            "clave": forms.TextInput(attrs={"class": "form-control", "readonly": True}),
+            "clave": forms.TextInput(attrs={"class": "form-control"}),
             "nombre": forms.TextInput(
                 attrs={"class": "form-control", "required": True}
             ),
@@ -118,7 +117,6 @@ class MetaFormDocente(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Para campos con disabled, debemos asegurar que se use el valor inicial
         for field_name in [
             "clave",
             "nombre",

@@ -45,6 +45,7 @@ class Evidencia(models.Model):
     )
     archivo = models.FileField(upload_to="actividades/evidencias/")
     fecha_subida = models.DateTimeField(auto_now_add=True)
+    history = HistoricalRecords()
 
     def save(self, *args, **kwargs):
         # Bloquear edición si ya existe
@@ -67,6 +68,7 @@ class SolicitudReapertura(models.Model):
     fecha_solicitud = models.DateTimeField(auto_now_add=True)
     aprobada = models.BooleanField(default=False)
     terminada = models.BooleanField(default=False)
+    history = HistoricalRecords()
 
     def clean(self):
         if not self.aprobada:

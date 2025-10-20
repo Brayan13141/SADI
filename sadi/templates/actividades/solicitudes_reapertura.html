@@ -2,78 +2,325 @@
 {% load static %}
 
 {% block content %}
-<div class="container py-4">
-    <h1 class="h4 mb-4 text-primary">
-        <i class="fas fa-envelope-open-text me-2"></i>Solicitudes de Reapertura
-    </h1>
-
-    {% if solicitudes %}
-    <div class="card shadow-sm">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Actividad</th>
-                            <th>Docente</th>
-                            <th>Departamento</th>
-                            <th>Fecha Solicitud</th>
-                            <th>Estado</th>
-                            <th class="text-center">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for solicitud in solicitudes %}
-                        <tr>
-                            <td>{{ solicitud.actividad.descripcion }}</td>
-                            <td>{{ solicitud.usuario.username }}</td>
-                            <td>{{ solicitud.departamento.nombre|default:"-" }}</td>
-                            <td>{{ solicitud.fecha_solicitud|date:"d/m/Y H:i" }}</td>
-                            <td>
-                                {% if solicitud.aprobada %}
-                                    <span class="badge bg-success">Aprobada</span>
-                                {% else %}
-                                    <span class="badge bg-warning text-dark">Pendiente</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-center">
-                                {% if not solicitud.aprobada %}
-                                <form method="post" class="d-inline">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="solicitud_id" value="{{ solicitud.id }}">
-                                    <button type="submit" name="accion" value="aprobar" class="btn btn-sm btn-success">
-                                        <i class="fas fa-check"></i> Aprobar
-                                    </button>
-                                </form>
-                                <form method="post" class="d-inline">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="solicitud_id" value="{{ solicitud.id }}">
-                                    <button type="submit" name="accion" value="rechazar" class="btn btn-sm btn-danger">
-                                        <i class="fas fa-times"></i> Rechazar
-                                    </button>
-                                </form>
-                                {% else %}
-                                <span class="text-muted">—</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="6" class="text-center py-4 text-muted">
-                                <i class="fas fa-inbox fa-2x d-block mb-2"></i>
-                                No hay solicitudes pendientes.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+<div class="container-fluid py-4">
+    <!-- Header con estadísticas -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 text-primary mb-1">
+                        <i class="fas fa-envelope-open-text me-2"></i>Solicitudes de Reapertura
+                    </h1>
+                    <p class="text-muted mb-0">Gestión y revisión de solicitudes de reapertura de actividades</p>
+                </div>
+                <div class="d-flex gap-3">
+                    <div class="text-center">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-1" style="width: 50px; height: 50px;">
+                            <strong>{{ solicitudes_pendientes_count }}</strong>
+                        </div>
+                        <small class="text-muted">Pendientes</small>
+                    </div>
+                    <div class="text-center">
+                        <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-1" style="width: 50px; height: 50px;">
+                            <strong>{{ solicitudes_aprobadas_count }}</strong>
+                        </div>
+                        <small class="text-muted">Aprobadas</small>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    {% else %}
-    <div class="alert alert-info">
-        <i class="fas fa-info-circle me-1"></i> No hay solicitudes registradas.
+
+    <!-- Pestañas para diferentes estados -->
+    <div class="row">
+        <div class="col-12">
+            <ul class="nav nav-tabs nav-justified mb-4" id="solicitudesTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="pendientes-tab" data-bs-toggle="tab" data-bs-target="#pendientes" type="button" role="tab">
+                        <i class="fas fa-clock me-2"></i>Pendientes
+                        {% if solicitudes_pendientes_count %}
+                        <span class="badge bg-warning ms-2">{{ solicitudes_pendientes_count }}</span>
+                        {% endif %}
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="historial-tab" data-bs-toggle="tab" data-bs-target="#historial" type="button" role="tab">
+                        <i class="fas fa-history me-2"></i>Historial
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="solicitudesTabContent">
+                <!-- Tab Pendientes -->
+                <div class="tab-pane fade show active" id="pendientes" role="tabpanel">
+                    {% if solicitudes %}
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white py-3">
+                            <h5 class="card-title mb-0 text-primary">
+                                <i class="fas fa-tasks me-2"></i>Solicitudes Pendientes de Revisión
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-4">Actividad</th>
+                                            <th>Solicitante</th>
+                                            <th>Departamento</th>
+                                            <th>Fecha Solicitud</th>
+                                            <th>Estado</th>
+                                            <th class="text-center pe-4">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for solicitud in solicitudes %}
+                                        <tr class="{% if forloop.counter|divisibleby:2 %}table-light{% endif %}">
+                                            <td class="ps-4">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="flex-grow-1">
+                                                        <h6 class="mb-0 text-dark">{{ solicitud.actividad.descripcion|truncatewords:8 }}</h6>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div>
+                                                    <strong class="text-dark">{{ solicitud.usuario.get_full_name|default:solicitud.usuario.username }}</strong>
+                                                    <br>
+                                                    <small class="text-muted">{{ solicitud.usuario.email|default:"Sin email" }}</small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-secondary bg-opacity-10 text-black border border-secondary border-opacity-25">
+                                                    {{ solicitud.departamento.nombre|default:"Sin departamento" }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">{{ solicitud.fecha_solicitud|date:"d/m/Y" }}</small>
+                                                <br>
+                                                <small class="text-muted">{{ solicitud.fecha_solicitud|date:"H:i" }}</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-warning bg-opacity-15 text-black border border-warning border-opacity-25">
+                                                    <i class="fas fa-clock me-1"></i> Pendiente
+                                                </span>
+                                            </td>
+                                            <td class="text-center pe-4">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <button type="button" class="btn btn-success" 
+                                                            data-bs-toggle="modal" 
+                                                            data-bs-target="#aprobarModal{{ solicitud.id }}">
+                                                        <i class="fas fa-check me-1"></i>Aprobar
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-danger" 
+                                                            data-bs-toggle="modal" 
+                                                            data-bs-target="#rechazarModal{{ solicitud.id }}">
+                                                        <i class="fas fa-times"></i> Denegar
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+
+                                        <!-- Modal Aprobar -->
+                                        <div class="modal fade" id="aprobarModal{{ solicitud.id }}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header bg-success text-white">
+                                                        <h5 class="modal-title">
+                                                            <i class="fas fa-check-circle me-2"></i>Confirmar Aprobación
+                                                        </h5>
+                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p>¿Está seguro de que desea <strong>aprobar</strong> la solicitud de reapertura?</p>
+                                                        <div class="alert alert-info">
+                                                            <strong>Actividad:</strong> {{ solicitud.actividad.descripcion }}<br>
+                                                            <strong>Solicitante:</strong> {{ solicitud.usuario.get_full_name|default:solicitud.usuario.username }}
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                        <form method="post" class="d-inline">
+                                                            {% csrf_token %}
+                                                            <input type="hidden" name="solicitud_id" value="{{ solicitud.id }}">
+                                                            <button type="submit" name="accion" value="aprobar" class="btn btn-success">
+                                                                <i class="fas fa-check me-1"></i> Sí, Aprobar
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Modal Rechazar -->
+                                        <div class="modal fade" id="rechazarModal{{ solicitud.id }}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header bg-danger text-white">
+                                                        <h5 class="modal-title">
+                                                            <i class="fas fa-times-circle me-2"></i>Confirmar Rechazo
+                                                        </h5>
+                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p>¿Está seguro de que desea <strong>rechazar</strong> la solicitud de reapertura?</p>
+                                                        <div class="alert alert-warning">
+                                                            <strong>Actividad:</strong> {{ solicitud.actividad.descripcion }}<br>
+                                                            <strong>Solicitante:</strong> {{ solicitud.usuario.get_full_name|default:solicitud.usuario.username }}
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                        <form method="post" class="d-inline">
+                                                            {% csrf_token %}
+                                                            <input type="hidden" name="solicitud_id" value="{{ solicitud.id }}">
+                                                            <button type="submit" name="accion" value="rechazar" class="btn btn-danger">
+                                                                <i class="fas fa-times me-1"></i> Sí, Rechazar
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <div class="mb-4">
+                            <i class="fas fa-check-circle fa-4x text-success opacity-50"></i>
+                        </div>
+                        <h4 class="text-muted mb-3">No hay solicitudes pendientes</h4>
+                        <p class="text-muted">Todas las solicitudes han sido revisadas y procesadas.</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Tab Historial -->
+                <div class="tab-pane fade" id="historial" role="tabpanel">
+                    {% if solicitudesTerminadas %}
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white py-3">
+                            <h5 class="card-title mb-0 text-primary">
+                                <i class="fas fa-archive me-2"></i>Historial de Solicitudes Procesadas
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-4">Actividad</th>
+                                            <th>Solicitante</th>
+                                            <th>Departamento</th>
+                                            <th>Fecha Solicitud</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for solicitud in solicitudesTerminadas %}
+                                        <tr class="{% if forloop.counter|divisibleby:2 %}table-light{% endif %}">
+                                            <td class="ps-4">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="flex-shrink-0 {% if solicitud.aprobada %}bg-success{% else %}bg-danger{% endif %} bg-opacity-10 rounded p-2 me-3">
+                                                        <i class="fas fa-tasks {% if solicitud.aprobada %}text-success{% else %}text-danger{% endif %}"></i>
+                                                    </div>
+                                                    <div class="flex-grow-1">
+                                                        <h6 class="mb-0 text-dark">{{ solicitud.actividad.descripcion|truncatewords:8 }}</h6>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div>
+                                                    <strong class="text-dark">{{ solicitud.usuario.get_full_name|default:solicitud.usuario.username }}</strong>
+                                                    <br>
+                                                    <small class="text-muted">{{ solicitud.usuario.email|default:"Sin email" }}</small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-secondary bg-opacity-10 text-black border border-secondary border-opacity-25">
+                                                    {{ solicitud.departamento.nombre|default:"Sin departamento" }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">{{ solicitud.fecha_solicitud|date:"d/m/Y" }}</small>
+                                                <br>
+                                                <small class="text-muted">{{ solicitud.fecha_solicitud|date:"H:i" }}</small>
+                                            </td>
+                                            <td>
+                                                {% if solicitud.aprobada %}
+                                                <span class="badge bg-success bg-opacity-15 text-black border border-success border-opacity-25">
+                                                    <i class="fas fa-check me-1"></i> Aprobada
+                                                </span>
+                                                {% else %}
+                                                <span class="badge bg-danger bg-opacity-15 text-black border border-danger border-opacity-25">
+                                                    <i class="fas fa-times me-1"></i> Rechazada
+                                                </span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <div class="mb-4">
+                            <i class="fas fa-inbox fa-4x text-muted opacity-50"></i>
+                        </div>
+                        <h4 class="text-muted mb-3">No hay historial de solicitudes</h4>
+                        <p class="text-muted">No se han procesado solicitudes aún.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
     </div>
-    {% endif %}
 </div>
+
+<style>
+.nav-tabs .nav-link {
+    color: #6c757d;
+    font-weight: 500;
+    border: none;
+    padding: 1rem 1.5rem;
+}
+
+.nav-tabs .nav-link.active {
+    color: #0d6efd;
+    border-bottom: 3px solid #0d6efd;
+    background: transparent;
+}
+
+.nav-tabs .nav-link:hover {
+    border: none;
+    border-bottom: 3px solid #dee2e6;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge {
+    font-weight: 500;
+    padding: 0.5em 0.75em;
+}
+
+.card {
+    border: 1px solid rgba(0,0,0,0.08);
+}
+
+.table > :not(caption) > * > * {
+    padding: 1rem 0.75rem;
+}
+</style>
 {% endblock %}

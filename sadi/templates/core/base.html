@@ -16,6 +16,9 @@
     <link rel="stylesheet" href="{% static 'CSS/style.css' %}">
     <link rel="stylesheet" href="{% static 'CSS/estiloBase.css' %}">
 
+    <link rel="icon" type="image/png" href="{% static 'img/LogoITSUR.png' %}">
+
+
     {% block extra_css %}
     {% endblock %}
     
@@ -135,18 +138,19 @@
                         </a>
                     </li>
                     {% endif %}
+
                     <!-- Menú de Administración - Solo para ADMIN y APOYO -->
                     {% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
                     <li class="nav-item">
                         <button 
                             class="btn btn-toggle align-items-center rounded w-120 text-start nav-link text-dark 
-                                {% if request.resolver_match.url_name in 'gestion_usuarios gestion_departamentos gestion_programas gestion_ciclos gestion_objetivos gestion_proyectos gestion_metas avance_meta_general_list meta_comprometida_general_list gestion_riesgos gestion_mitigaciones gestion_actividades' %}{% else %}collapsed{% endif %}" 
+                                {% if request.resolver_match.url_name in 'gestion_usuarios gestion_departamentos gestion_programas gestion_ciclos gestion_objetivos gestion_proyectos gestion_metas avance_meta_general_list meta_comprometida_general_list asignacion_metas solicitudes_reapertura gestion_actividades gestion_riesgos gestion_mitigaciones' %}{% else %}collapsed{% endif %}" 
                             data-bs-toggle="collapse" 
                             data-bs-target="#admin-collapse" 
-                            aria-expanded="{% if request.resolver_match.url_name in 'gestion_usuarios gestion_departamentos gestion_programas gestion_ciclos gestion_objetivos gestion_proyectos gestion_metas avance_meta_general_list meta_comprometida_general_list gestion_riesgos gestion_mitigaciones gestion_actividades' %}true{% else %}false{% endif %}">
+                            aria-expanded="{% if request.resolver_match.url_name in 'gestion_usuarios gestion_departamentos gestion_programas gestion_ciclos gestion_objetivos gestion_proyectos gestion_metas avance_meta_general_list meta_comprometida_general_list asignacion_metas solicitudes_reapertura gestion_actividades gestion_riesgos gestion_mitigaciones' %}true{% else %}false{% endif %}">
                             
                             <i id="admin-icon" class="bi me-2 
-                                {% if request.resolver_match.url_name in 'gestion_usuarios gestion_departamentos gestion_programas gestion_ciclos gestion_objetivos gestion_proyectos gestion_riesgos gestion_mitigaciones gestion_actividades' %}
+                                {% if request.resolver_match.url_name in 'gestion_usuarios gestion_departamentos gestion_programas gestion_ciclos gestion_objetivos gestion_proyectos gestion_metas avance_meta_general_list meta_comprometida_general_list asignacion_metas solicitudes_reapertura gestion_actividades gestion_riesgos gestion_mitigaciones' %}
                                     bi-chevron-compact-up
                                 {% else %}
                                     bi-chevron-compact-down
@@ -154,62 +158,120 @@
                             "></i> Administración
                         </button>
 
-                        <div class="collapse {% if request.resolver_match.url_name in 'gestion_usuarios gestion_departamentos gestion_programas gestion_ciclos gestion_objetivos gestion_proyectos gestion_metas avance_meta_general_list meta_comprometida_general_list gestion_riesgos gestion_mitigaciones gestion_actividades' %}show{% endif %}" id="admin-collapse">
+                        <div class="collapse {% if request.resolver_match.url_name in 'gestion_usuarios gestion_departamentos gestion_programas gestion_ciclos gestion_objetivos gestion_proyectos gestion_metas avance_meta_general_list meta_comprometida_general_list asignacion_metas solicitudes_reapertura gestion_actividades gestion_riesgos gestion_mitigaciones' %}show{% endif %}" id="admin-collapse">
                             <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small ms-4">
-
-                                <!-- Opciones solo para ADMIN -->
-                                {% if request.user.role == "ADMIN" %}
-                                <li><a href="{% url 'gestion_usuarios' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_usuarios' %}active{% endif %}"><i class="bi bi-person me-2"></i> Usuarios</a></li>
-                                <li><a href="{% url 'gestion_departamentos' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_departamentos' %}active{% endif %}"><i class="bi bi-buildings me-2"></i> Departamentos</a></li>
-                                <li><a href="{% url 'asignacion_metas' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'asignacion_metas' %}active{% endif %}"><i class="bi bi-flag me-2"></i> Asignacion de Metas</a></li>
-                                <li><a href="{% url 'solicitudes_reapertura' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'solicitudes_reapertura' %}active{% endif %}"><i class="bi bi-arrow-repeat me-2"></i> Solicitud de reapertura</a></li>
-
-                                {% endif %}
-
-                                <!-- Opciones para ADMIN y APOYO -->
-                                <li><a href="{% url 'gestion_programas' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_programas' %}active{% endif %}"><i class="bi bi-journal me-2"></i> Programas</a></li>
-                                <li><a href="{% url 'gestion_ciclos' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_ciclos' %}active{% endif %}"><i class="bi bi-calendar me-2"></i> Ciclos</a></li>
-                                <li><a href="{% url 'gestion_objetivos' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_objetivos' %}active{% endif %}"><i class="bi bi-bullseye me-2"></i> Objetivos</a></li>
-                                <li><a href="{% url 'gestion_proyectos' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_proyectos' %}active{% endif %}"><i class="bi bi-diagram-3 me-2"></i> Proyectos</a></li>
-
-                                <!-- Submenú Metas -->
-                                <li>
+                               <!-- Configuración General -->
+                                <li class="nav-item">
                                     <button 
                                         class="btn btn-toggle align-items-center rounded w-100 text-start nav-link text-dark
-                                            {% if request.resolver_match.url_name in 'gestion_metas avance_meta_general_list meta_comprometida_general_list' %}{% else %}collapsed{% endif %}" 
+                                            {% if request.resolver_match.url_name in 'gestion_programas gestion_ciclos gestion_objetivos gestion_proyectos' %}{% else %}collapsed{% endif %}" 
                                         data-bs-toggle="collapse" 
-                                        data-bs-target="#metas-collapse"
-                                        aria-expanded="{% if request.resolver_match.url_name in 'gestion_metas avance_meta_general list meta_comprometida_general_list' %}true{% else %}false{% endif %}">
-
-                            
-                                            <i id="metas-icon" class="bi me-2 
-                                                {% if request.resolver_match.url_name in 'gestion_metas avance_meta_general_list meta_comprometida_general_list' %}
-                                                    bi-chevron-compact-up
-                                                {% else %}
-                                                    bi-chevron-compact-down
-                                                {% endif %}
-                                            "></i> Metas
+                                        data-bs-target="#config-general-collapse"
+                                        aria-expanded="{% if request.resolver_match.url_name in 'gestion_programas gestion_ciclos gestion_objetivos gestion_proyectos' %}true{% else %}false{% endif %}">
+                                        <i id="config-general-icon" class="bi me-2 
+                                            {% if request.resolver_match.url_name in 'gestion_programas gestion_ciclos gestion_objetivos gestion_proyectos' %}
+                                                bi-chevron-compact-up
+                                            {% else %}
+                                                bi-chevron-compact-down
+                                            {% endif %}
+                                        "></i> Configuración
                                     </button>
-
-                                    <div class="collapse {% if request.resolver_match.url_name in 'gestion_metas avance_meta_general_list meta_comprometida_general_list' %}show{% endif %}" id="metas-collapse">
+                                    <div class="collapse {% if request.resolver_match.url_name in 'gestion_programas gestion_ciclos gestion_objetivos gestion_proyectos' %}show{% endif %}" id="config-general-collapse">
                                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small ms-4">
-                                            <li><a href="{% url 'gestion_metas' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_metas' %}active{% endif %}"><i class="bi bi-flag me-2"></i> Gestión de Metas</a></li>
-                                            <li><a href="{% url 'avance_meta_general_list' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'avance_meta_general_list' %}active{% endif %}"><i class="bi bi-graph-up-arrow me-2"></i> Avances</a></li>
-                                            <li><a href="{% url 'meta_comprometida_general_list' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'meta_comprometida_general_list' %}active{% endif %}"><i class="bi bi-check2-circle me-2"></i> Comprometidas</a></li>
+                                            <li><a href="{% url 'gestion_programas' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_programas' %}active{% endif %}"><i class="bi bi-journal me-2"></i> Programas</a></li>
+                                            <li><a href="{% url 'gestion_ciclos' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_ciclos' %}active{% endif %}"><i class="bi bi-calendar me-2"></i> Ciclos</a></li>
+                                            <li><a href="{% url 'gestion_objetivos' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_objetivos' %}active{% endif %}"><i class="bi bi-bullseye me-2"></i> Objetivos</a></li>
+                                            <li><a href="{% url 'gestion_proyectos' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_proyectos' %}active{% endif %}"><i class="bi bi-diagram-3 me-2"></i> Proyectos</a></li>
+                                            <li><a href="{% url 'gestion_usuarios' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_usuarios' %}active{% endif %}"><i class="bi bi-person me-2"></i> Usuarios</a></li>
+                                            <li><a href="{% url 'gestion_departamentos' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_departamentos' %}active{% endif %}"><i class="bi bi-buildings me-2"></i> Departamentos</a></li>
+                                       
                                         </ul>
                                     </div>
                                 </li>
 
-                                <li><a href="{% url 'gestion_actividades' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_actividades' %}active{% endif %}"><i class="bi bi-list-check me-2"></i> Actividades</a></li>
-                                {% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
-                                <li><a href="{% url 'gestion_riesgos' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_riesgos' %}active{% endif %}"><i class="bi bi-exclamation-triangle me-2"></i> Riesgos</a></li>
-                                <li><a href="{% url 'gestion_mitigaciones' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_mitigaciones' %}active{% endif %}"><i class="bi bi-shield-check me-2"></i> Mitigaciones</a></li>
-                                {% endif %}
+                                <!-- Gestión de Metas -->
+                                <li class="nav-item mb-2">
+                                    <button 
+                                        class="btn btn-toggle align-items-center rounded w-100 text-start nav-link text-dark
+                                            {% if request.resolver_match.url_name in 'gestion_metas avance_meta_general_list meta_comprometida_general_list asignacion_metas' %}{% else %}collapsed{% endif %}" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#metas-collapse"
+                                        aria-expanded="{% if request.resolver_match.url_name in 'gestion_metas avance_meta_general_list meta_comprometida_general_list asignacion_metas' %}true{% else %}false{% endif %}">
+                                        <i id="metas-icon" class="bi me-2 
+                                            {% if request.resolver_match.url_name in 'gestion_metas avance_meta_general_list meta_comprometida_general_list asignacion_metas' %}
+                                                bi-chevron-compact-up
+                                            {% else %}
+                                                bi-chevron-compact-down
+                                            {% endif %}
+                                        "></i> Gestión de Metas
+                                    </button>
+                                    <div class="collapse {% if request.resolver_match.url_name in 'gestion_metas avance_meta_general_list meta_comprometida_general_list asignacion_metas' %}show{% endif %}" id="metas-collapse">
+                                        <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small ms-4">
+                                            <li><a href="{% url 'gestion_metas' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_metas' %}active{% endif %}"><i class="bi bi-flag me-2"></i> Metas</a></li>
+                                            <li><a href="{% url 'avance_meta_general_list' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'avance_meta_general_list' %}active{% endif %}"><i class="bi bi-graph-up-arrow me-2"></i> Avances</a></li>
+                                            <li><a href="{% url 'meta_comprometida_general_list' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'meta_comprometida_general_list' %}active{% endif %}"><i class="bi bi-check2-circle me-2"></i> Comprometidas</a></li>
+                                            {% if request.user.role == "ADMIN" %}
+                                            <li><a href="{% url 'asignacion_metas' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'asignacion_metas' %}active{% endif %}"><i class="bi bi-person-check me-2"></i> Asignar Metas</a></li>
+                                            {% endif %}
+                                        </ul>
+                                    </div>
+                                </li>
+
+                                <!-- Gestión de Actividades -->
+                                <li class="nav-item mb-2">
+                                    <button 
+                                        class="btn btn-toggle align-items-center rounded w-100 text-start nav-link text-dark
+                                            {% if request.resolver_match.url_name in 'gestion_actividades solicitudes_reapertura' %}{% else %}collapsed{% endif %}" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#actividades-collapse"
+                                        aria-expanded="{% if request.resolver_match.url_name in 'gestion_actividades solicitudes_reapertura' %}true{% else %}false{% endif %}">
+                                        <i id="actividades-icon" class="bi me-2 
+                                            {% if request.resolver_match.url_name in 'gestion_actividades solicitudes_reapertura' %}
+                                                bi-chevron-compact-up
+                                            {% else %}
+                                                bi-chevron-compact-down
+                                            {% endif %}
+                                        "></i> Actividades
+                                    </button>
+                                    <div class="collapse {% if request.resolver_match.url_name in 'gestion_actividades solicitudes_reapertura' %}show{% endif %}" id="actividades-collapse">
+                                        <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small ms-4">
+                                            <li><a href="{% url 'gestion_actividades' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_actividades' %}active{% endif %}"><i class="bi bi-list-check me-2"></i> Gestión</a></li>
+                                            {% if request.user.role == "ADMIN" %}
+                                            <li><a href="{% url 'solicitudes_reapertura' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'solicitudes_reapertura' %}active{% endif %}"><i class="bi bi-arrow-repeat me-2"></i> Solicitudes Reapertura</a></li>
+                                            {% endif %}
+                                        </ul>
+                                    </div>
+                                </li>
+
+                                <!-- Gestión de Riesgos -->
+                                <li class="nav-item mb-2">
+                                    <button 
+                                        class="btn btn-toggle align-items-center rounded w-100 text-start nav-link text-dark
+                                            {% if request.resolver_match.url_name in 'gestion_riesgos gestion_mitigaciones' %}{% else %}collapsed{% endif %}" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#riesgos-collapse"
+                                        aria-expanded="{% if request.resolver_match.url_name in 'gestion_riesgos gestion_mitigaciones' %}true{% else %}false{% endif %}">
+                                        <i id="riesgos-icon" class="bi me-2 
+                                            {% if request.resolver_match.url_name in 'gestion_riesgos gestion_mitigaciones' %}
+                                                bi-chevron-compact-up
+                                            {% else %}
+                                                bi-chevron-compact-down
+                                            {% endif %}
+                                        "></i> Gestión de Riesgos
+                                    </button>
+                                    <div class="collapse {% if request.resolver_match.url_name in 'gestion_riesgos gestion_mitigaciones' %}show{% endif %}" id="riesgos-collapse">
+                                        <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small ms-4">
+                                            <li><a href="{% url 'gestion_riesgos' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_riesgos' %}active{% endif %}"><i class="bi bi-exclamation-triangle me-2"></i> Riesgos</a></li>
+                                            <li><a href="{% url 'gestion_mitigaciones' %}" class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_mitigaciones' %}active{% endif %}"><i class="bi bi-shield-check me-2"></i> Mitigaciones</a></li>
+                                        </ul>
+                                    </div>
+                                </li>
+
+                          
                             </ul>
                         </div>
                     </li>
                     {% endif %}
-
 
                     <!-- Opciones específicas para DOCENTE -->
                     {% if request.user.role == "DOCENTE" %}
@@ -241,137 +303,178 @@
                         </li>
                     {% endif %}
 
-
-                    <li><a class="nav-link text-dark {% if request.resolver_match.url_name == 'reportes' %}active{% endif %}" href="{% url 'reportes' %}" >
+                    <!-- Reportes -->
+                    <li class="nav-item">
+                        <a class="nav-link text-dark {% if request.resolver_match.url_name == 'reportes' %}active{% endif %}" href="{% url 'reportes' %}" >
                             <i class="bi bi-bar-chart me-2"></i> Reportes
                         </a>
                     </li>
                 </ul>
             </div>
 
-          
-<!-- Versión con solo iconos para modo colapsado -->
-<div class="sidebar-icons">
-    <!-- Dashboard -->
-    <a class="sidebar-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
-       href="{% url 'dashboard' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Dashboard">
-        <i class="bi bi-speedometer2"></i>
-    </a>
+            <!-- Versión con solo iconos para modo colapsado -->
+            <div class="sidebar-icons">
+                <!-- Dashboard -->
+                <a class="sidebar-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+                   href="{% url 'dashboard' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Dashboard">
+                    <i class="bi bi-speedometer2"></i>
+                </a>
 
-    <!-- Seguimiento de Metas -->
-    {% if request.user.role == "ADMIN" or request.user.role == "APOYO" or request.user.role == "DOCENTE" %}
-    <a class="sidebar-link {% if request.resolver_match.url_name == 'tabla_seguimiento' %}active{% endif %}"
-       href="{% url 'tabla_seguimiento' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Seguimiento de Metas">
-        <i class="bi bi-award"></i>
-    </a>
-    {% endif %}
-    {% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
-    <!-- Administración -->
-    <a class="sidebar-link dropdown-toggle" data-bs-toggle="collapse"
-       href="#admin-collapse-icons" role="button"
-       aria-expanded="false" aria-controls="admin-collapse-icons"
-       data-bs-toggle="tooltip" data-bs-placement="right" title="Administración">
-        <i class="bi bi-gear"></i>
-    </a>
-    <div class="collapse" id="admin-collapse-icons">
-        {% if request.user.role == "ADMIN" %}
-        <a class="sidebar-link {% if request.resolver_match.url_name == 'gestion_usuarios' %}active{% endif %}"
-           href="{% url 'gestion_usuarios' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Usuarios">
-            <i class="bi bi-person"></i>
-        </a>
-        <a class="sidebar-link {% if request.resolver_match.url_name == 'gestion_departamentos' %}active{% endif %}"
-           href="{% url 'gestion_departamentos' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Departamentos">
-            <i class="bi bi-buildings"></i>
-        </a>
-        <a class="sidebar-link {% if request.resolver_match.url_name == 'asignacion_metas' %}active{% endif %}"
-           href="{% url 'asignacion_metas' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Asignación de Metas">
-            <i class="bi bi-flag"></i>
-        </a>
-        <a class="sidebar-link {% if request.resolver_match.url_name == 'gestion_solicitudes_reapertura' %}active{% endif %}"
-        href="{% url 'solicitudes_reapertura' %}" 
-        data-bs-toggle="tooltip" data-bs-placement="right" title="Solicitud de reapertura">
-            <i class="bi bi-arrow-repeat"></i>
-        </a>
+                <!-- Seguimiento de Metas -->
+                {% if request.user.role == "ADMIN" or request.user.role == "APOYO" or request.user.role == "DOCENTE" %}
+                <a class="sidebar-link {% if request.resolver_match.url_name == 'tabla_seguimiento' %}active{% endif %}"
+                   href="{% url 'tabla_seguimiento' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Seguimiento de Metas">
+                    <i class="bi bi-award"></i>
+                </a>
+                {% endif %}
 
-        {% endif %}
-        <a class="sidebar-link {% if request.resolver_match.url_name == 'gestion_programas' %}active{% endif %}"
-           href="{% url 'gestion_programas' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Programas">
-            <i class="bi bi-journal"></i>
-        </a>
-        <a class="sidebar-link {% if request.resolver_match.url_name == 'gestion_ciclos' %}active{% endif %}"
-           href="{% url 'gestion_ciclos' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Ciclos">
-            <i class="bi bi-calendar"></i>
-        </a>
-        <a class="sidebar-link {% if request.resolver_match.url_name == 'gestion_objetivos' %}active{% endif %}"
-           href="{% url 'gestion_objetivos' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Objetivos">
-            <i class="bi bi-bullseye"></i>
-        </a>
-        <a class="sidebar-link {% if request.resolver_match.url_name == 'gestion_proyectos' %}active{% endif %}"
-           href="{% url 'gestion_proyectos' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Proyectos">
-            <i class="bi bi-diagram-3"></i>
-        </a>
+                {% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
+                <!-- Administración -->
+                <a class="sidebar-link dropdown-toggle" data-bs-toggle="collapse"
+                   href="#admin-collapse-icons" role="button"
+                   aria-expanded="false" aria-controls="admin-collapse-icons"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="Administración">
+                    <i class="bi bi-gear"></i>
+                </a>
+                <div class="collapse" id="admin-collapse-icons">
+                   <!-- Configuración -->
+                    <a class="sidebar-link dropdown-toggle" data-bs-toggle="collapse"
+                       href="#config-general-icons" role="button" aria-expanded="false"
+                       data-bs-toggle="tooltip" data-bs-placement="right" title="Configuración General">
+                        <i class="bi bi-sliders"></i>
+                    </a>
+                    <div class="collapse" id="config-general-icons">
+                        <a class="sidebar-link {% if request.resolver_match.url_name == 'gestion_programas' %}active{% endif %}"
+                           href="{% url 'gestion_programas' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Programas">
+                            <i class="bi bi-journal"></i>
+                        </a>
+                        <a class="sidebar-link {% if request.resolver_match.url_name == 'gestion_ciclos' %}active{% endif %}"
+                           href="{% url 'gestion_ciclos' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Ciclos">
+                            <i class="bi bi-calendar"></i>
+                        </a>
+                        <a class="sidebar-link {% if request.resolver_match.url_name == 'gestion_objetivos' %}active{% endif %}"
+                           href="{% url 'gestion_objetivos' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Objetivos">
+                            <i class="bi bi-bullseye"></i>
+                        </a>
+                        <a class="sidebar-link {% if request.resolver_match.url_name == 'gestion_proyectos' %}active{% endif %}"
+                           href="{% url 'gestion_proyectos' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Proyectos">
+                            <i class="bi bi-diagram-3"></i>
+                        </a>
+                          <div class="collapse" id="config-icons">
+                        <a class="sidebar-link {% if request.resolver_match.url_name == 'gestion_usuarios' %}active{% endif %}"
+                           href="{% url 'gestion_usuarios' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Usuarios">
+                            <i class="bi bi-person"></i>
+                        </a>
+                        <a class="sidebar-link {% if request.resolver_match.url_name == 'gestion_departamentos' %}active{% endif %}"
+                           href="{% url 'gestion_departamentos' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Departamentos">
+                            <i class="bi bi-buildings"></i>
+                        </a>
+                    </div>
 
-        <!-- Submenú Metas -->
-        <a class="sidebar-link {% if request.resolver_match.url_name == 'gestion_metas' %}active{% endif %}"
-           href="{% url 'gestion_metas' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Gestión de Metas">
-            <i class="bi bi-flag"></i>
-        </a>
-        <a class="sidebar-link {% if request.resolver_match.url_name == 'avance_meta_general_list' %}active{% endif %}"
-           href="{% url 'avance_meta_general_list' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Avances">
-            <i class="bi bi-graph-up-arrow"></i>
-        </a>
-        <a class="sidebar-link {% if request.resolver_match.url_name == 'meta_comprometida_general_list' %}active{% endif %}"
-           href="{% url 'meta_comprometida_general_list' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Comprometidas">
-            <i class="bi bi-check2-circle"></i>
-        </a>
 
-        <a class="sidebar-link {% if request.resolver_match.url_name == 'gestion_actividades' %}active{% endif %}"
-           href="{% url 'gestion_actividades' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Actividades">
-            <i class="bi bi-list-check"></i>
-        </a>
-        <a class="sidebar-link {% if request.resolver_match.url_name == 'gestion_riesgos' %}active{% endif %}"
-           href="{% url 'gestion_riesgos' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Riesgos">
-            <i class="bi bi-exclamation-triangle"></i>
-        </a>
-        <a class="sidebar-link {% if request.resolver_match.url_name == 'gestion_mitigaciones' %}active{% endif %}"
-           href="{% url 'gestion_mitigaciones' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Mitigaciones">
-            <i class="bi bi-shield-check"></i>
-        </a>
-    </div>
-    {% endif %}
+                    <!-- Gestión de Metas -->
+                    <a class="sidebar-link dropdown-toggle" data-bs-toggle="collapse"
+                       href="#metas-icons" role="button" aria-expanded="false"
+                       data-bs-toggle="tooltip" data-bs-placement="right" title="Gestión de Metas">
+                        <i class="bi bi-flag"></i>
+                    </a>
+                    <div class="collapse" id="metas-icons">
+                        <a class="sidebar-link {% if request.resolver_match.url_name == 'gestion_metas' %}active{% endif %}"
+                           href="{% url 'gestion_metas' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Metas">
+                            <i class="bi bi-flag"></i>
+                        </a>
+                        <a class="sidebar-link {% if request.resolver_match.url_name == 'avance_meta_general_list' %}active{% endif %}"
+                           href="{% url 'avance_meta_general_list' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Avances">
+                            <i class="bi bi-graph-up-arrow"></i>
+                        </a>
+                        <a class="sidebar-link {% if request.resolver_match.url_name == 'meta_comprometida_general_list' %}active{% endif %}"
+                           href="{% url 'meta_comprometida_general_list' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Comprometidas">
+                            <i class="bi bi-check2-circle"></i>
+                        </a>
+                        {% if request.user.role == "ADMIN" %}
+                        <a class="sidebar-link {% if request.resolver_match.url_name == 'asignacion_metas' %}active{% endif %}"
+                           href="{% url 'asignacion_metas' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Asignar Metas">
+                            <i class="bi bi-person-check"></i>
+                        </a>
+                        {% endif %}
+                    </div>
 
-    <!-- Mis Recursos para DOCENTE -->
-    {% if request.user.role == "DOCENTE" %}
-    <a class="sidebar-link dropdown-toggle" data-bs-toggle="collapse"
-       href="#docente-collapse-icons" role="button"
-       aria-expanded="false" aria-controls="docente-collapse-icons"
-       data-bs-toggle="tooltip" data-bs-placement="right" title="Mis Recursos">
-        <i class="bi bi-collection"></i>
-    </a>
-    <div class="collapse" id="docente-collapse-icons">
-        <a class="sidebar-link {% if request.resolver_match.url_name == 'gestion_actividades' %}active{% endif %}"
-           href="{% url 'gestion_actividades' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Actividades">
-            <i class="bi bi-list-check"></i>
-        </a>
-        <a class="sidebar-link {% if request.resolver_match.url_name == 'gestion_riesgos' %}active{% endif %}"
-           href="{% url 'gestion_riesgos' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Riesgos">
-            <i class="bi bi-exclamation-triangle"></i>
-        </a>
-        <a class="sidebar-link {% if request.resolver_match.url_name == 'gestion_mitigaciones' %}active{% endif %}"
-           href="{% url 'gestion_mitigaciones' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Mitigaciones">
-            <i class="bi bi-shield-check"></i>
-        </a>
-    </div>
-    {% endif %}
+                    <!-- Actividades -->
+                    <a class="sidebar-link dropdown-toggle" data-bs-toggle="collapse"
+                       href="#actividades-icons" role="button" aria-expanded="false"
+                       data-bs-toggle="tooltip" data-bs-placement="right" title="Actividades">
+                        <i class="bi bi-list-check"></i>
+                    </a>
+                    <div class="collapse" id="actividades-icons">
+                        <a class="sidebar-link {% if request.resolver_match.url_name == 'gestion_actividades' %}active{% endif %}"
+                           href="{% url 'gestion_actividades' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Gestión">
+                            <i class="bi bi-list-check"></i>
+                        </a>
+                        {% if request.user.role == "ADMIN" %}
+                        <a class="sidebar-link {% if request.resolver_match.url_name == 'solicitudes_reapertura' %}active{% endif %}"
+                           href="{% url 'solicitudes_reapertura' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Solicitudes Reapertura">
+                            <i class="bi bi-arrow-repeat"></i>
+                        </a>
+                        {% endif %}
+                    </div>
 
-    <!-- Reportes -->
-    <a class="sidebar-link {% if request.resolver_match.url_name == 'reportes' %}active{% endif %}"
-       href="#" data-bs-toggle="tooltip" data-bs-placement="right" title="Reportes">
-        <i class="bi bi-bar-chart"></i>
-    </a>
-    
-</div>
+                    <!-- Riesgos -->
+                    <a class="sidebar-link dropdown-toggle" data-bs-toggle="collapse"
+                       href="#riesgos-icons" role="button" aria-expanded="false"
+                       data-bs-toggle="tooltip" data-bs-placement="right" title="Gestión de Riesgos">
+                        <i class="bi bi-exclamation-triangle"></i>
+                    </a>
+                    <div class="collapse" id="riesgos-icons">
+                        <a class="sidebar-link {% if request.resolver_match.url_name == 'gestion_riesgos' %}active{% endif %}"
+                           href="{% url 'gestion_riesgos' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Riesgos">
+                            <i class="bi bi-exclamation-triangle"></i>
+                        </a>
+                        <a class="sidebar-link {% if request.resolver_match.url_name == 'gestion_mitigaciones' %}active{% endif %}"
+                           href="{% url 'gestion_mitigaciones' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Mitigaciones">
+                            <i class="bi bi-shield-check"></i>
+                        </a>
+                    </div>
 
+                    
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Mis Recursos para DOCENTE -->
+                {% if request.user.role == "DOCENTE" %}
+                <a class="sidebar-link dropdown-toggle" data-bs-toggle="collapse"
+                   href="#docente-collapse-icons" role="button"
+                   aria-expanded="false" aria-controls="docente-collapse-icons"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="Mis Recursos">
+                    <i class="bi bi-collection"></i>
+                </a>
+                <div class="collapse" id="docente-collapse-icons">
+                    <a class="sidebar-link {% if request.resolver_match.url_name == 'gestion_metas' %}active{% endif %}"
+                       href="{% url 'gestion_metas' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Gestión de Metas">
+                        <i class="bi bi-flag"></i>
+                    </a>
+                    <a class="sidebar-link {% if request.resolver_match.url_name == 'gestion_actividades' %}active{% endif %}"
+                       href="{% url 'gestion_actividades' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Actividades">
+                        <i class="bi bi-list-check"></i>
+                    </a>
+                    <a class="sidebar-link {% if request.resolver_match.url_name == 'gestion_riesgos' %}active{% endif %}"
+                       href="{% url 'gestion_riesgos' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Riesgos">
+                        <i class="bi bi-exclamation-triangle"></i>
+                    </a>
+                    <a class="sidebar-link {% if request.resolver_match.url_name == 'gestion_mitigaciones' %}active{% endif %}"
+                       href="{% url 'gestion_mitigaciones' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Mitigaciones">
+                        <i class="bi bi-shield-check"></i>
+                    </a>
+                </div>
+                {% endif %}
+
+                <!-- Reportes -->
+                <a class="sidebar-link {% if request.resolver_match.url_name == 'reportes' %}active{% endif %}"
+                   href="{% url 'reportes' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Reportes">
+                    <i class="bi bi-bar-chart"></i>
+                </a>
+                
+            </div>
         </nav>
 
         <main class="main-content" id="mainContent">

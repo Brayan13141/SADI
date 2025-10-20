@@ -11,6 +11,7 @@ from .models import Meta, AvanceMeta, MetaComprometida
 from django.contrib.auth.decorators import login_required
 from programas.models import Ciclo
 from django.db.models import Sum
+from django.db import transaction
 from django.utils import timezone
 from django.contrib import messages
 from .serializers import (
@@ -33,11 +34,12 @@ def gestion_metas(request):
     usuario = request.user
     # Si el usuario es DOCENTE → solo sus metas
     if usuario.role == "DOCENTE":
-        metas = Meta.objects.select_related("proyecto", "departamento", "ciclo").filter(
-            departamento=usuario.departamento
+        metas = (
+            Meta.objects.select_related("proyecto", "departamento", "ciclo")
+            .filter(departamento=usuario.departamento)
+            .filter(activa=True)
         )
     else:
-        # Si es ADMIN, JEFE, etc. → ve todas
         metas = Meta.objects.select_related("proyecto", "departamento", "ciclo").all()
 
     ciclos = Ciclo.objects.all()
@@ -69,23 +71,29 @@ def gestion_metas(request):
 
         if "activar_edicion" in request.POST and request.user.role == "ADMIN":
             # Activar todas las metas
-            Meta.objects.update(variableB=True)
+            Meta.objects.filter(activa=True).update(variableB=True)
             messages.success(
                 request, "Edición de metas activada para todos los docentes."
             )
+            return redirect("gestion_metas")
         elif "desactivar_edicion" in request.POST and request.user.role == "ADMIN":
             # Desactivar todas las metas
             Meta.objects.update(variableB=False)
             messages.success(
                 request, "Edición de metas desactivada para todos los docentes."
             )
+            return redirect("gestion_metas")
 
         # Crear meta (solo ADMIN y APOYO)
         if "crear_meta" in request.POST and puede_crear:
             form = FormClass(post_data)
             if form.is_valid():
                 try:
-                    form.save()
+                    meta = form.save(commit=False)
+                    # Si el usuario dejó la clave vacía o con “AUTO”, el modelo la generará
+                    if not meta.clave:
+                        meta.clave = "AUTO"
+                    meta.save()
                     messages.success(request, "Meta creada correctamente.")
                     return redirect("gestion_metas")
                 except Exception as e:
@@ -188,6 +196,9 @@ def avance_meta_general_list(request):
     avances = AvanceMeta.objects.select_related("metaCumplir", "departamento").order_by(
         "-fecha_registro"
     )
+    for a in avances:
+        print(a.metaCumplir_id)
+
     departamentos = Departamento.objects.all()
     metas = Meta.objects.select_related("departamento").all().order_by("id")
     avance_form = AvanceMetaGeneralForm()
@@ -492,8 +503,9 @@ def gestion_meta_comprometida(request, meta_id):
 
 
 # ================VISTA PARA TABLA DE SEGUIMIENTO=========================
-@role_required("ADMIN", "APOYO")
+@role_required("ADMIN", "APOYO", "DOCENTE")
 def TablaSeguimiento(request):
+    user = request.user
     # Obtener el ciclo activo o el más reciente
     ciclo = (
         Ciclo.objects.filter(activo=True).first()
@@ -506,6 +518,18 @@ def TablaSeguimiento(request):
         if request.GET.get("view") == "simple"
         else Meta.objects.filter(activa=True).order_by("id")
     )
+    # --- Filtrar metas según rol del usuario ---
+    if user.role == "ADMIN":
+        metas = metas  # Ve todo
+    elif user.role == "APOYO":
+        # APOYO solo ve las metas de su departamento
+        metas = metas
+    elif user.role == "DOCENTE":
+        # DOCENTE ve solo las metas asignadas directamente a él o a su departamento
+        metas = metas.filter(departamento=user.departamento)
+    else:
+        # Cualquier otro rol no debería ver nada
+        metas = Meta.objects.none()
 
     # Obtener lista de meses del ciclo
     meses = []
@@ -552,9 +576,8 @@ def TablaSeguimiento(request):
 
         # Calcular porcentaje de avance correctamente
         if meta.metacumplir and meta.metacumplir > 0:
-            porcentaje = min(
-                Decimal("100"), (total / meta.metacumplir) * Decimal("100")
-            )
+            porcentaje = (total / meta.metacumplir) * Decimal("100")
+
         else:
             porcentaje = Decimal("0")
 
@@ -707,6 +730,75 @@ def asignacion_metas(request):
         "departamentos": departamentos,
     }
     return render(request, "metas/asignacion_metas.html", context)
+
+
+@role_required("ADMIN", "APOYO")
+def activar_metas(request):
+    if request.method == "POST":
+
+        try:
+            # Obtener los datos enviados por el formulario
+            meta_ids_raw = request.POST.get("meta_ids")
+            action = request.POST.get("accion")
+
+            if not meta_ids_raw:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "No se recibieron metas para procesar.",
+                    },
+                    status=400,
+                )
+
+            meta_ids = json.loads(meta_ids_raw)
+
+            if not isinstance(meta_ids, list) or len(meta_ids) == 0:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "La lista de metas está vacía o es inválida.",
+                    },
+                    status=400,
+                )
+
+            # Validar acción
+            if action not in ["activar", "desactivar"]:
+                return JsonResponse(
+                    {"success": False, "message": "Acción no válida."}, status=400
+                )
+
+            # Operación en bloque (todo o nada)
+            with transaction.atomic():
+                metas = Meta.objects.filter(id__in=meta_ids)
+
+                # Validar que existan las metas
+                if not metas.exists():
+                    return JsonResponse(
+                        {
+                            "success": False,
+                            "message": "No se encontraron las metas seleccionadas.",
+                        },
+                        status=404,
+                    )
+                if action == "desactivar":
+                    # Desactivar todas las metas seleccionadas
+                    metas.update(activa=False)
+                elif action == "activar":  # Activar todas las metas seleccionadas
+                    metas.update(activa=True)
+
+            if action == "desactivar":
+                mensaje = f"Se desactivaron correctamente {metas.count()} metas."
+            else:
+                mensaje = f"Se activaron correctamente {metas.count()} metas."
+
+            return JsonResponse({"success": True, "message": mensaje})
+
+        except Exception as e:
+            return JsonResponse({"success": False, "message": str(e)}, status=500)
+
+    # GET normal → Renderizar página
+    metas = Meta.objects.all().order_by("clave")
+    return render(request, "metas/activar_metas.html", {"metas": metas})
 
 
 # =========================API=============================

@@ -30,6 +30,7 @@ ALLOWED_HOSTS = config("ALLOWED_HOSTS").split(",")
 # Application definition
 
 INSTALLED_APPS = [
+    "jazzmin",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -66,9 +67,9 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "simple_history.middleware.HistoryRequestMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "simple_history.middleware.HistoryRequestMiddleware",
     "allauth.account.middleware.AccountMiddleware",
 ]
 REST_FRAMEWORK = {
@@ -117,12 +118,32 @@ DATABASES = {
         "PORT": config("DB_PORT"),
     }
 }
+JAZZMIN_SETTINGS = {
+    "site_title": "SADI Admin",
+    "site_header": "Panel de Administración SADI",
+    "welcome_sign": "Bienvenido al sistema institucional",
+    "show_sidebar": True,
+    "search_model": "usuarios.Usuario",
+    "hide_models": ["auth.Group"],
+}
+JAZZMIN_UI_TWEAKS = {
+    "theme": "darkly",
+    "navbar": "navbar-dark navbar-primary",
+    "sidebar": "sidebar-dark-primary",
+    "brand_colour": "navbar-primary",
+}
+
+
 AUTH_USER_MODEL = "usuarios.Usuario"
 
 AUTHENTICATION_BACKENDS = (
     "django.contrib.auth.backends.ModelBackend",
     "allauth.account.auth_backends.AuthenticationBackend",
 )
+
+# Configuración del backend de correo electrónico para desarrollo
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
 # CONFIGURACIONES PARA DJANGO ALLAUTH
 SITE_ID = 1
 ACCOUNT_LOGIN_METHODS = {"username", "email"}  # Permite usuario o email
@@ -133,6 +154,7 @@ ACCOUNT_SIGNUP_FIELDS = [
     "password1*",
     "password2*",
 ]  # Campos obligatorios
+
 LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "dashboard"
 ACCOUNT_LOGOUT_REDIRECT_URL = "/accounts/login/"
@@ -164,7 +186,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 # CONFIGURACION PARA EL LENGUAJE Y LA ZONA HORARIA
-TIME_ZONE = "America/Mexico_City"  # o la que corresponda
+TIME_ZONE = "America/Mexico_City"
 USE_I18N = True
 USE_TZ = True
 

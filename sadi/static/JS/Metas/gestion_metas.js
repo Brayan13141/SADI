@@ -1,4 +1,15 @@
 $(document).ready(function () {
+    const inputclave = document.getElementById('inputclave');
+    const inputclaveoculta = document.getElementById('inputclaveoculta');
+
+    inputclave.addEventListener('input', () => {
+        if (inputclave.value.trim() !== '') {
+            inputclaveoculta.value = inputclave.value.trim();
+        } else {
+            inputclaveoculta.value = 'AUTO';
+        }
+    });
+
     // DataTable
     $('#metasTable').DataTable({
         scrollX: true,
@@ -65,19 +76,11 @@ $(document).ready(function () {
         const indicador = $(this).data('indicador');
         const unidadMedida = $(this).data('unidadmedida');
         const metodoCalculo = $(this).data('metodocalculo');
-        let lineabase = parseFloat($(this).data('lineabase'));
-        let metacumplir = Number($(this).data('metacumplir'));
         let variableB = $(this).data('variableb') === 'True';
         const cicloId = $(this).data('ciclo');
         const activa = $(this).data('activa') === 'True';
         const acumulable = $(this).data('acumulable') === 'True';
         const porcentages = $(this).data('porcentages') === 'True';
-
-        // Si está en modo porcentaje -> convertir de 0.8555 a 85.55
-        if (porcentages) {
-            lineabase = lineabase ? lineabase * 100 : '';
-            metacumplir = metacumplir ? metacumplir * 100 : '';
-        }
 
         // Llenar el formulario
         $('#meta_id').val(metaId);
@@ -90,8 +93,6 @@ $(document).ready(function () {
         $('#id_acumulable').prop('checked', acumulable);
         $('#id_unidadmedida').val(unidadMedida);
         $('#id_metodocalculo').val(metodoCalculo);
-        $('#id_lineabase').val(lineabase);
-        $('#id_metacumplir').val(metacumplir);
         $('#Eid_variableb').prop('checked', variableB);
         $('#id_ciclo').val(cicloId);
         $('#id_activa').prop('checked', activa);
@@ -174,7 +175,6 @@ $(document).ready(function () {
 
         // Validar campos requeridos
         const camposRequeridos = [
-            'clave',
             'nombre',
             'enunciado',
             'proyecto',

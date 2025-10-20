@@ -13,7 +13,7 @@ class Usuario(AbstractUser):
     ]
 
     role = models.CharField(max_length=15, choices=ROLE_CHOICES)
-    departamento = models.ForeignKey(
+    departamento = models.OneToOneField(
         Departamento, on_delete=models.RESTRICT, null=True, unique=True
     )
     history = HistoricalRecords()
