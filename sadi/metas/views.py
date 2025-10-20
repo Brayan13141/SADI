@@ -11,6 +11,7 @@ from .models import Meta, AvanceMeta, MetaComprometida
 from django.contrib.auth.decorators import login_required
 from programas.models import Ciclo
 from django.db.models import Sum
+from django.db import transaction
 from django.utils import timezone
 from django.contrib import messages
 from .serializers import (
@@ -70,16 +71,18 @@ def gestion_metas(request):
 
         if "activar_edicion" in request.POST and request.user.role == "ADMIN":
             # Activar todas las metas
-            Meta.objects.update(variableB=True)
+            Meta.objects.filter(activa=True).update(variableB=True)
             messages.success(
                 request, "Edición de metas activada para todos los docentes."
             )
+            return redirect("gestion_metas")
         elif "desactivar_edicion" in request.POST and request.user.role == "ADMIN":
             # Desactivar todas las metas
             Meta.objects.update(variableB=False)
             messages.success(
                 request, "Edición de metas desactivada para todos los docentes."
             )
+            return redirect("gestion_metas")
 
         # Crear meta (solo ADMIN y APOYO)
         if "crear_meta" in request.POST and puede_crear:
@@ -727,6 +730,75 @@ def asignacion_metas(request):
         "departamentos": departamentos,
     }
     return render(request, "metas/asignacion_metas.html", context)
+
+
+@role_required("ADMIN", "APOYO")
+def activar_metas(request):
+    if request.method == "POST":
+
+        try:
+            # Obtener los datos enviados por el formulario
+            meta_ids_raw = request.POST.get("meta_ids")
+            action = request.POST.get("accion")
+
+            if not meta_ids_raw:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "No se recibieron metas para procesar.",
+                    },
+                    status=400,
+                )
+
+            meta_ids = json.loads(meta_ids_raw)
+
+            if not isinstance(meta_ids, list) or len(meta_ids) == 0:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "La lista de metas está vacía o es inválida.",
+                    },
+                    status=400,
+                )
+
+            # Validar acción
+            if action not in ["activar", "desactivar"]:
+                return JsonResponse(
+                    {"success": False, "message": "Acción no válida."}, status=400
+                )
+
+            # Operación en bloque (todo o nada)
+            with transaction.atomic():
+                metas = Meta.objects.filter(id__in=meta_ids)
+
+                # Validar que existan las metas
+                if not metas.exists():
+                    return JsonResponse(
+                        {
+                            "success": False,
+                            "message": "No se encontraron las metas seleccionadas.",
+                        },
+                        status=404,
+                    )
+                if action == "desactivar":
+                    # Desactivar todas las metas seleccionadas
+                    metas.update(activa=False)
+                elif action == "activar":  # Activar todas las metas seleccionadas
+                    metas.update(activa=True)
+
+            if action == "desactivar":
+                mensaje = f"Se desactivaron correctamente {metas.count()} metas."
+            else:
+                mensaje = f"Se activaron correctamente {metas.count()} metas."
+
+            return JsonResponse({"success": True, "message": mensaje})
+
+        except Exception as e:
+            return JsonResponse({"success": False, "message": str(e)}, status=500)
+
+    # GET normal → Renderizar página
+    metas = Meta.objects.all().order_by("clave")
+    return render(request, "metas/activar_metas.html", {"metas": metas})
 
 
 # =========================API=============================

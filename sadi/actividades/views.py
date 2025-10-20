@@ -192,9 +192,20 @@ def agregar_actividad(request, meta_id):
 # ======================SOLICITUD DE APERTURA==============================
 @role_required("ADMIN")  # solo admin puede entrar
 def solicitudes_reapertura(request):
-    solicitudes = SolicitudReapertura.objects.select_related(
-        "actividad", "usuario", "departamento"
-    ).order_by("-fecha_solicitud")
+    solicitudesTerminadas = (
+        SolicitudReapertura.objects.select_related(
+            "actividad", "usuario", "departamento"
+        )
+        .order_by("-fecha_solicitud")
+        .filter(terminada=True)
+    )
+    solicitudes = (
+        SolicitudReapertura.objects.select_related(
+            "actividad", "usuario", "departamento"
+        )
+        .order_by("-fecha_solicitud")
+        .filter(terminada=False)
+    )
 
     if request.method == "POST":
         solicitud_id = request.POST.get("solicitud_id")
@@ -204,23 +215,33 @@ def solicitudes_reapertura(request):
 
         if accion == "aprobar":
             with transaction.atomic():  # Asegura que ambas operaciones se completen juntas
-                # Marcar solicitud como aprobada
+
                 solicitud.aprobada = True
+                solicitud.terminada = True
                 solicitud.save()
 
                 # Cambiar estado de la actividad
                 solicitud.actividad.editable = True
                 solicitud.actividad.save()
 
-            messages.success(
-                request,
-                f"La actividad '{solicitud.actividad.descripcion}' fue reabierta correctamente.",
-            )
+                messages.success(
+                    request,
+                    f"La actividad '{solicitud.actividad.descripcion}' fue reabierta correctamente.",
+                )
+
         elif accion == "rechazar":
-            messages.info(
-                request,
-                f"La solicitud de reapertura de '{solicitud.actividad.descripcion}' fue rechazada.",
-            )
+            with transaction.atomic():
+                solicitud.aprobada = False
+                solicitud.terminada = True
+                solicitud.save()
+
+                # Cambiar estado de la actividad
+                solicitud.actividad.editable = False
+                solicitud.actividad.save()
+                messages.info(
+                    request,
+                    f"La solicitud de reapertura de '{solicitud.actividad.descripcion}' fue rechazada.",
+                )
 
         return redirect("solicitudes_reapertura")
 
@@ -229,6 +250,9 @@ def solicitudes_reapertura(request):
         "actividades/solicitudes_reapertura.html",
         {
             "solicitudes": solicitudes,
+            "solicitudesTerminadas": solicitudesTerminadas,
+            "solicitudes_pendientes_count": solicitudes.count(),
+            "solicitudes_aprobadas_count": solicitudes.filter(aprobada=True).count(),
         },
     )
 
