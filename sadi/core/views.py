@@ -8,6 +8,7 @@ from metas.models import Meta
 from objetivos.models import ObjetivoEstrategico
 from proyectos.models import Proyecto
 from usuarios.decorators import role_required
+from django.db.models import Prefetch
 
 
 @role_required("ADMIN", "APOYO", "DOCENTE", "INVITADO")
@@ -54,11 +55,11 @@ def dashboard(request):
             # Verificar que el docente tenga departamento
             if not hasattr(usuario, "departamento") or not usuario.departamento:
                 logger.warning(f"Docente {usuario.id} sin departamento asignado")
-                # Retornar datos vacíos o manejar según necesidad
+                # Retornar datos vacíos en caso de falta de departamento
                 return render(request, "core/dashboard.html", get_empty_context())
 
             actividades_qs = Actividad.objects.filter(
-                meta__departamento=usuario.departamento
+                departamento=request.user.departamento
             )
             metas_qs = Meta.objects.filter(departamento=usuario.departamento)
             proyectos_qs = Proyecto.objects.filter(
@@ -102,50 +103,69 @@ def dashboard(request):
             actividades_cumplidas=Count(
                 "actividad", filter=Q(actividad__estado="Cumplida")
             ),
-        ).filter(
-            total_actividades__gt=0
-        )  # Solo metas con actividades
-
-        # Contar metas cumplidas (todas las actividades cumplidas)
-        metas_cumplidas_count = metas_anotadas.filter(
-            actividades_cumplidas=F("total_actividades")
-        ).count()
-
-        total_metas_con_actividades = safe_count(metas_anotadas)
-        metas_no_cumplidas = total_metas_con_actividades - metas_cumplidas_count
-        porcentaje_metas = safe_porcentaje(
-            metas_cumplidas_count, total_metas_con_actividades
         )
+
+        # Una meta se considera cumplida solo si tiene actividades y TODAS están cumplidas
+        metas_cumplidas_count = 0
+        total_metas = safe_count(metas_anotadas)
+
+        # Revisar cada meta individualmente para determinar si está cumplida
+        for meta in metas_anotadas:
+            if (
+                meta.total_actividades > 0
+                and meta.actividades_cumplidas == meta.total_actividades
+            ):
+                metas_cumplidas_count += 1
+
+        metas_no_cumplidas = total_metas - metas_cumplidas_count
+        porcentaje_metas = safe_porcentaje(metas_cumplidas_count, total_metas)
 
     except Exception as e:
         logger.error(f"Error procesando metas: {e}")
         metas_cumplidas_count = 0
-        total_metas_con_actividades = 0
+        total_metas = 0
         metas_no_cumplidas = 0
         porcentaje_metas = 0
 
     # ===================== PROYECTOS CON AGREGACIONES =====================
     try:
-        # Proyectos con al menos una meta
-        proyectos_con_metas = proyectos_qs.annotate(
-            total_metas=Count("meta"),
-            # Contar metas cumplidas usando subquery o lógica similar
-        ).filter(total_metas__gt=0)
+        # Anotar cada proyecto con el conteo de sus metas cumplidas y totales
+        proyectos_anotados = proyectos_qs.annotate(
+            total_metas=Count("meta", distinct=True),
+            metas_cumplidas=Count(
+                "meta", distinct=True, filter=Q(meta__actividad__estado="Cumplida")
+            ),
+        ).prefetch_related(
+            Prefetch(
+                "meta_set",
+                queryset=Meta.objects.annotate(
+                    total_acts=Count("actividad"),
+                    acts_cumplidas=Count(
+                        "actividad", filter=Q(actividad__estado="Cumplida")
+                    ),
+                ),
+            )
+        )
 
-        # Para proyectos, necesitamos una lógica más compleja
-        # Versión simplificada - podrías optimizar esto con subconsultas
         proyectos_cumplidos_count = 0
-        for proyecto in proyectos_con_metas.prefetch_related("meta_set__actividad_set"):
+        total_proyectos = safe_count(proyectos_anotados)
+
+        # Un proyecto se considera cumplido si TODAS sus metas están cumplidas
+        for proyecto in proyectos_anotados:
             metas_proyecto = proyecto.meta_set.all()
-            if metas_proyecto and all(
-                meta.actividad_set.exists()
-                and meta.actividad_set.filter(estado="Cumplida").count()
-                == meta.actividad_set.count()
-                for meta in metas_proyecto
-            ):
+            if not metas_proyecto:
+                continue  # Proyecto sin metas no se considera cumplido
+
+            # Verificar si TODAS las metas del proyecto están cumplidas
+            proyecto_cumplido = True
+            for meta in metas_proyecto:
+                if meta.total_acts == 0 or meta.acts_cumplidas != meta.total_acts:
+                    proyecto_cumplido = False
+                    break
+
+            if proyecto_cumplido:
                 proyectos_cumplidos_count += 1
 
-        total_proyectos = safe_count(proyectos_con_metas)
         proyectos_no_cumplidos = total_proyectos - proyectos_cumplidos_count
         porcentaje_proyectos = safe_porcentaje(
             proyectos_cumplidos_count, total_proyectos
@@ -160,26 +180,61 @@ def dashboard(request):
 
     # ===================== OBJETIVOS =====================
     try:
-        objetivos_con_proyectos = objetivos_qs.filter(proyecto__isnull=False).distinct()
-        objetivos_cumplidos_count = 0
+        objetivos_anotados = objetivos_qs.annotate(
+            total_proyectos=Count("proyecto", distinct=True)
+        ).prefetch_related(
+            Prefetch(
+                "proyecto_set",
+                queryset=Proyecto.objects.annotate(
+                    total_metas=Count("meta"),
+                    metas_cumplidas=Count(
+                        "meta", filter=Q(meta__actividad__estado="Cumplida")
+                    ),
+                ).prefetch_related(
+                    Prefetch(
+                        "meta_set",
+                        queryset=Meta.objects.annotate(
+                            total_acts=Count("actividad"),
+                            acts_cumplidas=Count(
+                                "actividad", filter=Q(actividad__estado="Cumplida")
+                            ),
+                        ),
+                    )
+                ),
+            )
+        )
 
-        for objetivo in objetivos_con_proyectos.prefetch_related(
-            "proyecto_set__meta_set__actividad_set"
-        ):
+        objetivos_cumplidos_count = 0
+        total_objetivos = safe_count(objetivos_anotados)
+
+        # Un objetivo se considera cumplido si TODOS sus proyectos están cumplidos
+        for objetivo in objetivos_anotados:
             proyectos_objetivo = objetivo.proyecto_set.all()
-            if proyectos_objetivo and all(
-                proyecto.meta_set.exists()
-                and all(
-                    meta.actividad_set.exists()
-                    and meta.actividad_set.filter(estado="Cumplida").count()
-                    == meta.actividad_set.count()
-                    for meta in proyecto.meta_set.all()
-                )
-                for proyecto in proyectos_objetivo
-            ):
+            if not proyectos_objetivo:
+                continue  # Objetivo sin proyectos no se considera cumplido
+
+            # Verificar si TODOS los proyectos del objetivo están cumplidos
+            objetivo_cumplido = True
+            for proyecto in proyectos_objetivo:
+                metas_proyecto = proyecto.meta_set.all()
+                if not metas_proyecto:
+                    objetivo_cumplido = False
+                    break
+
+                # Verificar si TODAS las metas del proyecto están cumplidas
+                proyecto_cumplido = True
+                for meta in metas_proyecto:
+                    if meta.total_acts == 0 or meta.acts_cumplidas != meta.total_acts:
+                        proyecto_cumplido = False
+                        break
+
+                if not proyecto_cumplido:
+                    objetivo_cumplido = False
+                    break
+
+            if objetivo_cumplido:
                 objetivos_cumplidos_count += 1
 
-        total_objetivos = safe_count(objetivos_con_proyectos)
         objetivos_no_cumplidos = total_objetivos - objetivos_cumplidos_count
         porcentaje_objetivos = safe_porcentaje(
             objetivos_cumplidos_count, total_objetivos
@@ -204,7 +259,6 @@ def dashboard(request):
         fig_actividades.update_traces(
             textinfo="percent+label",
             pull=[0.05, 0],
-            # Manejar caso sin datos
             text=(
                 [actividades_cumplidas, actividades_no_cumplidas]
                 if total_actividades > 0
@@ -215,36 +269,77 @@ def dashboard(request):
             fig_actividades, full_html=False, include_plotlyjs="cdn"
         )
 
-        # ... (similar para otros gráficos, con manejo de errores)
+        # Gráfico de metas
+        fig_metas = px.pie(
+            names=["Cumplidas", "No Cumplidas"],
+            values=[metas_cumplidas_count, metas_no_cumplidas],
+            title="Estado de las Metas",
+            color_discrete_sequence=["#2ECC71", "#E74C3C"],
+        )
+        fig_metas.update_traces(
+            textinfo="percent+label",
+            pull=[0.05, 0],
+            text=(
+                [metas_cumplidas_count, metas_no_cumplidas]
+                if total_metas > 0
+                else [0, 0]
+            ),
+        )
+        grafico_metas_html = pio.to_html(
+            fig_metas, full_html=False, include_plotlyjs="cdn"
+        )
+
+        # Gráfico de proyectos
+        fig_proyectos = px.pie(
+            names=["Cumplidos", "No Cumplidos"],
+            values=[proyectos_cumplidos_count, proyectos_no_cumplidos],
+            title="Estado de los Proyectos",
+            color_discrete_sequence=["#2ECC71", "#E74C3C"],
+        )
+        fig_proyectos.update_traces(
+            textinfo="percent+label",
+            pull=[0.05, 0],
+            text=(
+                [proyectos_cumplidos_count, proyectos_no_cumplidos]
+                if total_proyectos > 0
+                else [0, 0]
+            ),
+        )
+        grafico_proyectos_html = pio.to_html(
+            fig_proyectos, full_html=False, include_plotlyjs="cdn"
+        )
 
     except Exception as e:
         logger.error(f"Error generando gráficos: {e}")
         grafico_actividades_html = "<p>Error cargando gráfico</p>"
-        # ... manejar otros gráficos
+        grafico_metas_html = "<p>Error cargando gráfico</p>"
+        grafico_proyectos_html = "<p>Error cargando gráfico</p>"
 
     # ===================== CONTEXTO FINAL =====================
     context = {
         # Actividades
         "total_actividades": total_actividades,
-        "cumplidas": actividades_cumplidas,
-        "no_cumplidas": actividades_no_cumplidas,
+        "actividades_cumplidas": actividades_cumplidas,
+        "actividades_no_cumplidas": actividades_no_cumplidas,
         "grafico_actividades_html": grafico_actividades_html,
-        "porcentaje_cumplidas": porcentaje_actividades,
+        "porcentaje_actividades": porcentaje_actividades,
         # Metas
-        "total_metas": total_metas_con_actividades,
+        "total_metas": total_metas,
         "metas_cumplidas": metas_cumplidas_count,
         "metas_no_cumplidas": metas_no_cumplidas,
-        "porcentaje_metas_cumplidas": porcentaje_metas,
+        "grafico_metas_html": grafico_metas_html,
+        "porcentaje_metas": porcentaje_metas,
         # Proyectos
         "total_proyectos": total_proyectos,
         "proyectos_cumplidos": proyectos_cumplidos_count,
         "proyectos_no_cumplidos": proyectos_no_cumplidos,
-        "porcentaje_proyectos_cumplidos": porcentaje_proyectos,
+        "grafico_proyectos_html": grafico_proyectos_html,
+        "porcentaje_proyectos": porcentaje_proyectos,
         # Objetivos
         "total_objetivos": total_objetivos,
         "objetivos_cumplidos": objetivos_cumplidos_count,
         "objetivos_no_cumplidos": objetivos_no_cumplidos,
-        "porcentaje_objetivos_cumplidos": porcentaje_objetivos,
+        "porcentaje_objetivos": porcentaje_objetivos,
         # Info del rol
         "es_docente": es_docente,
         "filtro_aplicado": "Departamento" if es_docente else "Global",
