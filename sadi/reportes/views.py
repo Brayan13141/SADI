@@ -8,7 +8,6 @@ from openpyxl import Workbook
 import pandas as pd
 from django.utils import timezone
 from metas.models import Meta, AvanceMeta
-
 from actividades.models import Actividad
 from proyectos.models import Proyecto
 from objetivos.models import ObjetivoEstrategico
