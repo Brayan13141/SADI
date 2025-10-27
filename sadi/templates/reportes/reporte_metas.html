@@ -1,180 +1,351 @@
 {% extends "core/base.html" %}
 {% load static %}
 
-{% block title %}Reporte de Metas{% endblock %}
-
-{% block extra_css %}
-<style>
-    .resumen-card {
-        background: #f8f9fa;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        padding: 20px;
-        text-align: center;
-        transition: transform 0.2s;
-    }
-    .resumen-card:hover {
-        transform: scale(1.03);
-    }
-    .resumen-card h3 {
-        font-size: 1.8rem;
-        font-weight: bold;
-        margin-bottom: 10px;
-    }
-    .resumen-card span {
-        font-size: 1.2rem;
-        color: #555;
-    }
-    .table thead {
-        background-color: #0d6efd;
-        color: white;
-    }
-    .estado-cumplida {
-        color: #198754;
-        font-weight: bold;
-    }
-    .estado-progreso {
-        color: #ffc107;
-        font-weight: bold;
-    }
-    .estado-rezagada {
-        color: #dc3545;
-        font-weight: bold;
-    }
-</style>
-{% endblock %}
+{% block title %}Reporte de Metas por Departamento{% endblock %}
 
 {% block content %}
+<div class="container-fluid py-3">
     <!-- BOTÓN VOLVER -->
     <div class="mb-3">
-    <a href="{% url 'reportes' %}" class="btn btn-sm btn-outline-secondary">
-        <i class="fas fa-arrow-left me-1"></i> Volver a Reportes
-    </a>
+        <a href="{% url 'reportes' %}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Volver a Reportes
+        </a>
     </div>
-    <div class="container py-4">
-        <h2 class="mb-4 text-center">📊 Reporte de Metas por Departamento</h2>
 
-    <!-- Filtro por Departamento -->
-    <form method="get" class="mb-4 text-center">
-        <div class="d-flex justify-content-center align-items-center gap-2">
-            <select name="departamento" class="form-select w-auto">
-                <option value="">Todos los Departamentos</option>
-                {% for depto in departamentos %}
-                    <option value="{{ depto.id }}" {% if request.GET.departamento == depto.id|stringformat:"s" %}selected{% endif %}>
-                        {{ depto.nombre }}
-                    </option>
-                {% endfor %}
-            </select>
-            <button type="submit" class="btn btn-primary">
-                <i class="fa-solid fa-filter"></i> Filtrar
-            </button>
-            <a href="?exportar=1{% if request.GET.departamento %}&departamento={{ request.GET.departamento }}{% endif %}" class="btn btn-success">
-                <i class="fa-solid fa-file-excel"></i> Exportar a Excel
-            </a>
-        </div>
-    </form>
-
-    <!-- Tarjetas de resumen -->
-    <div class="row text-center mb-4">
-        <div class="col-md-4">
-            <div class="resumen-card border-success">
-                <h3 class="text-success">{{ metas_completadas }}</h3>
-                <span>Metas Cumplidas ✅</span>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="resumen-card border-warning">
-                <h3 class="text-warning">{{ metas_en_progreso }}</h3>
-                <span>Metas en Progreso ⚙️</span>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="resumen-card border-danger">
-                <h3 class="text-danger">{{ metas_rezagadas }}</h3>
-                <span>Metas Rezagadas ⏳</span>
+    <!-- ENCABEZADO Y CONTROLES -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h2 class="card-title mb-0 text-primary">
+                        <i class="fas fa-chart-bar me-2"></i>Reporte de Metas por Departamento
+                    </h2>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <a href="?exportar=1{% if departamento_seleccionado %}&departamento={{ departamento_seleccionado }}{% endif %}" 
+                       class="btn btn-success">
+                        <i class="fas fa-file-excel me-1"></i> Exportar a Excel
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Tabla de Metas -->
-    <div class="table-responsive" >
-        <table id="reporteMetas" class="table table-hover align-middle" >
-            <thead>
-                <tr class="text-nowrap text-center">
-                    <th>Departamento</th>
-                    <th>Clave</th>
-                    <th>Nombre</th>
-                    <th>Proyecto</th>
-                    <th>Objetivo</th>
-                    <th>Ciclo</th>
-                    <th>Indicador</th>
-                    <th>Línea Base</th>
-                    <th>Meta a Cumplir</th>
-                    <th>Total Acumulado</th>
-                    <th>Cumplimiento</th>
-                    <th>Estado</th>
-                </tr>
-            </thead>
-            <tbody>
+    <!-- FILTRO Y RESUMEN -->
+    <div class="row mb-4">
+        <!-- FILTRO -->
+        <div class="col-lg-4 mb-3">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h6 class="card-title mb-0"><i class="fas fa-filter me-1"></i>Filtrar por Departamento</h6>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row g-2">
+                        <div class="col-12">
+                            <select name="departamento" class="form-select">
+                                <option value="">Todos los Departamentos</option>
+                                {% for depto in departamentos %}
+                                    <option value="{{ depto.id }}" {% if departamento_seleccionado == depto.id %}selected{% endif %}>
+                                        {{ depto.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-filter me-1"></i> Aplicar Filtro
+                                </button>
+                                {% if departamento_seleccionado %}
+                                <a href="?" class="btn btn-outline-secondary">Limpiar Filtro</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- RESUMEN ESTADÍSTICAS -->
+        <div class="col-lg-8">
+            <div class="card h-100">
+                <div class="card-header bg-light">
+                    <h6 class="card-title mb-0"><i class="fas fa-chart-pie me-1"></i>Resumen General</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center h-100">
+                        <div class="col-md-4 mb-3 mb-md-0 d-flex flex-column">
+                            <div class="card bg-primary text-white flex-fill d-flex flex-column justify-content-center">
+                                <div class="card-body py-3">
+                                    <h4 class="card-title">{{ total_metas }}</h4>
+                                    <p class="card-text mb-0 small">Total de Metas</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3 mb-md-0 d-flex flex-column">
+                            <div class="card bg-success text-white flex-fill d-flex flex-column justify-content-center">
+                                <div class="card-body py-3">
+                                    <h4 class="card-title">{{ metas_cumplidas }}</h4>
+                                    <p class="card-text mb-0 small">Metas Cumplidas</p>
+                                    <small>{{ porcentaje_cumplimiento }}%</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 d-flex flex-column">
+                            <div class="card bg-warning text-dark flex-fill d-flex flex-column justify-content-center">
+                                <div class="card-body py-3">
+                                    <h4 class="card-title">{{ metas_pendientes }}</h4>
+                                    <p class="card-text mb-0 small">En Proceso</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LISTADO DE METAS -->
+    <div class="card">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h6 class="card-title mb-0">
+                <i class="fas fa-list-check me-1"></i>Detalle de Metas 
+                <span class="badge bg-primary ms-2">{{ total_metas }}</span>
+            </h6>
+            <small class="text-muted">Total de metas encontradas</small>
+        </div>
+        <div class="card-body p-0">
+            {% if metas %}
+            <div class="row g-0">
                 {% for meta in metas %}
-                    <tr class="text-wrap">
-                        <td>{{ meta.departamento }}</td>
-                        <td class="text-nowrap">{{ meta.meta }}</td>
-                        <td>{{ meta.nombre }}</td>
-                        <td>{{ meta.proyecto }}</td>
-                        <td>{{ meta.objetivo }}</td>
-                        <td>{{ meta.ciclo }}</td>
-                        <td>{{ meta.indicador }}</td>
-                        <td>{{ meta.lineabase }}</td>
-                        <td>{{ meta.metacumplir }}</td>
-                        <td>{{ meta.total_acumulado }}</td>
-                        <td>{{ meta.cumplimiento }}</td>
-                        <td class="text-nowrap">
-                            {% if meta.estado == "Cumplida" %}
-                                <span class="estado-cumplida">✔ {{ meta.estado }}</span>
-                            {% elif meta.estado == "En progreso" %}
-                                <span class="estado-progreso">⚙️ {{ meta.estado }}</span>
-                            {% else %}
-                                <span class="estado-rezagada">❌ {{ meta.estado }}</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% empty %}
-                    <tr>
-                        <td colspan="12" class="text-center text-muted">
-                            No se encontraron metas registradas.
-                        </td>
-                    </tr>
+                <div class="col-12 border-bottom">
+                    <div class="p-4">
+                        <!-- HEADER DE LA META -->
+                        <div class="row align-items-center mb-3">
+                            <div class="col-md-8">
+                                <h5 class="card-title text-primary mb-1">{{ meta.nombre|default:meta.clave }}</h5>
+                                <p class="text-muted mb-0 small">
+                                    <strong>Clave:</strong> {{ meta.clave }} | 
+                                    <strong>Proyecto:</strong> {{ meta.proyecto }} |
+                                    <strong>Departamento:</strong> {{ meta.departamento }}
+                                </p>
+                            </div>
+                            <div class="col-md-4 text-md-end">
+                                <span class="badge fs-6 
+                                    {% if meta.estado == 'Cumplida' %}bg-success
+                                    {% elif meta.estado == 'En progreso' %}bg-warning text-dark
+                                    {% else %}bg-danger{% endif %}">
+                                    {{ meta.estado }}
+                                </span>
+                                <div class="mt-2">
+                                    <span class="fw-bold text-dark">{{ meta.actividades_cumplidas }}/{{ meta.total_actividades }}</span>
+                                    <small class="text-muted">actividades cumplidas</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- INFORMACIÓN DETALLADA -->
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="card bg-light h-100">
+                                    <div class="card-body">
+                                        <h6 class="card-title"><i class="fas fa-info-circle me-1"></i>Información de la Meta</h6>
+                                        <div class="row small">
+                                            <div class="col-6">
+                                                <strong>Ciclo:</strong><br>
+                                                {{ meta.ciclo|default:"N/A" }}
+                                            </div>
+                                            <div class="col-6">
+                                                <strong>Indicador:</strong><br>
+                                                <span class="text-muted">{{ meta.indicador|truncatewords:8 }}</span>
+                                            </div>
+                                            <div class="col-6 mt-2">
+                                                <strong>Meta a Cumplir:</strong><br>
+                                                {{ meta.metacumplir|default:"N/A" }}
+                                            </div>
+                                            <div class="col-6 mt-2">
+                                                <strong>Total Acumulado:</strong><br>
+                                                {{ meta.total_acumulado|default:"N/A" }}
+                                            </div>
+                                            <div class="col-12 mt-2">
+                                                <strong>Progreso General:</strong><br>
+                                                {{ meta.cumplimiento }}%
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-lg-6 mt-3 mt-lg-0">
+                                <div class="card bg-light h-100">
+                                    <div class="card-body">
+                                        <h6 class="card-title"><i class="fas fa-chart-bar me-1"></i>Progreso de Actividades</h6>
+                                        <div class="text-center">
+                                            <!-- Barra de progreso -->
+                                            <div class="progress mb-2" style="height: 25px;">
+                                                <div class="progress-bar 
+                                                    {% if meta.estado == 'Cumplida' %}bg-success
+                                                    {% elif meta.estado == 'En progreso' %}bg-warning
+                                                    {% else %}bg-danger{% endif %}" 
+                                                    role="progressbar" 
+                                                    style="width: {{ meta.cumplimiento }}%" 
+                                                    aria-valuenow="{{ meta.cumplimiento }}" 
+                                                    aria-valuemin="0" 
+                                                    aria-valuemax="100">
+                                                    {{ meta.cumplimiento }}%
+                                                </div>
+                                            </div>
+                                            <small class="text-muted">
+                                                {{ meta.actividades_cumplidas }} de {{ meta.total_actividades }} actividades cumplidas
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ACTIVIDADES -->
+                        <div class="mt-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-tasks me-1"></i>Detalle de Actividades
+                                    <span class="badge bg-secondary ms-1">{{ meta.total_actividades }}</span>
+                                </h6>
+                                <button class="btn btn-sm btn-outline-primary" type="button" 
+                                        data-bs-toggle="collapse" data-bs-target="#actividades{{ forloop.counter }}">
+                                    <i class="fas fa-chevron-down me-1"></i>
+                                    <span class="collapse-show">Mostrar</span>
+                                    <span class="collapse-hide">Ocultar</span>
+                                </button>
+                            </div>
+                            
+                            <div class="collapse" id="actividades{{ forloop.counter }}">
+                                <div class="card">
+                                    <div class="card-body p-0">
+                                        {% if meta.actividades %}
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-hover mb-0">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>Actividad</th>
+                                                        <th>Descripción</th>
+                                                        <th>Estado</th>
+                                                        <th>Fechas</th>
+                                                        <th>Responsable</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for actividad in meta.actividades %}
+                                                    <tr>
+                                                        <td class="fw-bold">{{ actividad.nombre|default:"Sin nombre" }}</td>
+                                                        <td class="text-start small">{{ actividad.descripcion|truncatewords:10 }}</td>
+                                                        <td>
+                                                            <span class="badge 
+                                                                {% if actividad.estado == 'Cumplida' %}bg-success
+                                                                {% elif actividad.estado == 'En Proceso' %}bg-warning text-dark
+                                                                {% elif actividad.estado == 'Activa' %}bg-info
+                                                                {% else %}bg-danger{% endif %} small">
+                                                                {{ actividad.estado }}
+                                                            </span>
+                                                        </td>
+                                                        <td class="text-nowrap small">
+                                                            <div>{{ actividad.fecha_inicio|date:"d/m/Y" }}</div>
+                                                            <div class="text-muted">al {{ actividad.fecha_fin|date:"d/m/Y" }}</div>
+                                                        </td>
+                                                        <td class="small">{{ actividad.responsable }}</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        {% else %}
+                                        <div class="text-center py-4 text-muted">
+                                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                                            <p class="mb-0">No hay actividades registradas para esta meta</p>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 {% endfor %}
-            </tbody>
-        </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="fas fa-search fa-3x mb-3"></i>
+                <h5>No se encontraron metas</h5>
+                <p class="mb-0">No hay metas registradas para el criterio de búsqueda seleccionado</p>
+            </div>
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endblock %}
+
 {% block extra_js %}
-    <script>
-    $(document).ready(function() {
-    $('#reporteMetas').DataTable({
-            scrollX: true,
-            scrollY: '500px',
-            scrollCollapse: true,
-            fixedColumns: {
-                left: 1,
-            },
-            lengthMenu: [5, 10, 15, 20, 50],
-            autoWidth: false,
-            paging: true,
-            searching: true,
-            info: true,
-            pageLength: 5,
-            language: {
-                url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json',
-            },
-            deferRender: true,
-            scroller: true,
-            stateSave: true,
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // TOGGLE TEXT PARA BOTONES DE ACTIVIDADES
+    document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(button => {
+        button.addEventListener('click', function() {
+            const collapseShow = this.querySelector('.collapse-show');
+            const collapseHide = this.querySelector('.collapse-hide');
+            
+            if (collapseShow && collapseHide) {
+                if (this.getAttribute('aria-expanded') === 'true') {
+                    collapseShow.style.display = 'inline';
+                    collapseHide.style.display = 'none';
+                } else {
+                    collapseShow.style.display = 'none';
+                    collapseHide.style.display = 'inline';
+                }
+            }
         });
     });
-    
-    </script>
-    {% endblock %}
+
+    // INICIALIZAR ESTADO DE BOTONES
+    document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(button => {
+        const collapseShow = button.querySelector('.collapse-show');
+        const collapseHide = button.querySelector('.collapse-hide');
+        
+        if (collapseShow && collapseHide) {
+            collapseShow.style.display = 'inline';
+            collapseHide.style.display = 'none';
+        }
+    });
+});
+</script>
+
+<style>
+.card {
+    border: 1px solid #e3e6f0;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+}
+.card-header {
+    border-bottom: 1px solid #e3e6f0;
+    font-weight: 600;
+}
+.badge {
+    font-size: 0.75em;
+}
+.table th {
+    border-top: none;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+.collapse-hide {
+    display: none;
+}
+.progress {
+    border-radius: 0.5rem;
+}
+.progress-bar {
+    font-weight: 600;
+}
+</style>
+{% endblock %}

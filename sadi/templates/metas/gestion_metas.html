@@ -69,11 +69,11 @@
                 {% csrf_token %}
                 {% if editables == False %}
                      <button type="button" class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#confirmarActivar">
-                        Activar edición
+                        Activar edición para docentes
                     </button>
                 {% else %}
                     <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#confirmarDesactivar">
-                        Desactivar edición
+                        Desactivar edición para docentes
                     </button>
                 {% endif %}
             </form>

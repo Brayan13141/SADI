@@ -126,7 +126,7 @@
                     </li>
 
                     <!-- Gestión de Meta - Solo para ADMIN y APOYO -->
-                    {% if request.user.role == "ADMIN" or request.user.role == "APOYO" or request.user.role == "INVITADO" or request.user.role == "DOCENTE" %}
+                    {% if request.user.role == "ADMIN" or request.user.role == "APOYO"  or request.user.role == "DOCENTE" %}
                     <li class="nav-item mb-2">
                         <a class="nav-link text-dark {% if request.resolver_match.url_name == 'tabla_seguimiento' %}active{% endif %}" href="{% url 'tabla_seguimiento' %}">
                             <i class="bi bi-award text-dark me-2"></i> Seguimiento de Metas
@@ -302,13 +302,15 @@
                         </div>
                         </li>
                     {% endif %}
-
+  
+                    {% if request.user.role == "ADMIN" or request.user.role == "APOYO" or request.user.role == "DOCENTE" %}
                     <!-- Reportes -->
                     <li class="nav-item">
                         <a class="nav-link text-dark {% if request.resolver_match.url_name == 'reportes' %}active{% endif %}" href="{% url 'reportes' %}" >
                             <i class="bi bi-bar-chart me-2"></i> Reportes
                         </a>
                     </li>
+                    {% endif %}
                 </ul>
             </div>
 
@@ -468,11 +470,13 @@
                 </div>
                 {% endif %}
 
+                {% if request.user.role == "ADMIN" or request.user.role == "APOYO" or request.user.role == "DOCENTE" %}
                 <!-- Reportes -->
                 <a class="sidebar-link {% if request.resolver_match.url_name == 'reportes' %}active{% endif %}"
                    href="{% url 'reportes' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Reportes">
                     <i class="bi bi-bar-chart"></i>
                 </a>
+                {% endif %}
                 
             </div>
         </nav>

@@ -182,7 +182,7 @@ def gestion_metas(request):
             "abrir_modal_crear": abrir_modal_crear,
             "abrir_modal_editar": abrir_modal_editar,
             "meta_editar_id": meta_editar_id,
-            "editables": editables.variableB,
+            "editables": editables.variableB if editables else False,
             "puede_crear": puede_crear,
             "puede_editar": puede_editar,
             "puede_eliminar": puede_eliminar,

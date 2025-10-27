@@ -9,6 +9,10 @@
         background-color: #0d6efd;
         color: white;
     }
+    .table td, .table th {
+        vertical-align: middle;
+        text-align: center;
+    }
 </style>
 {% endblock %}
 
@@ -18,16 +22,18 @@
     <i class="fas fa-arrow-left me-1"></i> Volver a Reportes
   </a>
 </div>
+
 <div class="container py-4">
     <h2 class="mb-4 text-center">📊 Reporte de Avances de Metas</h2>
 
-    <!-- Filtro por Departamento -->
+    <!-- 🔍 Filtro por Departamento -->
     <form method="get" class="mb-4 text-center">
-        <div class="d-flex justify-content-center align-items-center gap-2">
+        <div class="d-flex justify-content-center align-items-center gap-2 flex-wrap">
             <select name="departamento" class="form-select w-auto">
                 <option value="">Todos los Departamentos</option>
                 {% for depto in departamentos %}
-                    <option value="{{ depto.id }}" {% if request.GET.departamento == depto.id|stringformat:"s" %}selected{% endif %}>
+                    <option value="{{ depto.id }}" 
+                        {% if departamento_seleccionado == depto.id %}selected{% endif %}>
                         {{ depto.nombre }}
                     </option>
                 {% endfor %}
@@ -35,17 +41,18 @@
             <button type="submit" class="btn btn-primary">
                 <i class="fa-solid fa-filter"></i> Filtrar
             </button>
-            <a href="?exportar=1{% if request.GET.departamento %}&departamento={{ request.GET.departamento }}{% endif %}" class="btn btn-success">
+            <a href="?exportar=1{% if departamento_seleccionado %}&departamento={{ departamento_seleccionado }}{% endif %}" 
+               class="btn btn-success">
                 <i class="fa-solid fa-file-excel"></i> Exportar a Excel
             </a>
         </div>
     </form>
 
-    <!-- Tabla de Avances -->
+    <!-- 📋 Tabla de Avances -->
     <div class="table-responsive">
         <table id="reporteAvances" class="table table-hover align-middle">
             <thead>
-                <tr class="text-nowrap text-center">
+                <tr class="text-nowrap">
                     <th>Departamento</th>
                     <th>Meta</th>
                     <th>Proyecto</th>
@@ -53,24 +60,28 @@
                     <th>Fecha Registro</th>
                     <th>Avance</th>
                     <th>Meta a Cumplir</th>
+                    <th>% Cumplimiento</th>
                 </tr>
             </thead>
             <tbody>
                 {% for a in data %}
-                    <tr>
+                    <tr class="text-wrap">
                         <td>{{ a.departamento }}</td>
                         <td>{{ a.meta }}</td>
                         <td>{{ a.proyecto }}</td>
                         <td>{{ a.ciclo }}</td>
-                        <td>{{ a.fecha_registro|date:"d/m/Y" }}</td>
-                        <td>
-                        {{ a.avance }}
-                        </td>
+                        <td>{{ a.fecha_registro }}</td>
+                        <td>{{ a.avance }}</td>
                         <td>{{ a.meta_cumplir }}</td>
+                        <td>
+                            <span class="fw-bold {% if a.porcentaje_cumplimiento >= 100 %}text-success{% elif a.porcentaje_cumplimiento >= 50 %}text-warning{% else %}text-danger{% endif %}">
+                                {{ a.porcentaje_cumplimiento }}%
+                            </span>
+                        </td>
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="7" class="text-center text-muted">
+                        <td colspan="8" class="text-center text-muted">
                             No se encontraron registros de avances.
                         </td>
                     </tr>
@@ -80,31 +91,21 @@
     </div>
 </div>
 {% endblock %}
+
 {% block extra_js %}
 <script>
 $(document).ready(function() {
-   $('#reporteAvances').DataTable({
+    $('#reporteAvances').DataTable({
         scrollX: true,
         scrollY: '500px',
         scrollCollapse: true,
-        fixedColumns: {
-            left: 1,
-        },
-        lengthMenu: [5, 10, 15, 20, 50],
-        autoWidth: false,
-        paging: true,
-        searching: true,
-        info: true,
-        pageLength: 5,
+        lengthMenu: [5, 10, 20, 50, 100],
+        pageLength: 10,
         language: {
             url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json',
         },
-        deferRender: true,
-        scroller: true,
         stateSave: true,
     });
 });
-  
 </script>
 {% endblock %}
-
