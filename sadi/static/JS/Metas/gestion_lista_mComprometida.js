@@ -1,19 +1,5 @@
 $(document).ready(function () {
     // DataTable
-    $('#comprometidasTable').DataTable({
-        scrollX: true,
-        scrollY: '250px',
-        scrollCollapse: true,
-        lengthMenu: [5, 10, 15, 20, 50],
-        autoWidth: false,
-        paging: true,
-        searching: true,
-        info: true,
-        pageLength: 5,
-        language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json',
-        },
-    });
 
     // --- ABRIR MODAL DE EDICIÓN ---
     $('.btn-editar-comprometida').on('click', function () {

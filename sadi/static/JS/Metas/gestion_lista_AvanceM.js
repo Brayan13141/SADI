@@ -253,27 +253,3 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
-
-$(document).ready(function () {
-    $('#lista_avances').DataTable({
-        scrollX: true,
-        scrollY: '250px',
-        scrollCollapse: true,
-        fixedColumns: {
-            left: 1,
-        },
-        lengthMenu: [5, 10, 15, 20, 50],
-        autoWidth: false,
-        paging: true,
-        searching: true,
-        info: true,
-        pageLength: 5,
-        language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json',
-        },
-        // Configuración adicional para mejorar el rendimiento con muchas columnas
-        deferRender: true,
-        scroller: true,
-        stateSave: true,
-    });
-});
