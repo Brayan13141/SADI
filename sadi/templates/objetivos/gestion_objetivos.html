@@ -37,6 +37,7 @@
                     <thead>
                         <tr>
                             <th>ID</th>
+                            <th>Clave</th>
                             <th>Descripción</th>  
                             <th>Programa</th>
                             <th>Acciones</th>
@@ -46,6 +47,7 @@
                         {% for objetivo in objetivos %}
                         <tr class="text-nowrap">
                             <td>{{ objetivo.id }}</td>
+                            <td>{{ objetivo.clave }}</td>
                             <td class="text-start">{{ objetivo.descripcion|truncatewords:10 }}</td>
                             <td>{{ objetivo.programa.nombre }}</td>
                             <td>
