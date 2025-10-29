@@ -5,26 +5,28 @@ from django.contrib import messages
 from .forms import UsuarioEditForm, UsuarioForm
 from .serializers import UsuarioSerializer
 from .decorators import role_required
-from django.contrib.admin.views.decorators import staff_member_required
 
 
-@staff_member_required
 @role_required("ADMIN")
 def gestion_usuarios(request):
     usuarios = Usuario.objects.all()
     form = UsuarioForm()
     form_edit = UsuarioEditForm()
     abrir_modal_crear = False
+    print(request.POST)
 
     if request.method == "POST":
         if "crear_usuario" in request.POST:
             form = UsuarioForm(request.POST)
+
             if form.is_valid():
                 usuario = form.save()
                 messages.success(request, "Usuario creado correctamente.")
                 return redirect("gestion_usuarios")
             else:
                 abrir_modal_crear = True
+                messages.error(request, "Error al crear el usuario. Revisa los campos.")
+                return redirect("gestion_usuarios")
 
         elif "editar_usuario" in request.POST:
             usuario_id = request.POST.get("usuario_id")

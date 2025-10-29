@@ -70,7 +70,7 @@ $(document).ready(function () {
         const metaId = $(this).data('id');
         const clave = $(this).data('clave');
         const nombre = $(this).data('nombre');
-        const enunciado = $(this).data('enunciado');
+
         const proyectoId = $(this).data('proyecto');
         const departamentoId = $(this).data('departamento');
         const indicador = $(this).data('indicador');
@@ -86,7 +86,7 @@ $(document).ready(function () {
         $('#meta_id').val(metaId);
         $('#id_clave').val(clave);
         $('#id_nombre').val(nombre);
-        $('#id_enunciado').val(enunciado);
+
         $('#id_proyecto').val(proyectoId);
         $('#id_departamento').val(departamentoId);
         $('#id_indicador').val(indicador);
@@ -105,7 +105,7 @@ $(document).ready(function () {
         // Deshabilitar campos para docentes
         if (usuarioRol === 'DOCENTE') {
             $(
-                '#id_clave, #id_nombre, #id_proyecto, #id_departamento, #id_ciclo, #id_activa, #id_indicador, #id_unidadmedida, #id_metodocalculo, #id_enunciado, #Eid_variableb'
+                '#id_clave, #id_nombre, #id_proyecto, #id_departamento, #id_ciclo, #id_activa, #id_indicador, #id_unidadmedida, #id_metodocalculo,  #Eid_variableb'
             ).prop('disabled', true);
         } else {
             $(
@@ -176,7 +176,7 @@ $(document).ready(function () {
         // Validar campos requeridos
         const camposRequeridos = [
             'nombre',
-            'enunciado',
+
             'proyecto',
             'indicador',
             'unidadMedida',
@@ -224,7 +224,6 @@ $(document).ready(function () {
         const camposRequeridos = [
             'clave',
             'nombre',
-            'enunciado',
             'proyecto',
             'acumulable',
             'indicador',

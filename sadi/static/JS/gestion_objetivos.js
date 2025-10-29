@@ -17,7 +17,6 @@ $(document).ready(function () {
     $('.btn-editar').on('click', function () {
         $('#objetivo_id').val($(this).data('id'));
         $('#id_descripcion').val($(this).data('descripcion'));
-        $('#id_ciclo').val($(this).data('ciclo_id'));
         $('#id_programa').val($(this).data('programa_id'));
 
         // Limpiar errores previos
@@ -39,10 +38,6 @@ $(document).ready(function () {
         let camposInvalidos = {};
 
         // Validar campos obligatorios
-        if (!$('[name="ciclo"]', this).val()) {
-            errores.push('Debe seleccionar un ciclo.');
-            camposInvalidos.ciclo = $('[name="ciclo"]', this);
-        }
         if (!$('[name="programa"]', this).val()) {
             errores.push('Debe seleccionar un programa.');
             camposInvalidos.programa = $('[name="programa"]', this);
@@ -76,10 +71,6 @@ $(document).ready(function () {
         let camposInvalidos = {};
 
         // Validar campos obligatorios
-        if (!$('#id_ciclo').val()) {
-            errores.push('Debe seleccionar un ciclo.');
-            camposInvalidos.ciclo = $('#id_ciclo');
-        }
         if (!$('#id_programa').val()) {
             errores.push('Debe seleccionar un programa.');
             camposInvalidos.programa = $('#id_programa');

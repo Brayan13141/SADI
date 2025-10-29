@@ -6,9 +6,8 @@ from objetivos.models import ObjetivoEstrategico
 class ProyectoForm(forms.ModelForm):
     class Meta:
         model = Proyecto
-        fields = ["clave", "nombre", "objetivo"]
+        fields = ["nombre", "objetivo"]
         widgets = {
-            "clave": forms.TextInput(attrs={"class": "form-control", "required": True}),
             "nombre": forms.Textarea(
                 attrs={"rows": 3, "class": "form-control", "required": True}
             ),

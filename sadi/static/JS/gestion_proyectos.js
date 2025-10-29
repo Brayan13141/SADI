@@ -18,12 +18,10 @@ $(document).ready(function () {
     // Manejar clic en botón Editar
     $('.btn-editar').on('click', function () {
         var proyectoId = $(this).data('id');
-        var clave = $(this).data('clave');
         var nombre = $(this).data('nombre');
         var objetivoId = $(this).data('objetivo_id');
 
         $('#proyecto_id').val(proyectoId);
-        $('#id_clave').val(clave);
         $('#id_nombre').val(nombre);
         $('#id_objetivo').val(objetivoId);
 
@@ -46,10 +44,6 @@ $(document).ready(function () {
         let camposInvalidos = {};
 
         // Validar campos obligatorios
-        if (!$('[name="clave"]', this).val().trim()) {
-            errores.push('El campo Clave es obligatorio.');
-            camposInvalidos.clave = $('[name="clave"]', this);
-        }
         if (!$('[name="objetivo"]', this).val()) {
             errores.push('Debe seleccionar un objetivo.');
             camposInvalidos.objetivo = $('[name="objetivo"]', this);
@@ -83,10 +77,6 @@ $(document).ready(function () {
         let camposInvalidos = {};
 
         // Validar campos obligatorios
-        if (!$('#id_clave').val().trim()) {
-            errores.push('El campo Clave es obligatorio.');
-            camposInvalidos.clave = $('#id_clave');
-        }
         if (!$('#id_objetivo').val()) {
             errores.push('Debe seleccionar un objetivo.');
             camposInvalidos.objetivo = $('#id_objetivo');

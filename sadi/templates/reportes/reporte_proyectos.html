@@ -140,13 +140,16 @@
 <script>
 document.addEventListener("DOMContentLoaded", function() {
     // === DataTable ===
+    {% if hay_datos %}
     $('#tablaProyectos').DataTable({
         lengthMenu: [5, 10, 20, 50],
         pageLength: 5,
         language: {
             url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json',
         }
-    });
+    });      
+    {% endif %}
+    
 
     // === Chart ===
     const ctx = document.getElementById("chartProyectos");

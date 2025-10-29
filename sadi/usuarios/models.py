@@ -14,7 +14,7 @@ class Usuario(AbstractUser):
 
     role = models.CharField(max_length=15, choices=ROLE_CHOICES)
     departamento = models.OneToOneField(
-        Departamento, on_delete=models.RESTRICT, null=True, unique=True
+        Departamento, on_delete=models.RESTRICT, null=True, unique=True, blank=True
     )
     history = HistoricalRecords()
 

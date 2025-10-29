@@ -12,7 +12,7 @@ from simple_history.models import HistoricalRecords
 class Meta(models.Model):
     nombre = models.CharField(max_length=250, blank=True, null=True)
     clave = models.CharField(max_length=50, unique=True, blank=True, null=True)
-    enunciado = models.TextField(blank=False, null=False)
+    enunciado = models.TextField(blank=True, null=True, default="")
     proyecto = models.ForeignKey(Proyecto, on_delete=models.RESTRICT)
     departamento = models.ForeignKey(
         Departamento, on_delete=models.RESTRICT, null=True, blank=True
@@ -68,9 +68,9 @@ class Meta(models.Model):
 
         # --- GENERAR CLAVE AUTOMÁTICA ---
         if not self.clave or self.clave.strip().upper() == "AUTO":
-            idP = self.proyecto.id
+            clave = self.proyecto.clave
             count = Meta.objects.filter(proyecto=self.proyecto).count() + 1
-            self.clave = f"{"P"+str(idP)}-{"META" + str(count)}"
+            self.clave = f"{clave}-{"META" + str(count)}"
 
         self.full_clean()
         super().save(*args, **kwargs)

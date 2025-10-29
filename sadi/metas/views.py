@@ -193,9 +193,12 @@ def gestion_metas(request):
 # =============VISTAS PARA EDICION MASIVA=====================
 @role_required("ADMIN", "APOYO", "DOCENTE")
 def avance_meta_general_list(request):
+
     avances = AvanceMeta.objects.select_related("metaCumplir", "departamento").order_by(
         "-fecha_registro"
     )
+
+    hay_avances = avances.exists()
     for a in avances:
         print(a.metaCumplir_id)
 
@@ -262,6 +265,7 @@ def avance_meta_general_list(request):
             "avances": avances,
             "metas": metas,
             "avance_form": avance_form,
+            "hay_avances": hay_avances,
             "abrir_modal_avance": abrir_modal_avance,
             "modo_edicion": modo_edicion,
             "avance_id": avance_id,
@@ -276,6 +280,8 @@ def meta_comprometida_general_list(request):
     comprometidas = MetaComprometida.objects.select_related("meta").all()
     comprometida_form = MetaComprometidaGeneralForm()
     metas_con_comprometida = MetaComprometida.objects.values_list("meta_id", flat=True)
+
+    hay_comprometidas = comprometidas.exists()
 
     abrir_modal_comprometida = False
     modo_edicion = False
@@ -347,6 +353,7 @@ def meta_comprometida_general_list(request):
         {
             "comprometidas": comprometidas,
             "comprometida_form": comprometida_form,
+            "hay_comprometidas": hay_comprometidas,
             "abrir_modal_comprometida": abrir_modal_comprometida,
             "modo_edicion": modo_edicion,
             "comprometida_id": comprometida_id,

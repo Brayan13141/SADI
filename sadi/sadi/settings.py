@@ -207,12 +207,18 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Configuraciones de seguridad para ngrok
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
 
 # Configuración CSRF para ngrok
 CSRF_TRUSTED_ORIGINS = [
     "https://a1835a660220.ngrok-free.app",
     "https://*.ngrok-free.app",
     "https://*.ngrok.io",
+    "http://192.168.0.161",
+    "http://localhost",
+    "http://127.0.0.1",
 ]
+
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
