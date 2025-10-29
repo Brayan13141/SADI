@@ -67,7 +67,6 @@ class MetaFormDocente(forms.ModelForm):
         fields = [
             "nombre",
             "clave",
-            "enunciado",
             "proyecto",
             "departamento",
             "indicador",
@@ -85,9 +84,6 @@ class MetaFormDocente(forms.ModelForm):
             "clave": forms.TextInput(attrs={"class": "form-control"}),
             "nombre": forms.TextInput(
                 attrs={"class": "form-control", "required": True}
-            ),
-            "enunciado": forms.Textarea(
-                attrs={"rows": 3, "class": "form-control", "required": True}
             ),
             "proyecto": forms.Select(attrs={"class": "form-select", "disabled": True}),
             "acumulable": forms.CheckboxInput(
@@ -121,7 +117,6 @@ class MetaFormDocente(forms.ModelForm):
             "clave",
             "nombre",
             "lineaBase",
-            "enunciado",
             "indicador",
             "unidadMedida",
             "metodoCalculo",

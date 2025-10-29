@@ -69,11 +69,11 @@
                 {% csrf_token %}
                 {% if editables == False %}
                      <button type="button" class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#confirmarActivar">
-                        Activar edición para docentes
+                        Activar edición para usuarios
                     </button>
                 {% else %}
                     <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#confirmarDesactivar">
-                        Desactivar edición para docentes
+                        Desactivar edición para usuarios
                     </button>
                 {% endif %}
             </form>
@@ -256,10 +256,6 @@
             </div>
           </div>
 
-          <div class="mb-2">
-            <label class="form-label">Enunciado</label>
-            <textarea class="form-control" name="enunciado" rows="3" required></textarea>
-          </div>
 
           <div class="row">
             <div class="col-md-6">
