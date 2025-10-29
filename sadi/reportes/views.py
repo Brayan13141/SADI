@@ -4,7 +4,6 @@ from decimal import Decimal
 from django.db.models import Prefetch, Sum
 from usuarios.decorators import role_required
 import io
-from openpyxl import Workbook
 import pandas as pd
 from django.utils import timezone
 from metas.models import Meta, AvanceMeta
@@ -317,10 +316,12 @@ def reporte_proyectos(request):
     cumplidas = [d["metas_cumplidas"] for d in data]
     rezagadas = [d["metas_rezagadas"] for d in data]
     en_progreso = [d["metas_en_progreso"] for d in data]
+    hay_datos = len(data) > 0  # Verificar si hay datos
 
     context = {
         "data": data,
         "nombres_proyectos": nombres_proyectos,
+        "hay_datos": hay_datos,
         "cumplidas": cumplidas,
         "rezagadas": rezagadas,
         "en_progreso": en_progreso,
@@ -399,8 +400,10 @@ def reporte_avances_metas(request):
         df.to_excel(response, index=False)
         return response
 
+    hay_datos = len(data) > 0  # Verificar si hay datos
     context = {
         "data": data,
+        "hay_datos": hay_datos,
         "departamentos": departamentos,
         "departamento_seleccionado": int(departamento_id) if departamento_id else None,
     }
@@ -501,9 +504,11 @@ def reporte_riesgos(request):
         response["Content-Disposition"] = 'attachment; filename="reporte_riesgos.xlsx"'
         return response
 
+    hay_datos = len(data) > 0  # Verificar si hay datos
     # === Contexto para template ===
     context = {
         "data": data,
+        "hay_datos": hay_datos,
         "niveles_labels": list(niveles.keys()),
         "niveles_values": list(niveles.values()),
         "total_riesgos": len(riesgos),
