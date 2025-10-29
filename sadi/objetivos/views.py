@@ -12,7 +12,7 @@ from usuarios.decorators import role_required
 
 @role_required("ADMIN", "APOYO")
 def gestion_objetivos(request):
-    objetivos = ObjetivoEstrategico.objects.all().select_related("ciclo", "programa")
+    objetivos = ObjetivoEstrategico.objects.all().select_related("programa")
     form_crear = ObjetivoEstrategicoForm()
     abrir_modal_crear = False
     abrir_modal_editar = False

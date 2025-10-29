@@ -5,7 +5,7 @@ from simple_history.models import HistoricalRecords
 
 class ObjetivoEstrategico(models.Model):
     descripcion = models.TextField()
-    ciclo = models.ForeignKey(Ciclo, on_delete=models.CASCADE, related_name="objetivos")
+    # ciclo = models.ForeignKey(Ciclo, on_delete=models.CASCADE, related_name="objetivos")
     programa = models.ForeignKey(
         ProgramaEstrategico, on_delete=models.CASCADE, related_name="objetivos"
     )

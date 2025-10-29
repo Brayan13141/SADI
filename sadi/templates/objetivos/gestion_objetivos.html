@@ -37,8 +37,7 @@
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Descripción</th>
-                            <th>Ciclo</th>
+                            <th>Descripción</th>  
                             <th>Programa</th>
                             <th>Acciones</th>
                         </tr>
@@ -48,14 +47,12 @@
                         <tr class="text-nowrap">
                             <td>{{ objetivo.id }}</td>
                             <td class="text-start">{{ objetivo.descripcion|truncatewords:10 }}</td>
-                            <td>{{ objetivo.ciclo.nombre }} </td>
                             <td>{{ objetivo.programa.nombre }}</td>
                             <td>
                                 {% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
                                 <button class="btn btn-sm btn-outline-primary btn-editar" 
                                         data-id="{{ objetivo.id }}"
                                         data-descripcion="{{ objetivo.descripcion }}"
-                                        data-ciclo_id="{{ objetivo.ciclo.id }}"
                                         data-programa_id="{{ objetivo.programa.id }}">
                                     Editar
                                 </button>
@@ -119,15 +116,6 @@
           <div id="erroresCrear" class="alert alert-danger d-none"></div>
           
           <div class="mb-3">
-            <label class="form-label">Ciclo</label>
-            <select class="form-select" name="ciclo" required>
-              <option value="">Seleccione un ciclo</option>
-              {% for ciclo in form_crear.ciclo.field.queryset %}
-              <option value="{{ ciclo.id }}">{{ ciclo.nombre }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="mb-3">
             <label class="form-label">Programa</label>
             <select class="form-select" name="programa" required>
               <option value="">Seleccione un programa</option>
@@ -165,15 +153,6 @@
         <div class="modal-body">
           <div id="erroresEditar" class="alert alert-danger d-none"></div>
           
-          <div class="mb-3">
-            <label class="form-label">Ciclo</label>
-            <select class="form-select" id="id_ciclo" name="ciclo" required>
-              <option value="">Seleccione un ciclo</option>
-              {% for ciclo in form_crear.ciclo.field.queryset %}
-              <option value="{{ ciclo.id }}">{{ ciclo.nombre }}</option>
-              {% endfor %}
-            </select>
-          </div>
           <div class="mb-3">
             <label class="form-label">Programa</label>
             <select class="form-select" id="id_programa" name="programa" required>
