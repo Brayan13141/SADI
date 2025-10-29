@@ -169,7 +169,7 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-
+{% if hay_datos %}
 $('#riesgosTable').DataTable({
         scrollX: true,
         scrollY: '500px',
@@ -191,7 +191,7 @@ $('#riesgosTable').DataTable({
         scroller: true,
         stateSave: true,
     });
-
+{% endif %}
     
     const ctx = document.getElementById("chartRiesgos");
     new Chart(ctx, {

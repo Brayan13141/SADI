@@ -95,6 +95,7 @@
 {% block extra_js %}
 <script>
 $(document).ready(function() {
+    {% if hay_datos %}
     $('#reporteAvances').DataTable({
         scrollX: true,
         scrollY: '500px',
@@ -106,6 +107,7 @@ $(document).ready(function() {
         },
         stateSave: true,
     });
+    {% endif %}
 });
 </script>
 {% endblock %}
