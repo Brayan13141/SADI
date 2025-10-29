@@ -16,7 +16,7 @@ class Proyecto(models.Model):
         # --- GENERAR CLAVE AUTOMÁTICA ---
         if not self.clave or self.clave.strip().upper() == "AUTO":
             # Obtenemos la clave del objetivo
-            clave_objetivo = self.objetivo.clave
+            clave_objetivo = self.objetivo.programa.clave
             count = Proyecto.objects.filter(objetivo=self.objetivo).count() + 1
             nueva_clave = f"{clave_objetivo}-PRY{count}"
             # Evitar duplicados si alguien crea varios a la vez

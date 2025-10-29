@@ -17,7 +17,7 @@ class ObjetivoEstrategico(models.Model):
 
     def save(self, *args, **kwargs):
         # --- GENERAR CLAVE AUTOMÁTICA ---
-        if not self.clave or self.clave.strip().upper() == "AUTO":
+        if not self.clave:
             # Obtenemos la clave base del programa
             clave_programa = self.programa.clave
             count = (
