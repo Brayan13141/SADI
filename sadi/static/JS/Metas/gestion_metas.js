@@ -70,7 +70,8 @@ $(document).ready(function () {
         const metaId = $(this).data('id');
         const clave = $(this).data('clave');
         const nombre = $(this).data('nombre');
-
+        const lineaB = $(this).data('lineabase');
+        const metaCumplir = $(this).data('metacumplir');
         const proyectoId = $(this).data('proyecto');
         const departamentoId = $(this).data('departamento');
         const indicador = $(this).data('indicador');
@@ -86,7 +87,8 @@ $(document).ready(function () {
         $('#meta_id').val(metaId);
         $('#id_clave').val(clave);
         $('#id_nombre').val(nombre);
-
+        $('#eid_lineabase').val(lineaB);
+        $('#eid_metacumplir').val(metaCumplir);
         $('#id_proyecto').val(proyectoId);
         $('#id_departamento').val(departamentoId);
         $('#id_indicador').val(indicador);
