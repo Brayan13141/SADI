@@ -641,98 +641,87 @@ def TablaSeguimiento(request):
 
 @role_required("ADMIN", "APOYO")
 def asignacion_metas(request):
+    """
+    Vista para asignar metas a ciclos y departamentos.
+    El carrito se maneja en el frontend y se envía como lista de IDs.
+    """
     metas = Meta.objects.filter(activa=True).order_by("clave")
     ciclos = Ciclo.objects.all()
     departamentos = Departamento.objects.all()
 
-    # Inicializar carrito en sesión
-    if "carrito_metas" not in request.session:
-        request.session["carrito_metas"] = []
+    puede_aplicar = request.user.role in ["ADMIN", "APOYO"]
 
-    # Permisos por rol
-    puede_asignar = request.user.role in ["ADMIN", "APOYO"]
-    puede_remover = request.user.role in ["ADMIN", "APOYO"]
-    puede_aplicar = request.user.role == "ADMIN"
+    # --- PETICIÓN AJAX ---
+    if (
+        request.headers.get("X-Requested-With") == "XMLHttpRequest"
+        and request.method == "POST"
+    ):
+        data = json.loads(request.body)
+        action = data.get("action")
 
-    # Manejo AJAX
-    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-        if request.method == "POST":
-            data = json.loads(request.body)
-            action = data.get("action")
+        if action == "apply" and puede_aplicar:
+            ciclo_id = data.get("ciclo")
+            departamento_id = data.get("departamento")
+            meta_ids = data.get("metas", [])
 
-            # Agregar meta al carrito
-            if action == "add" and puede_asignar:
-                meta_id = data.get("meta_id")
-                if meta_id and meta_id not in request.session["carrito_metas"]:
-                    request.session["carrito_metas"].append(meta_id)
-                    request.session.modified = True
-                    return JsonResponse(
-                        {"status": "success", "message": "Meta agregada al carrito"}
-                    )
-                return JsonResponse(
-                    {"status": "error", "message": "La meta ya está en el carrito"}
-                )
+            print("🧺 Carrito recibido desde frontend:")
+            print("Ciclo:", ciclo_id)
+            print("Departamento:", departamento_id)
+            print("Metas:", meta_ids)
+            print("--------------------------------")
 
-            # Quitar meta del carrito
-            elif action == "remove" and puede_remover:
-                meta_id = data.get("meta_id")
-                if meta_id in request.session["carrito_metas"]:
-                    request.session["carrito_metas"].remove(meta_id)
-                    request.session.modified = True
-                    return JsonResponse(
-                        {"status": "success", "message": "Meta removida del carrito"}
-                    )
-                return JsonResponse(
-                    {"status": "error", "message": "La meta no está en el carrito"}
-                )
-
-            # Aplicar cambios en lote
-            elif action == "apply" and puede_aplicar:
-                ciclo_id = data.get("ciclo")
-                departamento_id = data.get("departamento")
-                meta_ids = data.get("metas", [])
-
-                ciclo = Ciclo.objects.get(id=ciclo_id) if ciclo_id else None
-                departamento = (
-                    Departamento.objects.get(id=departamento_id)
-                    if departamento_id
-                    else None
-                )
-
-                updated_count = 0
-                for meta_id in meta_ids:
-                    try:
-                        meta = Meta.objects.get(id=meta_id)
-                        if ciclo:
-                            meta.ciclo = ciclo
-                        if departamento:
-                            meta.departamento = departamento
-                        meta.save()
-                        updated_count += 1
-                    except Meta.DoesNotExist:
-                        continue
-
-                # Vaciar carrito
-                request.session["carrito_metas"] = []
-                request.session.modified = True
-
-                return JsonResponse(
-                    {
-                        "status": "success",
-                        "message": f"Se actualizaron {updated_count} metas correctamente",
-                    }
-                )
-
-            return JsonResponse(
-                {"status": "error", "message": "Acción no permitida o sin permisos"}
+            ciclo = Ciclo.objects.filter(id=ciclo_id).first() if ciclo_id else None
+            departamento = (
+                Departamento.objects.filter(id=departamento_id).first()
+                if departamento_id
+                else None
             )
 
-    # GET normal
-    metas_carrito = Meta.objects.filter(id__in=request.session["carrito_metas"])
+            updated_count = 0
+            errores = []
 
+            for meta_id in meta_ids:
+                try:
+                    meta = Meta.objects.get(id=meta_id)
+                    meta.lineabase = meta.lineabase * 100
+                    meta.metacumplir = meta.metacumplir * 100
+                    print(f"Actualizando Meta ID {meta.id}...")
+                    print("Objeto completo:", meta.__dict__)
+                    if ciclo:
+                        meta.ciclo = ciclo
+                    if departamento:
+                        meta.departamento = departamento
+                    meta.save()
+                    updated_count += 1
+
+                except Meta.DoesNotExist:
+                    errores.append(f"Meta {meta_id} no encontrada")
+                except Exception as e:
+                    errores.append(f"Meta {meta_id}: {e}")
+
+            if errores:
+                print("Errores durante la asignación:")
+                for e in errores:
+                    print("  -", e)
+
+            return JsonResponse(
+                {
+                    "status": "success" if updated_count > 0 else "error",
+                    "message": f"Se actualizaron {updated_count} metas correctamente",
+                    "errores": errores,
+                }
+            )
+
+        return JsonResponse(
+            {
+                "status": "error",
+                "message": "Acción no permitida o sin permisos",
+            }
+        )
+
+    # --- PETICIÓN GET NORMAL ---
     context = {
         "metas": metas,
-        "metas_carrito": metas_carrito,
         "ciclos": ciclos,
         "departamentos": departamentos,
     }
