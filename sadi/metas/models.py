@@ -5,7 +5,6 @@ from programas.models import Ciclo
 from departamentos.models import Departamento
 from django.db.models import Sum
 from decimal import Decimal
-from django.utils.text import slugify
 from simple_history.models import HistoricalRecords
 
 
@@ -39,14 +38,16 @@ class Meta(models.Model):
         fields = {
             "lineabase": self.lineabase,
             "metacumplir": self.metacumplir,
-            "variableB": self.variableB,
         }
 
         for field_name, value in fields.items():
             if value is not None:
-                if value < 0:
+
+                if self.porcentages and value < -100:
                     raise ValidationError(
-                        {field_name: "No se permiten valores negativos."}
+                        {
+                            field_name: "No puede ser menor a 100 cuando porcentajes está activo."
+                        }
                     )
                 if self.porcentages and value > 100:
                     raise ValidationError(
@@ -76,6 +77,14 @@ class Meta(models.Model):
         super().save(*args, **kwargs)
 
     @property
+    def lineabase_button(self):
+        if self.lineabase is None:
+            return "-"
+        valor = self.lineabase * Decimal("100") if self.porcentages else self.lineabase
+        valor = valor.quantize(Decimal("0.00"))
+        return f"{valor}" if self.porcentages else f"{valor}"
+
+    @property
     def lineabase_display(self):
         if self.lineabase is None:
             return "-"
@@ -92,6 +101,16 @@ class Meta(models.Model):
         )
         valor = valor.quantize(Decimal("0.00"))
         return f"{valor} %" if self.porcentages else f"{valor}"
+
+    @property
+    def metacumplir_button(self):
+        if self.metacumplir is None:
+            return "-"
+        valor = (
+            self.metacumplir * Decimal("100") if self.porcentages else self.metacumplir
+        )
+        valor = valor.quantize(Decimal("0.00"))
+        return f"{valor}" if self.porcentages else f"{valor}"
 
     @property
     def total_avances(self):
