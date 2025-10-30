@@ -114,7 +114,6 @@
                   data-comprometida-id="{{ meta.metacomprometida.id|default:'' }}"
                   data-comprometida-valor="{{ meta.metacomprometida.valor|default:'' }}"
                 >
-                    
                     <td class="text-center">{{ meta.id }}</td>
                     <td class="text-center">{{ meta.clave }}</td>
                     <td class="text-center text-wrap">{{ meta.nombre }}</td>
@@ -173,8 +172,13 @@
                               data-indicador="{{ meta.indicador|default:'' }}"
                               data-unidadmedida="{{ meta.unidadMedida|default:'' }}"
                               data-metodocalculo="{{ meta.metodoCalculo|default:'' }}"
-                              data-lineabase="{{ meta.lineabase }}"
-                              data-metacumplir="{{ meta.metacumplir }}"
+                              {% if meta.porcentages %}
+                              data-lineabase="{{ meta.lineabase_button|default:0 }}"
+                              data-metacumplir="{{ meta.metacumplir_button|default:0 }}"
+                              {% else %}
+                              data-lineabase="{{ meta.lineabase_display }}"
+                              data-metacumplir="{{ meta.metacumplir_display }}"
+                              {% endif %}
                               data-variableb="{{ meta.variableB|default:0 }}"
                               data-porcentages="{{ meta.porcentages}}">
                         Editar
@@ -461,12 +465,12 @@
               {% if request.user.role == "ADMIN" %}
               <div class="mb-2">
                 <label class="form-label">Línea Base(LB)</label>
-                <input type="number" class="form-control" id="id_lineabase" name="lineabase">
+                <input type="number" class="form-control" id="eid_lineabase" name="lineabase">
                 <small id="labelEjemplo" class="form-text text-muted"></small>  
               </div>
               {% else %}
               <div class="mb-2">
-                <input type="hidden" class="form-control" id="id_lineabase" name="lineabase">
+                <input type="hidden" class="form-control" id="eid_lineabase" name="lineabase">
               </div>
               {% endif %}
 
@@ -474,7 +478,7 @@
             <div class="col-md-4">
               <div class="mb-2">
                 <label class="form-label">Meta a Cumplir(MC)</label>
-                <input type="number" class="form-control" id="id_metacumplir" name="metacumplir">
+                <input type="number" class="form-control" id="eid_metacumplir" name="metacumplir">
               </div>
             </div>
           </div>

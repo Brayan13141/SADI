@@ -1,7 +1,5 @@
 from django.utils import timezone
 from django import forms
-
-from programas.models import Ciclo
 from .models import Meta, AvanceMeta, MetaComprometida
 from proyectos.models import Proyecto
 from departamentos.models import Departamento

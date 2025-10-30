@@ -53,6 +53,6 @@ class Ciclo(models.Model):
                 nombre_corto = self.programa.nombre
 
             # Asignar el nombre con el formato requerido
-            self.nombre = f"{nombre_corto} {self.fecha_inicio} - {self.fecha_fin}"
+            self.nombre = f"{nombre_corto} - {self.fecha_inicio} - {self.fecha_fin}"
 
         super().save(*args, **kwargs)

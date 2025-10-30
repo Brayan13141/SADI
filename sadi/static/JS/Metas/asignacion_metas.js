@@ -155,14 +155,19 @@ $(document).ready(function () {
                 if (data.status === 'success') {
                     Toastify({
                         text: data.message,
-                        duration: 3000,
+                        duration: 2000,
                         backgroundColor: '#1cc88a',
                     }).showToast();
+
                     carrito = [];
                     actualizarCarrito();
                     $('.btn-add')
                         .prop('disabled', false)
                         .html('<i class="fas fa-plus"></i> Agregar');
+
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
                 } else {
                     Toastify({
                         text: data.message || 'Error',
