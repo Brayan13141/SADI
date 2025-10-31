@@ -683,8 +683,10 @@ def asignacion_metas(request):
             for meta_id in meta_ids:
                 try:
                     meta = Meta.objects.get(id=meta_id)
-                    meta.lineabase = meta.lineabase * 100
-                    meta.metacumplir = meta.metacumplir * 100
+                    if meta.porcentages:
+                        meta.lineabase = meta.lineabase * 100
+                        meta.metacumplir = meta.metacumplir * 100
+
                     print(f"Actualizando Meta ID {meta.id}...")
                     print("Objeto completo:", meta.__dict__)
                     if ciclo:
