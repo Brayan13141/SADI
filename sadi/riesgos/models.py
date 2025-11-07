@@ -1,5 +1,5 @@
 from django.db import models
-from metas.models import Meta
+from actividades.models import Actividad
 from usuarios.models import Usuario
 from simple_history.models import HistoricalRecords
 
@@ -9,7 +9,7 @@ class Riesgo(models.Model):
     probabilidad = models.IntegerField()
     impacto = models.IntegerField()
     riesgo = models.IntegerField(default=0)
-    meta = models.ForeignKey(Meta, on_delete=models.RESTRICT)
+    actividad = models.ForeignKey(Actividad, on_delete=models.RESTRICT)
 
     history = HistoricalRecords()
 

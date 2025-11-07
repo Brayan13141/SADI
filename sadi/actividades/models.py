@@ -1,6 +1,7 @@
 from django.db import models
 from django.forms import ValidationError
 from metas.models import Meta
+from programas.models import Ciclo
 from departamentos.models import Departamento
 from usuarios.models import Usuario
 from simple_history.models import HistoricalRecords
@@ -28,6 +29,7 @@ class Actividad(models.Model):
     fecha_fin = models.DateField()
     editable = models.BooleanField(default=True)
     meta = models.ForeignKey(Meta, on_delete=models.RESTRICT)
+    ciclo = models.ForeignKey(Ciclo, on_delete=models.CASCADE, blank=True, null=True)
     responsable = models.ForeignKey(Usuario, on_delete=models.RESTRICT)
     departamento = models.ForeignKey(
         Departamento, on_delete=models.RESTRICT, null=True, blank=True

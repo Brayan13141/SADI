@@ -22,51 +22,11 @@ class Meta(models.Model):
     porcentages = models.BooleanField(default=False)
     activa = models.BooleanField(default=False)
     metodoCalculo = models.TextField(blank=False, null=False)
-    lineabase = models.DecimalField(
-        max_digits=11, decimal_places=4, blank=True, null=True
-    )
-    metacumplir = models.DecimalField(
-        max_digits=11, decimal_places=4, blank=True, null=True
-    )
     variableB = models.BooleanField(default=True, verbose_name="Variable B")
-    ciclo = models.ForeignKey(Ciclo, on_delete=models.CASCADE, blank=True, null=True)
 
     history = HistoricalRecords()
 
-    # --- VALIDACIÓN ---
-    def clean(self):
-        fields = {
-            "lineabase": self.lineabase,
-            "metacumplir": self.metacumplir,
-        }
-
-        for field_name, value in fields.items():
-            if value is not None:
-
-                if self.porcentages and value < -100:
-                    raise ValidationError(
-                        {
-                            field_name: "No puede ser menor a 100 cuando porcentajes está activo."
-                        }
-                    )
-                if self.porcentages and value > 100:
-                    raise ValidationError(
-                        {
-                            field_name: "No puede ser mayor a 100 cuando porcentajes está activo."
-                        }
-                    )
-
     def save(self, *args, **kwargs):
-        """
-        Divide entre 100 usando Decimal puro (sin redondeo).
-        """
-        if self.porcentages:
-            divisor = Decimal("100")
-            if self.lineabase is not None:
-                self.lineabase = self.lineabase / divisor
-            if self.metacumplir is not None:
-                self.metacumplir = self.metacumplir / divisor
-
         # --- GENERAR CLAVE AUTOMÁTICA ---
         if not self.clave or self.clave.strip().upper() == "AUTO":
             clave = self.proyecto.clave
@@ -75,42 +35,6 @@ class Meta(models.Model):
 
         self.full_clean()
         super().save(*args, **kwargs)
-
-    @property
-    def lineabase_button(self):
-        if self.lineabase is None:
-            return "-"
-        valor = self.lineabase * Decimal("100") if self.porcentages else self.lineabase
-        valor = valor.quantize(Decimal("0.00"))
-        return f"{valor}" if self.porcentages else f"{valor}"
-
-    @property
-    def lineabase_display(self):
-        if self.lineabase is None:
-            return "-"
-        valor = self.lineabase * Decimal("100") if self.porcentages else self.lineabase
-        valor = valor.quantize(Decimal("0.00"))
-        return f"{valor} %" if self.porcentages else f"{valor}"
-
-    @property
-    def metacumplir_display(self):
-        if self.metacumplir is None:
-            return "-"
-        valor = (
-            self.metacumplir * Decimal("100") if self.porcentages else self.metacumplir
-        )
-        valor = valor.quantize(Decimal("0.00"))
-        return f"{valor} %" if self.porcentages else f"{valor}"
-
-    @property
-    def metacumplir_button(self):
-        if self.metacumplir is None:
-            return "-"
-        valor = (
-            self.metacumplir * Decimal("100") if self.porcentages else self.metacumplir
-        )
-        valor = valor.quantize(Decimal("0.00"))
-        return f"{valor}" if self.porcentages else f"{valor}"
 
     @property
     def total_avances(self):
@@ -157,18 +81,22 @@ class AvanceMeta(models.Model):
     departamento = models.ForeignKey(
         Departamento, on_delete=models.RESTRICT, null=True, blank=True
     )
+    ciclo = models.ForeignKey(Ciclo, on_delete=models.CASCADE, blank=True, null=True)
     history = HistoricalRecords()
 
     def clean(self):
         if self.avance is not None:
             if self.avance < 0:
                 raise ValidationError({"avance": "No se permiten valores negativos."})
-            if self.metaCumplir and self.metaCumplir.porcentages and self.avance > 100:
-                raise ValidationError(
-                    {
-                        "avance": "No puede ser mayor a 100 cuando el meta tiene porcentajes activo."
-                    }
-                )
+
+            # Si la meta está en porcentajes y el valor es mayor a 100, marcar error
+            if self.metaCumplir and self.metaCumplir.porcentages:
+                if self.avance > 100:
+                    raise ValidationError(
+                        {
+                            "avance": "El valor no puede ser mayor a 100 cuando la meta está en porcentajes."
+                        }
+                    )
 
     def save(self, *args, **kwargs):
         if (
@@ -192,6 +120,18 @@ class AvanceMeta(models.Model):
             valor = self.avance.quantize(Decimal("0.00"))
             return f"{valor}"
 
+    @property
+    def avance_button(self):
+        if self.avance is None:
+            return "-"
+        if self.metaCumplir and self.metaCumplir.porcentages:
+            valor = self.avance * Decimal("100")
+            valor = valor.quantize(Decimal("0.00"))
+            return f"{valor} %"
+        else:
+            valor = self.avance.quantize(Decimal("0.00"))
+            return f"{valor}"
+
     def __str__(self):
         return f"Avance de {self.metaCumplir.clave if self.metaCumplir else 'Meta sin asignar'}"
 
@@ -199,7 +139,11 @@ class AvanceMeta(models.Model):
 class MetaComprometida(models.Model):
     valor = models.DecimalField(max_digits=11, decimal_places=4, blank=True, null=True)
     meta = models.ForeignKey(Meta, on_delete=models.RESTRICT, blank=True, null=True)
+    ciclo = models.ForeignKey(Ciclo, on_delete=models.CASCADE, blank=True, null=True)
     history = HistoricalRecords()
+
+    class Meta:
+        unique_together = ("meta", "ciclo")
 
     def clean(self):
         if self.valor is not None:
@@ -230,5 +174,116 @@ class MetaComprometida(models.Model):
             valor = self.valor.quantize(Decimal("0.00"))
             return f"{valor}"
 
+    @property
+    def valor_button(self):
+        if self.valor is None:
+            return "-"
+        if self.meta and self.meta.porcentages:
+            valor = self.valor * Decimal("100")
+            valor = valor.quantize(Decimal("0.00"))
+            return f"{valor} "
+        else:
+            valor = self.valor.quantize(Decimal("0.00"))
+            return f"{valor}"
+
     def __str__(self):
         return f"Meta Comprometida de {self.meta.clave if self.meta else 'Sin meta'}"
+
+
+class MetaCiclo(models.Model):
+    """
+    Define los valores específicos de una meta para un ciclo particular.
+    """
+
+    meta = models.ForeignKey(Meta, on_delete=models.CASCADE, related_name="metas_ciclo")
+    ciclo = models.ForeignKey(
+        Ciclo,
+        on_delete=models.CASCADE,
+        related_name="metas_ciclo",
+        blank=True,
+        null=True,
+    )
+    lineaBase = models.DecimalField(
+        max_digits=11, decimal_places=4, blank=True, null=True
+    )
+    metaCumplir = models.DecimalField(
+        max_digits=11, decimal_places=4, blank=True, null=True
+    )
+
+    history = HistoricalRecords()
+
+    class Meta:
+        unique_together = ("meta", "ciclo")
+
+    def clean(self):
+        if self.meta and self.meta.porcentages:
+            if self.lineaBase is not None and (
+                self.lineaBase <= 0 or self.lineaBase > 100
+            ):
+                raise ValidationError(
+                    {
+                        "lineaBase": "Debe estar entre 1 y 100 si la meta usa porcentajes."
+                    }
+                )
+            if self.metaCumplir is not None and (
+                self.metaCumplir <= 0 or self.metaCumplir > 100
+            ):
+                raise ValidationError(
+                    {
+                        "metaCumplir": "Debe estar entre 1 y 100 si la meta usa porcentajes."
+                    }
+                )
+
+    def save(self, *args, **kwargs):
+        if self.meta and self.meta.porcentages:
+            divisor = Decimal("100")
+            if self.lineaBase is not None:
+                self.lineaBase = self.lineaBase / divisor
+            if self.metaCumplir is not None:
+                self.metaCumplir = self.metaCumplir / divisor
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    @property
+    def lineabase_button(self):
+        if self.lineaBase is None:
+            return "-"
+        valor = (
+            self.lineaBase * Decimal("100") if self.meta.porcentages else self.lineaBase
+        )
+        valor = valor.quantize(Decimal("0.00"))
+        return f"{valor}"
+
+    @property
+    def lineabase_display(self):
+        if self.lineaBase is None:
+            return "-"
+        valor = (
+            self.lineaBase * Decimal("100") if self.meta.porcentages else self.lineaBase
+        )
+        valor = valor.quantize(Decimal("0.00"))
+        return f"{valor} %" if self.meta.porcentages else f"{valor}"
+
+    @property
+    def metacumplir_display(self):
+        if self.metaCumplir is None:
+            return "-"
+        valor = (
+            self.metaCumplir * Decimal("100")
+            if self.meta.porcentages
+            else self.metaCumplir
+        )
+        valor = valor.quantize(Decimal("0.00"))
+        return f"{valor} %" if self.meta.porcentages else f"{valor}"
+
+    @property
+    def metacumplir_button(self):
+        if self.metaCumplir is None:
+            return "-"
+        valor = (
+            self.metaCumplir * Decimal("100")
+            if self.meta.porcentages
+            else self.metaCumplir
+        )
+        valor = valor.quantize(Decimal("0.00"))
+        return f"{valor}"
