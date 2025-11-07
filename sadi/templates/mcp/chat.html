@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MCP - Asistente Local</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        .chat-container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .messages { height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
+        .message { margin-bottom: 10px; padding: 8px; border-radius: 5px; }
+        .user-message { background-color: #e3f2fd; text-align: right; }
+        .assistant-message { background-color: #f5f5f5; }
+        .input-area { display: flex; gap: 10px; }
+        input, textarea, button { padding: 10px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <h1>Asistente MCP Local</h1>
+        
+        <div class="messages" id="messages">
+            <!-- Mensajes aparecerán aquí -->
+        </div>
+        
+        <div class="input-area">
+            <textarea id="prompt-input" placeholder="Escribe tu pregunta..." rows="3" style="flex: 1;"></textarea>
+            <button onclick="sendMessage()">Enviar</button>
+        </div>
+        
+        <div>
+            <button onclick="generateReport()">Generar Reporte</button>
+            <button onclick="clearChat()">Limpiar Chat</button>
+        </div>
+    </div>
+
+    <script>
+        let currentConversationId = null;
+        
+        function addMessage(content, isUser = false) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'assistant-message'}`;
+            messageDiv.textContent = content;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function sendMessage() {
+            const input = document.getElementById('prompt-input');
+            const prompt = input.value.trim();
+            
+            if (!prompt) return;
+            
+            addMessage(prompt, true);
+            input.value = '';
+            
+            axios.post('/mcp/api/mcp/', {
+                action: 'chat',
+                prompt: prompt,
+                conversation_id: currentConversationId
+            }, {
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                }
+            }).then(response => {
+                addMessage(response.data.response);
+                if (!currentConversationId) {
+                    currentConversationId = response.data.conversation_id;
+                }
+            }).catch(error => {
+                addMessage('Error: ' + error.response.data.error);
+            });
+        }
+        
+        function generateReport() {
+            // Implementar generación de reporte
+            const reportData = {
+                // Datos para el reporte
+            };
+            
+            axios.post('/mcp/api/mcp/', {
+                action: 'generate_report',
+                data: reportData,
+                report_type: 'análisis mensual'
+            }).then(response => {
+                addMessage('Reporte generado: ' + response.data.report);
+            });
+        }
+        
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        // Enter para enviar mensaje
+        document.getElementById('prompt-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>

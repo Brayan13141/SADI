@@ -17,6 +17,7 @@ urlpatterns = [
     path("actividades/", include("actividades.urls")),
     path("riesgos/", include("riesgos.urls")),
     path("reportes/", include("reportes.urls")),
+    path('mcp/', include('mcp.urls'))
 ]
 
 # Esto solo en entorno de desarrollo
