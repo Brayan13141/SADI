@@ -15,7 +15,7 @@ class RiesgoDetailSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "enunciado",
-            "meta",
+            "actividad",
             "probabilidad",
             "impacto",
             "riesgo",
