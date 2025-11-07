@@ -34,9 +34,9 @@ class ProgramaEstrategicoForm(forms.ModelForm):
 class CicloForm(forms.ModelForm):
     class Meta:
         model = Ciclo
-        fields = ["activo", "fecha_inicio", "fecha_fin", "programa"]
+        fields = ["estado", "fecha_inicio", "fecha_fin", "programa"]
         widgets = {
-            "activo": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            "estado": forms.Select(attrs={"class": "form-select", "required": True}),
             "fecha_inicio": forms.DateInput(
                 attrs={"type": "date", "class": "form-control", "required": True}
             ),
