@@ -6,7 +6,8 @@ from usuarios.decorators import role_required
 import io
 import pandas as pd
 from django.utils import timezone
-from metas.models import Meta, AvanceMeta
+from programas.models import Ciclo
+from metas.models import Meta, AvanceMeta, MetaCiclo
 from actividades.models import Actividad
 from proyectos.models import Proyecto
 from objetivos.models import ObjetivoEstrategico
@@ -37,59 +38,65 @@ def gestion_reportes(request):
 @role_required("ADMIN", "APOYO")
 def reporte_metas_departamento(request):
     """
-    Reporte de Metas agrupadas por departamento.
-    Una meta se marca como 'Cumplida' solo si TODAS sus actividades están cumplidas.
+    Reporte de Metas agrupadas por departamento y ciclo.
     """
-
-    # --- FILTRO POR DEPARTAMENTO ---
+    # --- FILTROS ---
     departamento_id = request.GET.get("departamento")
+    ciclo_id = request.session.get("ciclo_id")
     departamentos = Departamento.objects.all()
+    ciclos = Ciclo.objects.all()
 
-    # Prefetch actividades para optimizar consultas - CORREGIDO
-    metas_query = Meta.objects.prefetch_related(
+    # --- CONSULTA BASE ---
+    metas_ciclo_query = MetaCiclo.objects.select_related(
+        "meta", "ciclo", "meta__proyecto", "meta__departamento"
+    ).prefetch_related(
         Prefetch(
-            "actividad_set", queryset=Actividad.objects.select_related("responsable")
+            "meta__actividad_set",
+            queryset=Actividad.objects.select_related("responsable"),
         )
-    ).select_related(
-        "proyecto", "ciclo", "departamento"
-    )  # Incluir departamento en select_related
+    )
 
-    # Filtrar por departamento - CORREGIDO (usando el campo departamento directo de Meta)
+    # --- FILTROS APLICADOS ---
     if departamento_id:
-        metas_query = metas_query.filter(departamento_id=departamento_id)
+        metas_ciclo_query = metas_ciclo_query.filter(
+            meta__departamento_id=departamento_id
+        )
+    if ciclo_id:
+        metas_ciclo_query = metas_ciclo_query.filter(ciclo_id=ciclo_id)
 
-    metas = metas_query.order_by("departamento__nombre", "nombre")
+    metas_ciclo = metas_ciclo_query.order_by(
+        "meta__departamento__nombre", "meta__nombre"
+    )
 
-    # --- PROCESAMIENTO DE METAS ---
+    # --- PROCESAMIENTO ---
     resultados = []
     stats = {"completadas": 0, "en_progreso": 0, "rezagadas": 0}
 
-    for meta in metas:
-        actividades = meta.actividad_set.all()
+    for mc in metas_ciclo:
+        meta = mc.meta
+        actividades = meta.actividad_set.filter(ciclo_id=mc.ciclo_id)
+
         total_acts = actividades.count()
 
-        # INICIALIZAR VARIABLES PARA TODOS LOS CASOS
-        completadas = 0
-        cumplimiento = 0
-        estado = "Rezagada"
+        completadas = (
+            actividades.filter(estado__iexact="Cumplida").count()
+            if total_acts > 0
+            else 0
+        )
+        cumplimiento = (completadas / total_acts) * 100 if total_acts > 0 else 0
 
-        if total_acts > 0:
-            completadas = actividades.filter(estado__iexact="Cumplida").count()
-            cumplimiento = (completadas / total_acts) * 100
-
-            # Estado general de la meta según actividades
-            if completadas == total_acts:
-                estado = "Cumplida"
-                stats["completadas"] += 1
-            elif completadas == 0:
-                estado = "Rezagada"
-                stats["rezagadas"] += 1
-            else:
-                estado = "En progreso"
-                stats["en_progreso"] += 1
-        else:
-            # Si no hay actividades, se considera rezagada
+        if total_acts == 0:
+            estado = "Rezagada"
             stats["rezagadas"] += 1
+        elif completadas == total_acts:
+            estado = "Cumplida"
+            stats["completadas"] += 1
+        elif completadas == 0:
+            estado = "Rezagada"
+            stats["rezagadas"] += 1
+        else:
+            estado = "En progreso"
+            stats["en_progreso"] += 1
 
         restante = max(0, 100 - cumplimiento)
 
@@ -99,18 +106,19 @@ def reporte_metas_departamento(request):
                 "clave": meta.clave,
                 "nombre": meta.nombre,
                 "indicador": meta.indicador,
-                "metacumplir": meta.metacumplir_display,  # Usar property display
-                "total_acumulado": meta.total_acumulado,  # Usar property
+                "metacumplir": mc.metacumplir_display,
+                "lineabase": mc.lineabase_display,
+                "total_acumulado": meta.total_acumulado,
                 "proyecto": meta.proyecto.nombre if meta.proyecto else "N/A",
                 "departamento": (
                     meta.departamento.nombre if meta.departamento else "N/A"
-                ),  # Campo directo
-                "ciclo": meta.ciclo.nombre if meta.ciclo else "N/A",
+                ),
+                "ciclo": mc.ciclo.nombre if mc.ciclo else "N/A",
                 "estado": estado,
                 "cumplimiento": round(cumplimiento, 2),
                 "restante": round(restante, 2),
                 "total_actividades": total_acts,
-                "actividades_cumplidas": completadas,  # Ahora siempre definida
+                "actividades_cumplidas": completadas,
                 "actividades": [
                     {
                         "nombre": act.nombre,
@@ -129,67 +137,44 @@ def reporte_metas_departamento(request):
             }
         )
 
-    # Calcular totales para el resumen
+    # --- RESUMEN GENERAL ---
     total_metas = len(resultados)
     porcentaje_cumplimiento = (
         (stats["completadas"] / total_metas * 100) if total_metas > 0 else 0
     )
 
-    # === EXPORTAR A EXCEL ===
+    # --- EXPORTAR A EXCEL ---
     if "exportar" in request.GET:
         import pandas as pd
         import io
         from django.http import HttpResponse
 
-        # Preparar datos para Excel
-        excel_data = []
-        for meta in resultados:
-            excel_data.append(
-                {
-                    "Clave": meta["clave"],
-                    "Nombre": meta["nombre"],
-                    "Proyecto": meta["proyecto"],
-                    "Departamento": meta["departamento"],
-                    "Ciclo": meta["ciclo"],
-                    "Indicador": meta["indicador"],
-                    "Meta a Cumplir": meta["metacumplir"],
-                    "Total Acumulado": meta["total_acumulado"],
-                    "Estado": meta["estado"],
-                    "Cumplimiento (%)": meta["cumplimiento"],
-                    "Total Actividades": meta["total_actividades"],
-                    "Actividades Cumplidas": meta["actividades_cumplidas"],
-                    "Porcentaje Actividades": f"{(meta['actividades_cumplidas']/meta['total_actividades']*100) if meta['total_actividades'] > 0 else 0:.2f}%",
-                }
-            )
+        excel_data = [
+            {
+                "Clave": r["clave"],
+                "Nombre": r["nombre"],
+                "Proyecto": r["proyecto"],
+                "Departamento": r["departamento"],
+                "Ciclo": r["ciclo"],
+                "Indicador": r["indicador"],
+                "Línea Base": r["lineabase"],
+                "Meta a Cumplir": r["metacumplir"],
+                "Total Acumulado": r["total_acumulado"],
+                "Estado": r["estado"],
+                "Cumplimiento (%)": r["cumplimiento"],
+                "Total Actividades": r["total_actividades"],
+                "Actividades Cumplidas": r["actividades_cumplidas"],
+            }
+            for r in resultados
+        ]
 
-        # Crear DataFrame
         df = pd.DataFrame(excel_data)
-
-        # Crear buffer en memoria
         buffer = io.BytesIO()
-
-        # Usar ExcelWriter con xlsxwriter
         with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
-            # Exportar datos principales
             df.to_excel(writer, index=False, sheet_name="Metas")
-
-            # Obtener el worksheet y ajustar columnas
             worksheet = writer.sheets["Metas"]
+            worksheet.set_column("A:M", 20)
 
-            # Ajustar el ancho de las columnas
-            worksheet.set_column("A:A", 15)  # Clave
-            worksheet.set_column("B:B", 30)  # Nombre
-            worksheet.set_column("C:C", 25)  # Proyecto
-            worksheet.set_column("D:D", 20)  # Departamento
-            worksheet.set_column("E:E", 15)  # Ciclo
-            worksheet.set_column("F:F", 40)  # Indicador
-            worksheet.set_column("G:H", 15)  # Meta a Cumplir y Total Acumulado
-            worksheet.set_column("I:I", 15)  # Estado
-            worksheet.set_column("J:J", 15)  # Cumplimiento
-            worksheet.set_column("K:L", 15)  # Actividades
-            worksheet.set_column("M:M", 20)  # Porcentaje Actividades
-
-        # Preparar respuesta
         buffer.seek(0)
         response = HttpResponse(
             buffer.getvalue(),
@@ -200,10 +185,13 @@ def reporte_metas_departamento(request):
         )
         return response
 
+    # --- CONTEXTO ---
     context = {
         "metas": resultados,
         "departamentos": departamentos,
+        "ciclos": ciclos,
         "departamento_seleccionado": int(departamento_id) if departamento_id else None,
+        "ciclo_seleccionado": int(ciclo_id) if ciclo_id else None,
         "stats": stats,
         "total_metas": total_metas,
         "metas_cumplidas": stats["completadas"],
@@ -217,10 +205,13 @@ def reporte_metas_departamento(request):
 @role_required("ADMIN", "APOYO")
 def reporte_proyectos(request):
     """
-    Reporte general de Proyectos con sus respectivas Metas.
-    Muestra el total de metas, cuántas están cumplidas o rezagadas,
-    y exporta los resultados a Excel.
+    Reporte general de Proyectos con sus respectivas Metas y Actividades por Ciclo.
+    Muestra el total de metas, cuántas están cumplidas, en progreso o rezagadas,
+    y permite exportar los resultados a Excel.
     """
+
+    ciclo_id = request.session.get("ciclo_id")
+    ciclo = Ciclo.objects.filter(id=ciclo_id).first()
 
     proyectos = Proyecto.objects.prefetch_related("meta_set").all()
     data = []
@@ -234,10 +225,11 @@ def reporte_proyectos(request):
         metas_data = []
 
         for meta in metas:
-            actividades = Actividad.objects.filter(meta=meta)
+            # Filtramos actividades por meta y ciclo
+            actividades = Actividad.objects.filter(meta=meta, ciclo=ciclo)
             total_actividades = actividades.count()
 
-            # === Determinar estado de la meta según sus actividades ===
+            # === Determinar estado de la meta según sus actividades del ciclo ===
             if total_actividades == 0:
                 estado_meta = "Rezago"
                 metas_rezagadas += 1
@@ -316,7 +308,9 @@ def reporte_proyectos(request):
     cumplidas = [d["metas_cumplidas"] for d in data]
     rezagadas = [d["metas_rezagadas"] for d in data]
     en_progreso = [d["metas_en_progreso"] for d in data]
-    hay_datos = len(data) > 0  # Verificar si hay datos
+    hay_datos = len(data) > 0
+
+    ciclos = Ciclo.objects.all()
 
     context = {
         "data": data,
@@ -328,6 +322,8 @@ def reporte_proyectos(request):
         "total_cumplidas": total_cumplidas,
         "total_en_progreso": total_en_progreso,
         "total_rezagadas": total_rezagadas,
+        "ciclos": ciclos,
+        "ciclo_seleccionado": ciclo,
     }
 
     return render(request, "reportes/reporte_proyectos.html", context)
@@ -336,53 +332,83 @@ def reporte_proyectos(request):
 @role_required("ADMIN", "APOYO")
 def reporte_avances_metas(request):
     """
-    Reporte de avances de metas por departamento.
-    Muestra los avances y permite exportar a Excel.
+    Reporte de avances de metas por departamento y ciclo.
+    Muestra los avances registrados en cada meta, filtrando correctamente por ciclo.
+    Permite exportar los resultados a Excel.
     """
     departamento_id = request.GET.get("departamento")
-    departamentos = Departamento.objects.all()
+    ciclo_id = request.session.get("ciclo_id")
 
-    # Filtro por departamento
-    avances = AvanceMeta.objects.all().select_related(
-        "metaCumplir__proyecto", "metaCumplir__ciclo", "departamento"
+    departamentos = Departamento.objects.all()
+    ciclos = Ciclo.objects.all()
+
+    # --- Consulta base optimizada ---
+    avances_query = AvanceMeta.objects.select_related(
+        "metaCumplir",
+        "metaCumplir__proyecto",
+        "metaCumplir__departamento",
+        "ciclo",
+        "departamento",
     )
+
+    # --- Aplicar filtros dinámicos ---
     if departamento_id:
-        avances = avances.filter(departamento_id=departamento_id)
+        avances_query = avances_query.filter(departamento_id=departamento_id)
+    if ciclo_id:
+        avances_query = avances_query.filter(ciclo_id=ciclo_id)
+
+    avances_query = avances_query.order_by(
+        "metaCumplir__departamento__nombre", "metaCumplir__nombre"
+    )
 
     data = []
-    for a in avances:
+    for a in avances_query:
         meta = a.metaCumplir
+        ciclo = a.ciclo
+
         if not meta:
             continue
 
+        # Verificar si la meta es porcentual
         usa_porcentaje = getattr(meta, "porcentages", False)
 
-        # Cálculo de porcentaje real
+        # Buscar su MetaCiclo asociado para obtener la metaCumplir y lineaBase
+        meta_ciclo = MetaCiclo.objects.filter(meta=meta, ciclo=ciclo).first()
+
+        meta_cumplir_valor = (
+            meta_ciclo.metaCumplir if meta_ciclo and meta_ciclo.metaCumplir else 0
+        )
+        linea_base = meta_ciclo.lineaBase if meta_ciclo and meta_ciclo.lineaBase else 0
+
+        # Cálculo de porcentaje de cumplimiento
         try:
             porcentaje_avance = (
-                (a.avance / meta.metacumplir) * 100
-                if meta.metacumplir and meta.metacumplir != 0
-                else 0
+                (a.avance / meta_cumplir_valor) * 100 if meta_cumplir_valor else 0
             )
         except (TypeError, ZeroDivisionError):
             porcentaje_avance = 0
 
         data.append(
             {
-                "departamento": a.departamento.nombre if a.departamento else "-",
+                "departamento": meta.departamento.nombre if meta.departamento else "-",
                 "meta": meta.nombre or meta.clave,
                 "proyecto": meta.proyecto.nombre if meta.proyecto else "-",
-                "ciclo": meta.ciclo.nombre if meta.ciclo else "-",
-                "fecha_registro": a.fecha_registro.strftime("%d/%m/%Y"),
+                "ciclo": ciclo.nombre if ciclo else "-",
+                "linea_base": (
+                    round(linea_base * 100, 2)
+                    if usa_porcentaje
+                    else round(linea_base or 0, 2)
+                ),
+                "meta_cumplir": (
+                    round(meta_cumplir_valor * 100, 2)
+                    if usa_porcentaje
+                    else round(meta_cumplir_valor or 0, 2)
+                ),
                 "avance": (
                     round(a.avance * 100, 2) if usa_porcentaje else round(a.avance, 2)
                 ),
-                "meta_cumplir": (
-                    round(meta.metacumplir * 100, 2)
-                    if usa_porcentaje
-                    else round(meta.metacumplir or 0, 2)
-                ),
                 "porcentaje_cumplimiento": round(porcentaje_avance, 2),
+                "fecha_registro": a.fecha_registro.strftime("%d/%m/%Y"),
             }
         )
 
@@ -390,9 +416,7 @@ def reporte_avances_metas(request):
     if "exportar" in request.GET:
         df = pd.DataFrame(data)
         response = HttpResponse(
-            content_type=(
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
         response["Content-Disposition"] = (
             'attachment; filename="reporte_avances_metas.xlsx"'
@@ -400,12 +424,13 @@ def reporte_avances_metas(request):
         df.to_excel(response, index=False)
         return response
 
-    hay_datos = len(data) > 0  # Verificar si hay datos
     context = {
         "data": data,
-        "hay_datos": hay_datos,
+        "hay_datos": len(data) > 0,
         "departamentos": departamentos,
+        "ciclos": ciclos,
         "departamento_seleccionado": int(departamento_id) if departamento_id else None,
+        "ciclo_seleccionado": int(ciclo_id) if ciclo_id else None,
     }
     return render(request, "reportes/reporte_avances_metas.html", context)
 

@@ -1,0 +1,318 @@
+:root {
+    /* Paleta oficial */
+    --bs-primary: #09a43c;
+    --bs-secondary: #eccb4f;
+    --bs-success: #09a43c;
+    --bs-info: #4fc7e2;
+    --bs-warning: #eccb4f;
+    --bs-light: #f8f9fa;
+    --bs-dark: #212529;
+    --bs-gray: #7c849c;
+    --oficial-gob: #611232;
+    /*Variables para el modo colapsado */
+    --sidebar-icon-size: 1.35rem;
+    --sidebar-icon-spacing: 0.75rem;
+    --sidebar-active-indicator: 3px;
+}
+
+/* BOTONES */
+.btn-primary {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+
+.btn-primary:hover {
+    background-color: #14253a;
+    border-color: #14253a;
+}
+
+/* Colores extendidos */
+.bg-primary {
+    background-color: var(--bs-primary) !important;
+}
+.text-primary {
+    color: var(--bs-primary) !important;
+}
+
+.bg-secondary {
+    background-color: var(--bs-secondary) !important;
+}
+.text-secondary {
+    color: var(--bs-secondary) !important;
+}
+
+.bg-success {
+    background-color: var(--bs-success) !important;
+}
+.text-success {
+    color: var(--bs-success) !important;
+}
+
+.bg-info {
+    background-color: var(--bs-info) !important;
+}
+.bg-gob-local {
+    background-color: var(--oficial-gob) !important;
+}
+.text-info {
+    color: var(--bs-info) !important;
+}
+
+.bg-warning {
+    background-color: var(--bs-warning) !important;
+}
+.text-warning {
+    color: var(--bs-warning) !important;
+}
+
+.bg-gray {
+    background-color: var(--bs-gray) !important;
+}
+.text-gray {
+    color: var(--bs-gray) !important;
+}
+
+.text-black {
+    color: var(--bs-dark) !important;
+}
+
+/* CARDS */
+.card-shadow {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+}
+
+.btn-toggle:hover {
+    background-color: #e9ecef !important;
+}
+
+/* ERRORES DE FORMULARIO */
+.field-error {
+    color: #dc3545 !important;
+    font-size: 0.875em !important;
+    margin-top: 0.25rem !important;
+}
+
+/* Botón toggle del sidebar */
+#toggleSidebar {
+    height: 30px;
+}
+/* Estilos generales */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: grid;
+    grid-template-rows: auto auto 1fr auto;
+    min-height: 100vh;
+}
+
+/* Estilo para la barra GOB */
+.navbarGob {
+    background-color: var(--oficial-gob) !important;
+    color: white;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+}
+
+/* Estilo para la barra SADI */
+.navbarSadi {
+    background-color: #0056b3; /* Azul más oscuro */
+    color: white;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Contenedor principal */
+.main-container {
+    display: flex;
+    flex: 1;
+}
+
+/* Sidebar/MENU */
+.sidebar {
+    width: 250px;
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-right: 1px solid #dee2e6;
+    transition: width 0.3s;
+    overflow-y: auto;
+}
+
+.sidebar.collapsed {
+    width: 70px;
+    padding: 15px 10px;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    color: #212529;
+    text-decoration: none;
+    transition: all 0.3s;
+    white-space: nowrap;
+    border-radius: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.sidebar-link i {
+    font-size: 1.25rem;
+    transition: all 0.2s ease;
+}
+
+.sidebar-link:hover {
+    background-color: #f8f9fa;
+    color: #0d6efd;
+}
+
+.sidebar-content {
+    overflow: hidden;
+    transition: opacity 0.3s;
+}
+
+.sidebar.collapsed .sidebar-content {
+    opacity: 0;
+    height: 0;
+    overflow: hidden;
+}
+.sidebar-icons {
+    display: none;
+    padding: 10px 0;
+}
+
+.sidebar.collapsed .sidebar-icons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sidebar .nav-link:hover,
+.sidebar .nav-link.active {
+    background-color: var(--bs-primary) !important;
+    color: #fff !important;
+}
+
+.sidebar-icons .sidebar-link {
+    justify-content: center;
+    padding: var(--sidebar-icon-spacing);
+    margin: 0 5px;
+    border-radius: 8px;
+    position: relative;
+}
+
+.sidebar-icons .sidebar-link i {
+    font-size: var(--sidebar-icon-size);
+    transition: all 0.2s ease;
+}
+
+.sidebar-icons .sidebar-link:hover {
+    background-color: #f0f0f0;
+    transform: translateY(-1px);
+}
+
+.sidebar-icons .sidebar-link:hover i {
+    color: var(--bs-primary);
+    transform: scale(1.1);
+}
+
+.sidebar-icons .sidebar-link.active {
+    background-color: #e9f2ff;
+    color: var(--bs-primary);
+}
+
+/* Mejoras para los dropdowns en modo iconos */
+
+.sidebar-icons .dropdown-toggle::after {
+    display: none;
+}
+
+/* Tooltips mejorados */
+.tooltip {
+    z-index: 1080;
+}
+
+.tooltip-inner {
+    background-color: #212529;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    padding: 6px 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.bs-tooltip-end .tooltip-arrow::before {
+    border-right-color: #212529;
+}
+
+/* Contenido principal */
+.main-content {
+    flex: 1;
+    padding: 20px;
+    background-color: #fff;
+}
+
+/* Footer */
+footer {
+    background-color: #003366; /* Azul oscuro */
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+/* Responsividad */
+@media (max-width: 768px) {
+    .main-container {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .sidebar.collapsed {
+        width: 100%;
+        height: 60px;
+        overflow: hidden;
+    }
+
+    .sidebar.collapsed .sidebar-content {
+        display: none;
+    }
+}
+/* Asegurar que los modales estén por encima de todo */
+.modal-backdrop {
+    z-index: 1040 !important; /* Valor por defecto de Bootstrap pero aseguramos */
+}
+
+.modal {
+    z-index: 1050 !important; /* Valor por defecto de Bootstrap pero aseguramos */
+}
+
+/* Ajustar el z-index del sidebar para que no interfiera */
+.sidebar {
+    z-index: 1030 !important; /* Menor que los modales */
+}
+.navbarGob {
+    z-index: 1031 !important; /* Mayor que el sidebar pero menor que los modales */
+}
+
+/* Asegurar que la tabla ocupe el 100% del ancho */
+table.dataTable {
+    width: 100% !important;
+    margin: 0 !important;
+}
+
+/* Prevenir que las celdas se expandan demasiado */
+
+/* Asegurar que el contenedor principal no cause problemas de layout */
+.main-content {
+    overflow: hidden;
+}

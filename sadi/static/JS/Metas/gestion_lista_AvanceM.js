@@ -1,4 +1,75 @@
 document.addEventListener('DOMContentLoaded', function () {
+    // --- FUNCIÓN PARA MOSTRAR ERRORES DEBAJO DE LOS CAMPOS ---
+    function mostrarError(campo, mensaje) {
+        let errorDiv = campo.parentElement.querySelector('.error-feedback');
+        if (!errorDiv) {
+            errorDiv = document.createElement('div');
+            errorDiv.classList.add(
+                'error-feedback',
+                'text-danger',
+                'mt-1',
+                'small'
+            );
+            campo.parentElement.appendChild(errorDiv);
+        }
+        errorDiv.textContent = mensaje;
+        campo.classList.add('is-invalid');
+    }
+
+    // --- FUNCIÓN PARA LIMPIAR ERROR DE UN CAMPO ---
+    function limpiarError(campo) {
+        campo.classList.remove('is-invalid');
+        const errorDiv = campo.parentElement.querySelector('.error-feedback');
+        if (errorDiv) errorDiv.remove();
+    }
+
+    // --- FUNCIÓN GENERAL DE VALIDACIÓN ---
+    function validarFormulario(formId) {
+        const form = document.getElementById(formId);
+        let esValido = true;
+
+        // Limpia errores previos
+        form.querySelectorAll('.is-invalid').forEach((input) =>
+            limpiarError(input)
+        );
+
+        // Validar meta
+        const metaSelect = form.querySelector('select[name="metaCumplir"]');
+        if (metaSelect && !metaSelect.value) {
+            mostrarError(metaSelect, 'Debe seleccionar una meta.');
+            esValido = false;
+        }
+
+        // Validar avance
+        const avanceInput = form.querySelector('input[name="avance"]');
+        const valorAvance = parseFloat(avanceInput.value);
+        if (isNaN(valorAvance)) {
+            mostrarError(avanceInput, 'El avance debe ser un número.');
+            esValido = false;
+        } else if (valorAvance < 0 || valorAvance > 100) {
+            mostrarError(avanceInput, 'El avance debe estar entre 0 y 100.');
+            esValido = false;
+        }
+
+        // Validar fecha
+        const fechaInput = form.querySelector('input[name="fecha_registro"]');
+        if (fechaInput && !fechaInput.value) {
+            mostrarError(fechaInput, 'Debe seleccionar una fecha.');
+            esValido = false;
+        }
+
+        return esValido;
+    }
+
+    // --- LIMPIAR ERROR AL CAMBIAR UN CAMPO ---
+    function activarLimpiezaErrores(formId) {
+        const form = document.getElementById(formId);
+        form.querySelectorAll('input, select').forEach((campo) => {
+            campo.addEventListener('input', () => limpiarError(campo));
+            campo.addEventListener('change', () => limpiarError(campo));
+        });
+    }
+
     // --- ACTUALIZAR DEPARTAMENTO SEGÚN META SELECCIONADA ---
     function actualizarDepartamento(
         metaSelect,
@@ -14,144 +85,59 @@ document.addEventListener('DOMContentLoaded', function () {
             'data-departamento-id'
         );
 
-        // Buscar la opción correspondiente en el select de departamentos
-        const options = departamentoSelect.options;
-        for (let i = 0; i < options.length; i++) {
-            if (options[i].value === departamentoId) {
-                departamentoSelect.value = departamentoId;
-                departamentoHidden.value = departamentoId;
-                return;
-            }
+        if (departamentoId) {
+            departamentoSelect.value = departamentoId;
+            departamentoHidden.value = departamentoId;
+        } else {
+            departamentoSelect.value = '';
+            departamentoHidden.value = '';
         }
-
-        // Si no se encuentra el departamento, limpiar los valores
-        departamentoSelect.value = '';
-        departamentoHidden.value = '';
     }
 
-    // --- EVENTOS PARA ACTUALIZAR DEPARTAMENTO ---
-    // Modal de creación
-    document
-        .getElementById('id_metaCumplir')
-        .addEventListener('change', function () {
+    // --- EVENTO META CREAR ---
+    const metaCrear = document.getElementById('id_metaCumplir');
+    if (metaCrear) {
+        metaCrear.addEventListener('change', function () {
             actualizarDepartamento(
                 this,
                 'id_departamento',
                 'id_departamento_hidden'
             );
-            validarCampo(this, 'metaCumplir');
         });
-
-    // Modal de edición
-    document
-        .getElementById('id_metaCumplir_editar')
-        .addEventListener('change', function () {
-            actualizarDepartamento(
-                this,
-                'id_departamento_editar',
-                'id_departamento_hidden_editar'
-            );
-            validarCampo(this, 'metaCumplir', true);
-        });
-
-    // --- VALIDACIONES DE CAMPOS ---
-    function validarCampo(campo, nombreCampo, esEdicion = false) {
-        const sufijo = esEdicion ? '-editar' : '';
-        const errorElement = document.getElementById(
-            `error-${nombreCampo}${sufijo}`
-        );
-
-        // Limpiar mensajes de error previos
-        campo.classList.remove('is-invalid');
-        errorElement.textContent = '';
-
-        let esValido = true;
-        let mensajeError = '';
-
-        switch (nombreCampo) {
-            case 'metaCumplir':
-                if (!campo.value) {
-                    mensajeError = 'Debe seleccionar una meta.';
-                    esValido = false;
-                }
-                break;
-
-            case 'avance':
-                const valorAvance = parseFloat(campo.value);
-                if (isNaN(valorAvance)) {
-                    mensajeError = 'El avance debe ser un número válido.';
-                    esValido = false;
-                } else if (valorAvance < 0 || valorAvance > 100) {
-                    mensajeError = 'El avance debe estar entre 0% y 100%.';
-                    esValido = false;
-                }
-                break;
-
-            case 'fecha_registro':
-                if (!campo.value) {
-                    mensajeError = 'Debe seleccionar una fecha.';
-                    esValido = false;
-                } else {
-                    const fechaSeleccionada = new Date(campo.value);
-                    const hoy = new Date();
-                    if (fechaSeleccionada > hoy) {
-                        mensajeError = 'La fecha no puede ser futura.';
-                        esValido = false;
-                    }
-                }
-                break;
-        }
-
-        if (!esValido) {
-            campo.classList.add('is-invalid');
-            errorElement.textContent = mensajeError;
-        } else {
-            campo.classList.add('is-valid');
-        }
-
-        return esValido;
     }
 
-    // Agregar eventos de validación a los campos
-    document.getElementById('id_avance').addEventListener('blur', function () {
-        validarCampo(this, 'avance');
-    });
-
-    document
-        .getElementById('id_fecha_registro')
-        .addEventListener('change', function () {
-            validarCampo(this, 'fecha_registro');
-        });
-
-    document
-        .getElementById('id_avance_editar')
-        .addEventListener('blur', function () {
-            validarCampo(this, 'avance', true);
-        });
-
-    // --- ABRIR MODAL DE EDICIÓN ---
+    // --- ABRIR MODAL DE EDICIÓN Y CARGAR DATOS ---
     document.querySelectorAll('.btn-editar-avance').forEach((button) => {
         button.addEventListener('click', function () {
             const id = this.getAttribute('data-id');
             const avance = this.getAttribute('data-avance');
             const fecha = this.getAttribute('data-fecha');
-            const meta = this.getAttribute('data-meta');
+            const metaId = this.getAttribute('data-meta-id');
             const metaNombre = this.getAttribute('data-meta-nombre');
             const departamento = this.getAttribute('data-departamento');
 
+            // Cargar datos en el formulario de edición
             document.getElementById('avance_id_editar').value = id;
+            document.getElementById('id_avance_editar').value = avance;
             document.getElementById('id_fecha_registro_editar').value = fecha;
-            //document.getElementById('id_avance_editar').value = avance;
             document.getElementById('id_metaCumplir_editar').value = metaNombre;
             document.getElementById('id_metaCumplir_editar_hidden').value =
-                meta;
-
-            // Establecer el valor del departamento en el select deshabilitado y en el campo oculto
+                metaId;
             document.getElementById('id_departamento_editar').value =
                 departamento;
             document.getElementById('id_departamento_hidden_editar').value =
                 departamento;
 
+            // Limpiar errores previos
+            const form = document.getElementById('formEditarAvance');
+            form.querySelectorAll('.error-feedback').forEach((el) =>
+                el.remove()
+            );
+            form.querySelectorAll('.is-invalid').forEach((el) =>
+                el.classList.remove('is-invalid')
+            );
+
+            // Abrir modal de edición
             const modal = new bootstrap.Modal(
                 document.getElementById('modalEditarAvance')
             );
@@ -159,97 +145,25 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // --- VALIDACIÓN DE FORMULARIOS COMPLETOS ---
-    function validarFormularioCompleto(formId, esEdicion = false) {
-        const form = document.getElementById(formId);
-        const sufijo = esEdicion ? '-editar' : '';
-        let esValido = true;
-
-        // Validar meta
-        const metaSelect = form.querySelector('select[name="metaCumplir"]');
-        if (!validarCampo(metaSelect, 'metaCumplir', esEdicion)) {
-            esValido = false;
-        }
-
-        // Validar avance
-        const avanceInput = form.querySelector('input[name="avance"]');
-        if (!validarCampo(avanceInput, 'avance', esEdicion)) {
-            esValido = false;
-        }
-
-        // Validar fecha
-        const fechaInput = form.querySelector('input[name="fecha_registro"]');
-        if (!validarCampo(fechaInput, 'fecha_registro', esEdicion)) {
-            esValido = false;
-        }
-
-        return esValido;
+    // --- SUBMIT FORMULARIO CREAR ---
+    const formCrear = document.getElementById('formCrearAvance');
+    if (formCrear) {
+        activarLimpiezaErrores('formCrearAvance');
+        formCrear.addEventListener('submit', function (e) {
+            if (!validarFormulario('formCrearAvance')) {
+                e.preventDefault();
+            }
+        });
     }
 
-    // Validar formulario de creación al enviar
-    document
-        .getElementById('formCrearAvance')
-        .addEventListener('submit', function (e) {
-            if (!validarFormularioCompleto('formCrearAvance')) {
+    // --- SUBMIT FORMULARIO EDITAR ---
+    const formEditar = document.getElementById('formEditarAvance');
+    if (formEditar) {
+        activarLimpiezaErrores('formEditarAvance');
+        formEditar.addEventListener('submit', function (e) {
+            if (!validarFormulario('formEditarAvance')) {
                 e.preventDefault();
-                // Mostrar mensaje general de error
-                document.getElementById('erroresCrearAvance').textContent =
-                    'Por favor, corrija los errores en el formulario.';
-                document
-                    .getElementById('erroresCrearAvance')
-                    .classList.remove('d-none');
             }
-        });
-
-    // Validar formulario de edición al enviar
-    document
-        .getElementById('formEditarAvance')
-        .addEventListener('submit', function (e) {
-            if (!validarFormularioCompleto('formEditarAvance', true)) {
-                e.preventDefault();
-                // Mostrar mensaje general de error
-                document.getElementById('erroresEditarAvance').textContent =
-                    'Por favor, corrija los errores en el formulario.';
-                document
-                    .getElementById('erroresEditarAvance')
-                    .classList.remove('d-none');
-            }
-        });
-
-    // Limpiar validaciones al cerrar modales
-    document
-        .getElementById('modalCrearAvance')
-        .addEventListener('hidden.bs.modal', function () {
-            limpiarValidaciones('formCrearAvance');
-            document
-                .getElementById('erroresCrearAvance')
-                .classList.add('d-none');
-        });
-
-    document
-        .getElementById('modalEditarAvance')
-        .addEventListener('hidden.bs.modal', function () {
-            limpiarValidaciones('formEditarAvance', true);
-            document
-                .getElementById('erroresEditarAvance')
-                .classList.add('d-none');
-        });
-
-    function limpiarValidaciones(formId, esEdicion = false) {
-        const form = document.getElementById(formId);
-        const sufijo = esEdicion ? '-editar' : '';
-
-        // Limpiar clases de validación
-        const campos = form.querySelectorAll('select, input');
-        campos.forEach((campo) => {
-            campo.classList.remove('is-invalid');
-            campo.classList.remove('is-valid');
-        });
-
-        // Limpiar mensajes de error
-        const errores = form.querySelectorAll('.invalid-feedback');
-        errores.forEach((error) => {
-            error.textContent = '';
         });
     }
 });

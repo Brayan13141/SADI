@@ -1,0 +1,89 @@
+:root {
+    --bs-primary: #09a43c;
+}
+/* Badges personalizados */
+.badge-active {
+    background-color: #1cc88a;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 8px;
+}
+.badge-inactive {
+    background-color: #e74a3b;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 8px;
+}
+
+/* Botones */
+.btn-add {
+    background-color: #36b9cc;
+    color: white;
+}
+.btn-add:disabled {
+    background-color: #1cc88a !important;
+    border: none;
+}
+.btn-remove {
+    background: none;
+    border: none;
+    color: #e74a3b;
+    font-size: 1.2rem;
+}
+
+/* Carrito */
+#carrito-lista .list-group-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+#cart-count {
+    background: var(--bs-primary);
+    color: white;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+}
+
+/* Estilos para la fila seleccionada */
+tr.selected {
+    background-color: var(--bs-primary) !important;
+}
+tr.selected td {
+    background-color: inherit !important;
+}
+
+/* Panel de detalles */
+.details-panel {
+    display: none;
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    margin-top: 10px;
+    border-left: 4px solid #4e73df;
+}
+
+.details-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.detail-item {
+    margin-bottom: 10px;
+}
+
+.detail-label {
+    font-weight: bold;
+    color: #5a5c69;
+    margin-bottom: 5px;
+}
+
+.detail-value {
+    color: #4e73df;
+}
+
+.table-hover tbody tr:hover {
+    cursor: pointer;
+    background-color: rgba(78, 115, 223, 0.05);
+}

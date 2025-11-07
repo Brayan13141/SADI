@@ -25,7 +25,8 @@
         {% endfor %}
     </div>
     {% endif %}
-        {% if avance_form_errors %}
+
+    {% if avance_form_errors %}
     <div class="alert alert-danger">
         <strong>Errores de validación:</strong>
         <ul>
@@ -38,24 +39,30 @@
     </div>
     {% endif %}
 
-    <h4 class="mb-3">Meta: <strong>{{ meta.clave }}</strong> - {{ meta.nombre }}</h4>
+    <h6 class="mb-3 text-black">
+        Meta: <strong>{{ meta.clave }}</strong> - {{ meta.nombre }}
+        {% if ciclo_activo %}
+        <span class="badge bg-secondary text-black ms-2">Ciclo activo: {{ ciclo_activo.nombre }}</span>
+        {% else %}
+        <span class="badge bg-warning text-dark ms-2">Sin ciclo activo</span>
+        {% endif %}
+    </h6>
 
     <h5>Avances registrados</h5>
-{% if meta.acumulable %}
-  <div class="alert alert-info">
-    <strong>Total acumulado:</strong>
-    {{ meta.total_acumulado }}{% if meta.porcentages %}%{% endif %}
+    {% if meta.acumulable %}
+    <div class="alert alert-info">
+        <strong>Total acumulado:</strong>
+        {{ meta.total_acumulado }}{% if meta.porcentages %}%{% endif %}
 
-    <div class="float-end">
-      <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#modalInfoAcumulable">
-        <i class="fas fa-info-circle me-1"></i> Ayuda
-      </button>
+        <div class="float-end">
+            <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#modalInfoAcumulable">
+                <i class="fas fa-info-circle me-1"></i> Ayuda
+            </button>
+        </div>
     </div>
-  </div>
-  
-{% endif %}
+    {% endif %}
 
-    <!-- ========== AVANCES ========== -->
+    <!-- Tabla de avances -->
     <div class="card shadow-sm">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <span>Avances</span>
@@ -66,26 +73,24 @@
         <div class="card-body">
             <div class="table-responsive">
                 <table id="avancesTable" class="table table-striped table-hover table-bordered table-sm">
-                    <thead>
+                    <thead class="table-nowrap">
                         <tr>
-                            <th>ID</th>
                             <th>Avance</th>
                             <th>Fecha</th>
                             <th>Departamento</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="table-nowrap">
                         {% for avance in avances %}
                         <tr>
-                            <td>{{ avance.id }}</td>
                             <td>{{ avance.avance_display }}</td>
                             <td>{{ avance.fecha_registro }}</td>
                             <td>{{ avance.departamento.nombre|default:"-" }}</td>
                             <td>
                                 <button class="btn btn-sm btn-outline-primary btn-editar-avance me-1"
                                         data-id="{{ avance.id }}"
-                                        data-avance="{{ avance.avance }}"
+                                        data-avance="{{ avance.avance_button }}"
                                         data-fecha="{{ avance.fecha_registro|date:'Y-m-d' }}"
                                         data-departamento="{{ avance.departamento.id|default:'' }}">
                                     Editar
@@ -98,6 +103,11 @@
                                 {% endif %}
                             </td>
                         </tr>
+                        {% if avances|length == 0 %}
+                        <tr>
+                            <td colspan="4" class="text-center">No hay avances registrados en este ciclo.</td>
+                        </tr>
+                        {% endif %}
                         {% endfor %}
                     </tbody>
                 </table>
@@ -121,10 +131,6 @@
         </div>
         <div class="modal-body">
           <div id="erroresCrearAvance" class="alert alert-danger d-none"></div>
-          
-          <!-- Campos ocultos del formulario Django -->
-          {{ avance_form.metaCumplir }}
-          {{ avance_form.departamento }}
 
           <!-- Campo Avance -->
           <div class="mb-3">
@@ -236,9 +242,8 @@
 </div>
 {% endif %}
 
-
 {% if request.user.role == "ADMIN" %}
-<!-- Eliminar Avance (fuera de la tabla para evitar errores de DataTables) -->
+<!-- Eliminar Avance -->
 {% for avance in avances %}
 <div class="modal fade" id="modalEliminarAvance{{ avance.id }}" tabindex="-1">
   <div class="modal-dialog">
@@ -252,7 +257,7 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          ¿Seguro que deseas eliminar el avance <strong>ID {{ avance.id }}</strong>?
+          ¿Seguro que deseas eliminar el avance <strong> {{ avance.avance_display }}</strong>?
         </div>
         <div class="modal-footer">
           <button type="submit" class="btn btn-danger">Eliminar</button>
@@ -271,10 +276,9 @@
 <script src="{% static 'JS/Metas/gestion_meta_avances.js' %}"></script>
 <script>
   {% if abrir_modal_avance %}
-    $(document).ready(function() {
-        $('#modalCrearAvance').modal('show');
-    });
-    {% endif %}
-
-  
+  $(document).ready(function() {
+      $('#modalCrearAvance').modal('show');
+  });
+  {% endif %}
+</script>
 {% endblock %}

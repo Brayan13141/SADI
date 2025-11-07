@@ -5,11 +5,10 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css"/>
- 
 {% endblock %}
 
 {% block content %}
- {% if request.user.role == "ADMIN" or request.user.role == "DOCENTE" or request.user.role == "APOYO" %}
+{% if request.user.role in "ADMIN APOYO DOCENTE" %}
 <div class="container-fluid py-3">
 
     <div class="card shadow-sm">
@@ -30,7 +29,7 @@
                             <th>Probabilidad</th>
                             <th>Impacto</th>
                             <th>Nivel de Riesgo</th>
-                            <th>Meta</th>
+                            <th>Actividad</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -50,7 +49,7 @@
                                     <span class="badge bg-danger">Alto ({{ riesgo.riesgo }})</span>
                                 {% endif %}
                             </td>
-                            <td>{{ riesgo.meta.nombre|truncatewords:3 }}</td>
+                            <td>{{ riesgo.actividad.nombre|truncatewords:3 }}</td>
                             <td>
                                 <div class="action-buttons">
                                     <button class="btn btn-sm btn-outline-primary btn-editar" 
@@ -58,7 +57,7 @@
                                             data-enunciado="{{ riesgo.enunciado }}"
                                             data-probabilidad="{{ riesgo.probabilidad }}"
                                             data-impacto="{{ riesgo.impacto }}"
-                                            data-meta_id="{{ riesgo.meta.id }}">
+                                            data-actividad_id="{{ riesgo.actividad.id }}">
                                         Editar
                                     </button>
                                     {% if request.user.role == "ADMIN" or request.user.role == "DOCENTE" %}
@@ -70,6 +69,7 @@
                                 </div>
                             </td>
                         </tr>
+
                         {% if request.user.role == "ADMIN" or request.user.role == "DOCENTE" %}
                         <!-- Modal Eliminar -->
                         <div class="modal fade" id="modalEliminar{{ riesgo.id }}" tabindex="-1">
@@ -105,16 +105,6 @@
 
 <!-- Modal Crear -->
 <div class="modal fade" id="modalCrear" tabindex="-1">
-   {% if messages %}
-    <div class="mb-3">
-        {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
   <div class="modal-dialog">
     <div class="modal-content">
       <form method="post" id="formCrear" novalidate>
@@ -129,23 +119,23 @@
           
           <div class="mb-3">
             <label class="form-label">Enunciado</label>
-            <input type="text" class="form-control" name="enunciado" required>
+            {{ form.enunciado }}
           </div>
           <div class="mb-3">
             <label class="form-label">Probabilidad (1-10)</label>
-            <input type="number" class="form-control" name="probabilidad" min="1" max="10" required onchange="calcularRiesgo()">
+            {{ form.probabilidad }}
           </div>
           <div class="mb-3">
             <label class="form-label">Impacto (1-10)</label>
-            <input type="number" class="form-control" name="impacto" min="1" max="10" required onchange="calcularRiesgo()">
+            {{ form.impacto }}
           </div>
           <div class="mb-3">
             <label class="form-label">Nivel de Riesgo Calculado</label>
             <div id="riesgo-calculado" class="form-control-plaintext fw-bold">0</div>
           </div>
           <div class="mb-3">
-              <label class="form-label">Meta</label>
-              {{ form.meta }}
+            <label class="form-label">Actividad</label>
+            {{ form.actividad }}
           </div>
         </div>
         <div class="modal-footer">
@@ -159,16 +149,6 @@
 
 <!-- Modal Editar -->
 <div class="modal fade" id="modalEditar" tabindex="-1">
-     {% if messages %}
-    <div class="mb-3">
-        {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
   <div class="modal-dialog">
     <div class="modal-content">
       <form method="post" id="formEditar" novalidate>
@@ -198,9 +178,9 @@
             <label class="form-label">Nivel de Riesgo Calculado</label>
             <div id="riesgo-calculado-editar" class="form-control-plaintext fw-bold">0</div>
           </div>
-        <div class="mb-3">
-              <label class="form-label">Meta</label>
-              {{ form.meta }}
+          <div class="mb-3">
+              <label class="form-label">Actividad</label>
+              {{ form.actividad }}
           </div>
         </div>
         <div class="modal-footer">
@@ -218,16 +198,13 @@
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
-<script src="{% static "JS/Riesgos/gestion_riesgos.js" %}"></script>
+<script src="{% static 'JS/Riesgos/gestion_riesgos.js' %}"></script>
 <script>
-// Auto abrir modal si hubo errores
     {% if abrir_modal_crear %}
-        var modalCrear = new bootstrap.Modal(document.getElementById('modalCrear'));
-        modalCrear.show();
+        new bootstrap.Modal(document.getElementById('modalCrear')).show();
     {% endif %}
     {% if abrir_modal_editar %}
-        var modalEditar = new bootstrap.Modal(document.getElementById('modalEditar'));
-        modalEditar.show();
+        new bootstrap.Modal(document.getElementById('modalEditar')).show();
     {% endif %}
 </script>
 {% endblock %}

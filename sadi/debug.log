@@ -1,0 +1,149 @@
+INFO 2025-11-06 10:54:10,168 views 📥 Petición recibida: dame mis metas
+INFO 2025-11-06 10:54:10,169 views 🔍 Buscando contexto para: dame mis metas
+INFO 2025-11-06 10:54:10,169 views 🎯 Consultando modelo Meta...
+INFO 2025-11-06 10:54:10,170 views ✅ Modelo Meta importado correctamente
+INFO 2025-11-06 10:54:10,174 views 📈 Metas encontradas: 1
+WARNING 2025-11-06 10:54:10,181 views ⚠️ Error obteniendo avance: Cannot resolve keyword 'meta' into field. Choices are: avance, departamento, departamento_id, fecha_registro, id, metaCumplir, metaCumplir_id
+INFO 2025-11-06 10:54:10,181 views ✅ Contexto de metas creado: 1 metas
+INFO 2025-11-06 10:54:10,181 views 📋 Contexto final: Metas del sistema:
+- Matricula de  licenciatura: Sin descripción (Progreso: N/A%)...
+INFO 2025-11-06 10:54:10,182 views 📊 Contexto obtenido: Metas del sistema:
+- Matricula de  licenciatura: Sin descripción (Progreso: N/A%)...
+ERROR 2025-11-06 10:54:10,182 views ❌ Error en mcp_api: name 'mcp_service' is not defined
+ERROR 2025-11-06 10:54:10,192 views 🔍 Traceback: Traceback (most recent call last):
+  File "/home/sadi/SADI/sadi/mcp/views.py", line 30, in mcp_api
+    response = mcp_service.generate_contextual_response(prompt, db_context)
+               ^^^^^^^^^^^
+NameError: name 'mcp_service' is not defined
+
+INFO 2025-11-06 10:58:56,494 views 📥 Petición recibida: dame mis metas
+INFO 2025-11-06 10:58:56,494 views 🔍 Buscando contexto para: dame mis metas
+INFO 2025-11-06 10:58:56,494 views 🎯 Consultando modelo Meta...
+INFO 2025-11-06 10:58:56,495 views ✅ Modelo Meta importado correctamente
+INFO 2025-11-06 10:58:56,498 views 📈 Metas encontradas: 1
+WARNING 2025-11-06 10:58:56,505 views ⚠️ Error obteniendo avance: Cannot resolve keyword 'meta' into field. Choices are: avance, departamento, departamento_id, fecha_registro, id, metaCumplir, metaCumplir_id
+INFO 2025-11-06 10:58:56,505 views ✅ Contexto de metas creado: 1 metas
+INFO 2025-11-06 10:58:56,505 views 📋 Contexto final: Metas del sistema:
+- Matricula de  licenciatura: Sin descripción (Progreso: N/A%)...
+INFO 2025-11-06 10:58:56,506 views 📊 Contexto obtenido: Metas del sistema:
+- Matricula de  licenciatura: Sin descripción (Progreso: N/A%)...
+INFO 2025-11-06 10:58:56,506 mcp_service 🚀 Cargando modelo con contexto...
+INFO 2025-11-06 10:59:06,482 mcp_service ✅ Modelo cargado correctamente
+INFO 2025-11-06 10:59:45,155 views 📤 Respuesta generada: Entiendo que tus metas son importantes para ti. Pero por favor, no te olvides de las otras cosas que...
+INFO 2025-11-06 11:06:30,233 views 📥 Petición recibida: 'dame mis metas'
+INFO 2025-11-06 11:06:30,234 views 🔍 Buscando contexto para: dame mis metas
+INFO 2025-11-06 11:06:30,234 views 🎯 Consultando modelo Meta...
+INFO 2025-11-06 11:06:30,240 views ✅ Contexto de metas: 1 metas
+INFO 2025-11-06 11:06:30,240 views 📋 Contexto final (primeros 200 chars): METAS DEL SISTEMA:
+1. Matricula de  licenciatura - Estado: Estado no especificado...
+INFO 2025-11-06 11:06:30,240 views 📊 Contexto BD obtenido: SÍ
+INFO 2025-11-06 11:06:30,241 mcp_service 🚀 Cargando modelo con contexto...
+INFO 2025-11-06 11:06:36,504 mcp_service ✅ Modelo cargado correctamente
+INFO 2025-11-06 11:06:44,031 views 📤 Respuesta generada: 35 caracteres
+INFO 2025-11-06 11:07:11,402 views 📥 Petición recibida: 'dame mis programas actuales'
+INFO 2025-11-06 11:07:11,402 views 🔍 Buscando contexto para: dame mis programas actuales
+INFO 2025-11-06 11:07:11,402 views 📋 Contexto final (primeros 200 chars): Sistema de Gestión SADI - Consulta general...
+INFO 2025-11-06 11:07:11,403 views 📊 Contexto BD obtenido: SÍ
+INFO 2025-11-06 11:07:17,628 views 📤 Respuesta generada: 35 caracteres
+INFO 2025-11-06 11:11:25,804 views 📥 Petición recibida: 'dame mis proyectos actuales'
+INFO 2025-11-06 11:11:25,808 views 🔍 Buscando contexto detallado para: dame mis proyectos actuales
+INFO 2025-11-06 11:11:25,813 views 📊 Contexto BD obtenido: SÍ
+INFO 2025-11-06 11:11:25,813 mcp_service 🚀 Cargando modelo con contexto...
+INFO 2025-11-06 11:11:32,070 mcp_service ✅ Modelo cargado correctamente
+INFO 2025-11-06 11:12:47,843 views 📤 Respuesta generada: 400 caracteres
+INFO 2025-11-06 12:29:22,377 views 📥 Petición recibida: 'dame mis objetivos'
+INFO 2025-11-06 12:29:22,377 views 🔍 Buscando contexto para: dame mis objetivos
+INFO 2025-11-06 12:29:22,378 views 🎯 Consultando modelo Meta...
+INFO 2025-11-06 12:29:22,378 views ✅ Modelo Meta importado correctamente
+INFO 2025-11-06 12:29:22,381 views ✅ Contexto de metas: 1 metas cargadas
+INFO 2025-11-06 12:29:22,382 views 📋 Contexto final: METAS REGISTRADAS EN EL SISTEMA:
+
+1. **Matricula de  licenciatura**
+   - Estado: No especificado...
+INFO 2025-11-06 12:29:22,382 views 📊 Contexto BD: 96 caracteres
+INFO 2025-11-06 12:29:22,382 mcp_service 🚀 Cargando modelo con contexto estricto...
+INFO 2025-11-06 12:29:29,605 mcp_service ✅ Modelo cargado correctamente
+INFO 2025-11-06 12:29:51,283 views 📤 Respuesta generada: 142 caracteres
+INFO 2025-11-06 12:30:32,048 views 📥 Petición recibida: 'dame las metas'
+INFO 2025-11-06 12:30:32,048 views 🔍 Buscando contexto para: dame las metas
+INFO 2025-11-06 12:30:32,049 views 🎯 Consultando modelo Meta...
+INFO 2025-11-06 12:30:32,049 views ✅ Modelo Meta importado correctamente
+INFO 2025-11-06 12:30:32,053 views ✅ Contexto de metas: 1 metas cargadas
+INFO 2025-11-06 12:30:32,053 views 📋 Contexto final: METAS REGISTRADAS EN EL SISTEMA:
+
+1. **Matricula de  licenciatura**
+   - Estado: No especificado...
+INFO 2025-11-06 12:30:32,053 views 📊 Contexto BD: 96 caracteres
+INFO 2025-11-06 12:30:55,412 views 📤 Respuesta generada: 142 caracteres
+INFO 2025-11-06 12:31:12,953 views 📥 Petición recibida: 'dame los ciclos'
+INFO 2025-11-06 12:31:12,953 views 🔍 Buscando contexto para: dame los ciclos
+INFO 2025-11-06 12:31:12,953 views ℹ️ Consulta general sin contexto específico
+INFO 2025-11-06 12:31:12,953 views 📋 Contexto final: Sistema de Gestión SADI - Consulta general...
+INFO 2025-11-06 12:31:12,954 views 📊 Contexto BD: 42 caracteres
+INFO 2025-11-06 12:32:23,443 views 📤 Respuesta generada: 75 caracteres
+INFO 2025-11-06 12:32:38,089 views 📥 Petición recibida: 'dame mis proyectos'
+INFO 2025-11-06 12:32:38,089 views 🔍 Buscando contexto para: dame mis proyectos
+INFO 2025-11-06 12:32:38,089 views 🏗️ Consultando modelo Proyecto...
+INFO 2025-11-06 12:32:38,090 views ✅ Modelo Proyecto importado correctamente
+INFO 2025-11-06 12:32:38,093 views ✅ Contexto de proyectos: 2 proyectos cargados
+INFO 2025-11-06 12:32:38,093 views 📋 Contexto final: PROYECTOS REGISTRADOS EN EL SISTEMA SADI:
+
+PROYECTO 1: Incremento de la matrícula total del ITSUR
+- Estado: Estado no especificado
+
+PROYECTO 2: Incremento de la matrícula de licenciatura
+- Estado: Est...
+INFO 2025-11-06 12:32:38,093 views 📊 Contexto BD: 219 caracteres
+INFO 2025-11-06 12:33:11,562 views 📤 Respuesta generada: 224 caracteres
+INFO 2025-11-06 12:35:05,345 views 📥 Petición recibida: 'lista mis actividades'
+INFO 2025-11-06 12:35:05,345 views 🔍 Buscando contexto para: lista mis actividades
+INFO 2025-11-06 12:35:05,345 views ℹ️ Consulta general sin contexto específico
+INFO 2025-11-06 12:35:05,346 views 📋 Contexto final: Sistema de Gestión SADI - Consulta general...
+INFO 2025-11-06 12:35:05,346 views 📊 Contexto BD: 42 caracteres
+INFO 2025-11-06 12:35:42,318 views 📤 Respuesta generada: 62 caracteres
+INFO 2025-11-06 12:49:43,303 views 📥 Petición recibida: 'lista mis ciclos'
+INFO 2025-11-06 12:49:43,345 views 📊 Contexto BD: 192 caracteres
+INFO 2025-11-06 12:49:43,345 mcp_service 🚀 Cargando TinyLlama/TinyLlama-1.1B-Chat-v1.0...
+INFO 2025-11-06 12:49:47,770 mcp_service ✅ Modelo cargado correctamente
+INFO 2025-11-06 12:49:57,255 views 📤 Respuesta generada: 215 caracteres
+INFO 2025-11-06 12:50:57,057 views 📥 Petición recibida: 'dame mis metas'
+INFO 2025-11-06 12:50:57,057 views 📊 Contexto BD: 93 caracteres
+INFO 2025-11-06 12:52:27,335 views 📤 Respuesta generada: 970 caracteres
+INFO 2025-11-06 12:53:07,801 views 📥 Petición recibida: 'dame mis proyectos'
+INFO 2025-11-06 12:53:07,806 views 📊 Contexto BD: 267 caracteres
+INFO 2025-11-06 12:53:29,345 views 📤 Respuesta generada: 298 caracteres
+INFO 2025-11-06 13:32:16,585 views 📥 Petición recibida: 'dame mis metas'
+INFO 2025-11-06 13:32:16,613 views 📊 Contexto BD: 188 caracteres
+INFO 2025-11-06 13:32:16,613 mcp_service 🚀 Cargando TinyLlama/TinyLlama-1.1B-Chat-v1.0...
+INFO 2025-11-06 13:32:26,127 mcp_service ✅ Modelo cargado correctamente
+INFO 2025-11-06 13:32:43,262 views 📤 Respuesta generada: 214 caracteres
+INFO 2025-11-06 13:33:08,814 views 📥 Petición recibida: 'dame mis objetivos'
+INFO 2025-11-06 13:33:08,825 views 📊 Contexto BD: 188 caracteres
+INFO 2025-11-06 13:33:19,915 views 📤 Respuesta generada: 214 caracteres
+INFO 2025-11-06 13:33:36,297 views 📥 Petición recibida: 'dame mis ciclos'
+INFO 2025-11-06 13:33:36,313 views 📊 Contexto BD: 292 caracteres
+INFO 2025-11-06 13:33:49,225 views 📤 Respuesta generada: 315 caracteres
+INFO 2025-11-06 13:35:27,901 views 📥 Petición recibida: 'dame mis proyectos'
+INFO 2025-11-06 13:35:27,907 views 📊 Contexto BD: 199 caracteres
+INFO 2025-11-06 13:36:02,207 views 📤 Respuesta generada: 230 caracteres
+INFO 2025-11-06 13:36:14,641 views 📥 Petición recibida: 'dame mis programas'
+INFO 2025-11-06 13:36:14,645 views 📊 Contexto BD: 212 caracteres
+INFO 2025-11-06 13:37:24,942 views 📤 Respuesta generada: 818 caracteres
+INFO 2025-11-06 13:38:01,766 views 📥 Petición recibida: 'dame mis actividades'
+INFO 2025-11-06 13:38:01,768 views 📊 Contexto BD: 31 caracteres
+INFO 2025-11-06 13:38:01,769 views 📤 Respuesta generada: 82 caracteres
+INFO 2025-11-06 13:38:45,834 views 📥 Petición recibida: 'dame mi programa'
+INFO 2025-11-06 13:38:45,838 views 📊 Contexto BD: 212 caracteres
+INFO 2025-11-06 13:40:32,770 views 📤 Respuesta generada: 1174 caracteres
+INFO 2025-11-06 13:40:49,931 views 📥 Petición recibida: 'dame mis departamentos'
+INFO 2025-11-06 13:40:49,934 views 📊 Contexto BD: 42 caracteres
+INFO 2025-11-06 13:41:17,219 views 📤 Respuesta generada: 73 caracteres
+INFO 2025-11-06 13:44:54,526 views 📥 Petición recibida: 'dame mi actividad'
+INFO 2025-11-06 13:44:54,529 views 📊 Contexto BD: 31 caracteres
+INFO 2025-11-06 13:44:54,529 views 📤 Respuesta generada: 82 caracteres
+WARNING 2025-11-07 09:43:39,285 log Not Found: /favicon.ico
+INFO 2025-11-07 09:45:32,132 views 📥 Petición recibida: 'dame mis metas'
+INFO 2025-11-07 09:45:32,175 views 📊 Contexto BD: 188 caracteres
+INFO 2025-11-07 09:45:32,175 mcp_service 🚀 Cargando TinyLlama/TinyLlama-1.1B-Chat-v1.0...
+INFO 2025-11-07 09:45:48,931 mcp_service ✅ Modelo cargado correctamente
+INFO 2025-11-07 09:46:07,085 views 📤 Respuesta generada: 214 caracteres

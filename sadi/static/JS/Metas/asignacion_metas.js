@@ -3,9 +3,7 @@ $(document).ready(function () {
         scrollX: true,
         scrollY: '500px',
         scrollCollapse: true,
-        fixedColumns: {
-            left: 1,
-        },
+        fixedColumns: { left: 1 },
         lengthMenu: [5, 10, 15, 20, 50],
         autoWidth: false,
         paging: true,
@@ -15,7 +13,6 @@ $(document).ready(function () {
         language: {
             url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json',
         },
-        // Configuración adicional para mejorar el rendimiento con muchas columnas
         deferRender: true,
         scroller: true,
         stateSave: true,
@@ -38,9 +35,9 @@ $(document).ready(function () {
             empty.hide();
             carrito.forEach((item) => {
                 lista.append(`
-                    <li class="list-group-item" data-id="${item.id}">
+                    <li class="list-group-item d-flex justify-content-between align-items-center" data-id="${item.id}">
                         <div><strong>${item.clave}</strong> - ${item.nombre}</div>
-                        <button class="btn-remove" data-id="${item.id}">
+                        <button class="btn-remove btn btn-sm btn-outline-danger" data-id="${item.id}">
                             <i class="fas fa-times"></i>
                         </button>
                     </li>
@@ -49,33 +46,19 @@ $(document).ready(function () {
         }
     }
 
-    // Función para mostrar detalles de la fila seleccionada
     function mostrarDetalles(row) {
-        const ciclo = row.data('ciclo') || '-';
         const departamento = row.data('departamento') || '-';
-
-        $('#detail-ciclo').text(ciclo);
         $('#detail-departamento').text(departamento);
         $('#details-panel').slideDown();
     }
 
-    // Evento para seleccionar fila y mostrar detalles
     $(document).on('click', '#tabla-metas tbody tr', function (e) {
-        // No activar si se hace clic en el botón de agregar
-        if ($(e.target).is('button') || $(e.target).closest('button').length) {
+        if ($(e.target).is('button') || $(e.target).closest('button').length)
             return;
-        }
 
-        // Quitar selección anterior
-        if (selectedRow) {
-            selectedRow.removeClass('selected');
-        }
-
-        // Seleccionar nueva fila
+        if (selectedRow) selectedRow.removeClass('selected');
         selectedRow = $(this);
         selectedRow.addClass('selected');
-
-        // Mostrar detalles
         mostrarDetalles(selectedRow);
     });
 
@@ -99,9 +82,8 @@ $(document).ready(function () {
         $(this)
             .prop('disabled', true)
             .html('<i class="fas fa-check"></i> Agregada');
-
         Toastify({
-            text: 'Meta agregada ✅',
+            text: 'Meta agregada',
             duration: 2000,
             backgroundColor: '#1cc88a',
         }).showToast();
@@ -115,16 +97,14 @@ $(document).ready(function () {
         $(`.btn-add[data-id="${id}"]`)
             .prop('disabled', false)
             .html('<i class="fas fa-plus"></i> Agregar');
-
         Toastify({
-            text: 'Meta eliminada ⚠️',
+            text: 'Meta eliminada',
             duration: 2000,
             backgroundColor: '#f6c23e',
         }).showToast();
     });
 
     $('#aplicar-cambios').click(function () {
-        const ciclo = $('#ciclo').val();
         const departamento = $('#departamento').val();
 
         if (carrito.length === 0) {
@@ -145,7 +125,6 @@ $(document).ready(function () {
             },
             body: JSON.stringify({
                 action: 'apply',
-                ciclo,
                 departamento,
                 metas: carrito.map((m) => m.id),
             }),
@@ -165,9 +144,7 @@ $(document).ready(function () {
                         .prop('disabled', false)
                         .html('<i class="fas fa-plus"></i> Agregar');
 
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1000);
+                    setTimeout(() => location.reload(), 1000);
                 } else {
                     Toastify({
                         text: data.message || 'Error',

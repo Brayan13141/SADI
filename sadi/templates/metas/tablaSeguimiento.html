@@ -51,76 +51,84 @@
             <!-- Tabla -->
             
             <div >
-                <table id="seguimientoTable" class="table table-striped table-hover table-bordered table-sm">
-                    <thead >
-                        <tr class="text-nowrap">
-                            <th>#</th>
-                            <th>Meta</th>
-                            <th>LB</th>
-                            <th>Meta</th>
-                            {% for mes in meses %}
-                                <th >{{ mes.nombre|slice:":3" }}</th>
-                            {% endfor %}
-                            <th>Categoria</th>
-                            <th>Completado</th>
-                            <th>Actividades</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for fila in tabla %}
-                        <tr class="align-middle">
-                            <td>{{ fila.meta.id }}</td>
-                            <td class="text-center text-nowrap">
-                                <div class="fw-semibold">{{ fila.meta.nombre }}</div>
-                                {% if fila.meta.departamento %}
-                                    <small class="text-muted">{{ fila.meta.departamento.nombre }}</small>
-                                {% endif %}
-                            </td>
-                            <td><span class="badge bg-light text-dark">{{ fila.meta.lineabase_display }}</span></td>
-                            <td><span class="badge bg-primary">{{ fila.meta.metacumplir_display }}</span></td>
-                            {% for valor in fila.valores_por_mes %}
-                            <td class="text-center text-nowrap">
-                                {% if valor %}
-                                    <span class="text-success fw-semibold">{{ valor }}</span>
-                                {% else %}
-                                    <span class="text-muted">-</span>
-                                {% endif %}
-                            </td>
-                            {% endfor %}
-                            <td class="fw-semibold text-center">
-                                {{ fila.meta.total_acumulado }}
-                                <br>
-                                {% if fila.meta.acumulable %}
-                                <small class="text-muted fw-normal">Acumulado</small>
-                                {% else %}
-                                    <small class="text-muted fw-normal">Incremental</small>
-                                {% endif %}
-                            </td>
+                       <table id="seguimientoTable" class="table table-striped table-hover table-bordered table-sm">
+          <thead>
+            <tr class="text-nowrap text-center align-middle">
+              <th>#</th>
+              <th>Meta</th>
+              <th>LB</th>
+              <th>Meta a Cumplir</th>
+              {% for mes in meses %}
+                <th>{{ mes.nombre|slice:":3" }}</th>
+              {% endfor %}
+              <th>Total / Categoría</th>
+              <th>Completado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for fila in tabla %}
+            <tr class="align-middle">
+              <!-- ID -->
+              <td class="text-center">{{ fila.id }}</td>
 
-                            <td class="text-center ">
-                                <div class="d-flex align-items-center gap-1 ">
-                                    <div class="progress flex-grow-1">
-                                        <div class="progress-bar 
-                                            {% if fila.porcentaje >= 110 %}bg-info
-                                            {% elif fila.porcentaje >= 85 %}bg-success
-                                            {% elif fila.porcentaje >= 25 %}bg-warning
-                                            {% else %}bg-danger{% endif %}" 
-                                            style="width: {{ fila.porcentaje }}%">
-                                        </div>
-                                    </div>
-                                    <small class="fw-semibold">{{ fila.porcentaje }}%</small>
-                                </div>
-                            </td>
-                            <td>
-                                <a href="{% url 'ver_actividades' fila.meta.id %}" class="btn btn-sm btn-outline-primary">Ver</a>
-                                {% if request.user.role == "ADMIN" or request.user.role == "APOYO"%}
-                                <a href="{% url 'agregar_actividad' fila.meta.id %}" class="btn btn-sm btn-outline-success">Agregar</a>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+              <!-- Meta y departamento -->
+              <td class="text-center text-nowrap">
+                <div class="fw-semibold">{{ fila.meta_nombre }}</div>
+                {% if fila.meta.departamento %}
+                  <small class="text-muted">{{ fila.meta.departamento.nombre }}</small>
+                {% endif %}
+              </td>
+
+              <!-- Línea base y meta a cumplir -->
+              <!-- 🔧 corregido: antes usabas fila.meta.lineabase_display -->
+              <td class="text-center"><span class="badge bg-light text-dark">{{ fila.linea_base }}</span></td>
+              <td class="text-center"><span class="badge bg-primary">{{ fila.meta_cumplir }}</span></td>
+
+              <!-- Avances por mes -->
+              {% for valor in fila.valores_por_mes %}
+                <td class="text-center">
+                  {% if valor != "-" %}
+                    <span class="text-success fw-semibold">{{ valor }}</span>
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+              {% endfor %}
+
+              <!-- Categoría / Total -->
+              <td class="text-center">
+                <div class="fw-semibold">{{ fila.total }}</div>
+                <small class="text-muted">{{ fila.categoria }}</small>
+              </td>
+
+              <!-- Porcentaje completado -->
+              <td class="text-center">
+                <div class="d-flex align-items-center gap-1">
+                  <div class="progress flex-grow-1">
+                    <div class="progress-bar 
+                      {% if fila.porcentaje >= 110 %}bg-info
+                      {% elif fila.porcentaje >= 85 %}bg-success
+                      {% elif fila.porcentaje >= 25 %}bg-warning
+                      {% else %}bg-danger{% endif %}" 
+                      style="width: {{ fila.porcentaje }}%">
+                    </div>
+                  </div>
+                  <small class="fw-semibold">{{ fila.porcentaje }}%</small>
+                </div>
+              </td>
+
+              <!-- Acciones -->
+              <td class="text-center">
+                <a href="{% url 'ver_actividades' fila.id %}" class="btn btn-sm btn-outline-primary">Ver</a>
+                {% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
+                  <a href="{% url 'agregar_actividad' fila.id %}" class="btn btn-sm btn-outline-success">Agregar</a>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
             </div>
         </div>
     </div>

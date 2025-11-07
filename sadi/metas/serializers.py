@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Meta, AvanceMeta, MetaComprometida
+from .models import Meta, AvanceMeta, MetaComprometida, MetaCiclo
 from proyectos.serializers import ProyectoSerializer
 from departamentos.serializers import DepartamentoSerializer
 
@@ -8,22 +8,33 @@ from departamentos.serializers import DepartamentoSerializer
 class AvanceMetaSerializer(serializers.ModelSerializer):
     class Meta:
         model = AvanceMeta
-        fields = ["id", "avance", "fecha_registro", "departamento"]
+        fields = ["id", "avance", "fecha_registro", "departamento", "ciclo"]
 
 
 # MetaComprometida simple
 class MetaComprometidaSerializer(serializers.ModelSerializer):
     class Meta:
         model = MetaComprometida
-        fields = ["id", "valor"]
+        fields = ["id", "valor", "ciclo"]
 
 
-# Serializer de detalle de Meta con anidado
+# Nuevo: MetaCiclo simple
+class MetaCicloSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MetaCiclo
+        fields = ["id", "ciclo", "lineaBase", "metaCumplir"]
+
+
+# Serializer de detalle de Meta con anidados
 class MetaDetailSerializer(serializers.ModelSerializer):
     avances = AvanceMetaSerializer(source="avancemeta_set", many=True, read_only=True)
     comprometidas = MetaComprometidaSerializer(
         source="metacomprometida_set", many=True, read_only=True
     )
+    metaciclos = MetaCicloSerializer(source="metaciclo_set", many=True, read_only=True)
+
+    proyecto = ProyectoSerializer(read_only=True)
+    departamento = DepartamentoSerializer(read_only=True)
 
     class Meta:
         model = Meta
@@ -39,10 +50,9 @@ class MetaDetailSerializer(serializers.ModelSerializer):
             "porcentages",
             "activa",
             "metodoCalculo",
-            "lineabase",
-            "metacumplir",
             "variableB",
-            "ciclo",
+            # anidados
+            "metaciclos",
             "avances",
             "comprometidas",
         ]

@@ -12,6 +12,7 @@ from .views import (
     meta_comprometida_general_list,
     asignacion_metas,
     activar_metas,
+    asignar_ciclo_meta,
 )
 
 router = DefaultRouter()
@@ -25,6 +26,11 @@ urlpatterns = [
     path("", include(router.urls)),
     path("tablaSeguimiento/", TablaSeguimiento, name="tabla_seguimiento"),
     path("admin/asignacion/", asignacion_metas, name="asignacion_metas"),
+    path(
+        "asignar_ciclo_meta/<int:meta_id>/",
+        asignar_ciclo_meta,
+        name="asignar_ciclo_meta",
+    ),
     path("admin/", gestion_metas, name="gestion_metas"),
     path("admin/avances/", avance_meta_general_list, name="avance_meta_general_list"),
     path(

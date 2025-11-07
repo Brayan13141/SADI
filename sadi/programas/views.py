@@ -86,13 +86,15 @@ def gestion_ciclos(request):
     puede_eliminar = request.user.role == "ADMIN"
 
     if request.method == "POST":
+        print(request.POST)
         if "crear_ciclo" in request.POST and puede_crear:
             form = CicloForm(request.POST)
             if form.is_valid():
                 ciclo = form.save(commit=False)
-                ciclo.save()  # calcula duración en el save()
+                ciclo.save()
                 messages.success(request, "Ciclo creado exitosamente.")
                 return redirect("gestion_ciclos")
+
             abrir_modal_crear = True
 
         elif "editar_ciclo" in request.POST and puede_editar:
@@ -104,6 +106,9 @@ def gestion_ciclos(request):
                 ciclo.save()
                 messages.success(request, "Ciclo actualizado exitosamente.")
                 return redirect("gestion_ciclos")
+
+            else:
+                print("❌ Errores del formulario:", form.errors)
             abrir_modal_editar = True
             request.session["ciclo_editar_id"] = ciclo_id
 

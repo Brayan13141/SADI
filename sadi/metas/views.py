@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 import json
 from django.http import JsonResponse
 from django.shortcuts import redirect, render, get_object_or_404
@@ -7,10 +7,9 @@ from usuarios.permissions import IsAdmin, IsApoyo, IsDocente, IsInvitado
 from psycopg2 import IntegrityError
 from rest_framework import viewsets, permissions
 from departamentos.models import Departamento
-from .models import Meta, AvanceMeta, MetaComprometida
-from django.contrib.auth.decorators import login_required
+from .models import Meta, AvanceMeta, MetaComprometida, MetaCiclo
 from programas.models import Ciclo
-from django.db.models import Sum
+from django.db.models import Sum, Prefetch
 from django.db import transaction
 from django.utils import timezone
 from django.contrib import messages
@@ -26,71 +25,51 @@ from .forms import (
     MetaComprometidaForm,
     AvanceMetaGeneralForm,
     MetaComprometidaGeneralForm,
+    AsignarCicloMetaForm,
 )
 
 
 @role_required("ADMIN", "APOYO", "DOCENTE")
 def gestion_metas(request):
     usuario = request.user
-    # Si el usuario es DOCENTE → solo sus metas
-    if usuario.role == "DOCENTE":
-        metas = (
-            Meta.objects.select_related("proyecto", "departamento", "ciclo")
-            .filter(departamento=usuario.departamento)
-            .filter(activa=True)
+    # --- 1. Cargar solo las metas globales (sin sus ciclos) ---
+    if usuario.role == "ADMIN" or usuario.role == "APOYO":
+        metas = Meta.objects.select_related("proyecto", "departamento").all()
+    elif usuario.role == "DOCENTE":
+        metas = Meta.objects.select_related("proyecto", "departamento").filter(
+            departamento=usuario.departamento
         )
-    else:
-        metas = Meta.objects.select_related("proyecto", "departamento", "ciclo").all()
-
-    ciclos = Ciclo.objects.all()
-    # Obtener meta comprometida para cada meta
-    for meta in metas:
-        try:
-            meta.metacomprometida = MetaComprometida.objects.get(meta=meta)
-        except MetaComprometida.DoesNotExist:
-            meta.metacomprometida = None
-
     abrir_modal_crear = False
     abrir_modal_editar = False
     meta_editar_id = None
 
-    # Permisos según rol
-    puede_crear = request.user.role in ["ADMIN", "APOYO"]
-    puede_editar = request.user.role in ["ADMIN", "APOYO", "DOCENTE"]
-    puede_eliminar = request.user.role in ["ADMIN"]
+    # --- 2. Permisos ---
+    puede_crear = usuario.role in ["ADMIN", "APOYO"]
+    puede_editar = usuario.role in ["ADMIN", "APOYO"]
+    puede_eliminar = usuario.role == "ADMIN"
     editables = Meta.objects.first()
 
     if request.method == "POST":
         post_data = request.POST.copy()
+        FormClass = MetaFormAdmin
 
-        # Determinar qué formulario usar según el rol
-        if request.user.role in ["ADMIN", "APOYO"]:
-            FormClass = MetaFormAdmin
-        else:
-            FormClass = MetaFormDocente
-
-        if "activar_edicion" in request.POST and request.user.role == "ADMIN":
-            # Activar todas las metas
+        # --- Activar/Desactivar edición ---
+        if "activar_edicion" in post_data and usuario.role == "ADMIN":
             Meta.objects.filter(activa=True).update(variableB=True)
-            messages.success(
-                request, "Edición de metas activada para todos los docentes."
-            )
-            return redirect("gestion_metas")
-        elif "desactivar_edicion" in request.POST and request.user.role == "ADMIN":
-            # Desactivar todas las metas
-            Meta.objects.update(variableB=False)
-            messages.success(
-                request, "Edición de metas desactivada para todos los docentes."
-            )
+            messages.success(request, "Edición activada para docentes.")
             return redirect("gestion_metas")
 
-        # Crear meta (solo ADMIN y APOYO)
-        if "crear_meta" in request.POST and puede_crear:
+        elif "desactivar_edicion" in post_data and usuario.role == "ADMIN":
+            Meta.objects.update(variableB=False)
+            messages.success(request, "Edición desactivada para docentes.")
+            return redirect("gestion_metas")
+
+        # --- Crear meta ---
+        if "crear_meta" in post_data and puede_crear:
             form = FormClass(post_data)
             if form.is_valid():
                 try:
                     meta = form.save(commit=False)
-                    # Si el usuario dejó la clave vacía o con “AUTO”, el modelo la generará
                     if not meta.clave:
                         meta.clave = "AUTO"
                     meta.save()
@@ -101,83 +80,48 @@ def gestion_metas(request):
                     abrir_modal_crear = True
             else:
                 abrir_modal_crear = True
-                for field, errors in form.errors.items():
-                    for error in errors:
-                        messages.error(request, f"{field}: {error}")
+                for f, errs in form.errors.items():
+                    for err in errs:
+                        messages.error(request, f"{f}: {err}")
 
-        # Editar meta
-        elif "editar_meta" in request.POST and puede_editar:
-            meta_id = request.POST.get("meta_id")
+        # --- Editar meta ---
+        elif "editar_meta" in post_data and puede_editar:
+            meta_id = post_data.get("meta_id")
             meta = get_object_or_404(Meta, id=meta_id)
             form = FormClass(post_data, instance=meta)
-            # Verificar si la meta puede ser editada (variableB debe ser True para docentes)
-            if request.user.role == "DOCENTE" and not meta.variableB:
-                messages.error(request, "Esta meta ya no está disponible para edición.")
-                return redirect("gestion_metas")
-
             if form.is_valid():
                 try:
-                    # Para el formulario de docente, necesitamos manejar campos disabled
-                    if request.user.role == "DOCENTE":
-                        meta_instance = form.save(commit=False)
-                        # Preservar valores de campos disabled que no se envían
-                        for field in [
-                            "clave",
-                            "lineaBase",
-                            "enunciado",
-                            "indicador",
-                            "unidadMedida",
-                            "metodoCalculo",
-                            "proyecto",
-                            "departamento",
-                            "ciclo",
-                            "acumulable",
-                            "porcentages",
-                            "variableB",
-                            "activa",
-                        ]:
-                            if hasattr(meta, field):
-                                setattr(meta_instance, field, getattr(meta, field))
-                        meta_instance.save()
-                    else:
-                        form.save()
-
+                    meta = form.save()
                     messages.success(request, "Meta actualizada correctamente.")
                     return redirect("gestion_metas")
                 except Exception as e:
-                    messages.error(request, f"Error al actualizar la meta: {str(e)}")
+                    messages.error(request, f"Error al actualizar: {e}")
                     abrir_modal_editar = True
                     meta_editar_id = meta_id
             else:
                 abrir_modal_editar = True
                 meta_editar_id = meta_id
-                for field, errors in form.errors.items():
-                    for error in errors:
-                        messages.error(request, f"{field}: {error}")
 
-        # Eliminar meta (solo ADMIN)
-        elif "eliminar_meta" in request.POST and puede_eliminar:
-            meta_id = request.POST.get("meta_id")
+        # --- Eliminar meta ---
+        elif "eliminar_meta" in post_data and puede_eliminar:
+            meta_id = post_data.get("meta_id")
             meta = get_object_or_404(Meta, id=meta_id)
             try:
                 meta.delete()
                 messages.success(request, "Meta eliminada correctamente.")
                 return redirect("gestion_metas")
             except Exception as e:
-                messages.error(request, f"Error al eliminar la meta: {str(e)}")
+                messages.error(request, f"Error al eliminar: {e}")
 
-    # Para GET requests, determinar qué formulario usar
-    if request.user.role in ["ADMIN", "APOYO"]:
-        form = MetaFormAdmin()
-    else:
-        form = MetaFormDocente()
+    # --- 3. Form por rol ---
+    form = MetaFormAdmin() if usuario.role in ["ADMIN", "APOYO"] else MetaFormDocente()
 
+    # --- 4. Render solo con metas ---
     return render(
         request,
         "metas/gestion_metas.html",
         {
             "metas": metas,
-            "ciclos": ciclos,
             "form": form,
             "abrir_modal_crear": abrir_modal_crear,
             "abrir_modal_editar": abrir_modal_editar,
@@ -191,21 +135,32 @@ def gestion_metas(request):
 
 
 # =============VISTAS PARA EDICION MASIVA=====================
-@role_required("ADMIN", "APOYO", "DOCENTE")
+@role_required("ADMIN", "APOYO")
 def avance_meta_general_list(request):
+    # Ciclo activo desde la sesión
+    ciclo_id = request.session.get("ciclo_id")
+    ciclo_actual = None
+    if ciclo_id:
+        ciclo_actual = get_object_or_404(Ciclo, id=ciclo_id)
 
-    avances = AvanceMeta.objects.select_related("metaCumplir", "departamento").order_by(
-        "-fecha_registro"
-    )
+    # Filtramos los avances solo del ciclo actual de todos los departamentos
+    if ciclo_actual:
+        avances = (
+            AvanceMeta.objects.select_related("metaCumplir", "departamento", "ciclo")
+            .filter(ciclo=ciclo_actual)
+            .order_by("-fecha_registro")
+        )
+    else:
+        avances = AvanceMeta.objects.none()
 
     hay_avances = avances.exists()
-    for a in avances:
-        print(a.metaCumplir_id)
 
     departamentos = Departamento.objects.all()
     metas = Meta.objects.select_related("departamento").all().order_by("id")
+
     avance_form = AvanceMetaGeneralForm()
 
+    # Mapeo de metas con su departamento para JS
     metas_con_departamentos = {
         meta.id: {
             "departamento_id": meta.departamento.id if meta.departamento else "",
@@ -222,21 +177,25 @@ def avance_meta_general_list(request):
     modo_edicion = False
     avance_id = None
 
-    # permisos por rol
+    # Permisos por rol
     puede_crear = request.user.role in ["ADMIN", "APOYO"]
     puede_editar = request.user.role in ["ADMIN", "APOYO"]
     puede_eliminar = request.user.role == "ADMIN"
 
     if request.method == "POST":
+        # Crear avance
         if "crear_avance" in request.POST and puede_crear:
             avance_form = AvanceMetaGeneralForm(request.POST)
             if avance_form.is_valid():
-                avance_form.save()
+                avance = avance_form.save(commit=False)
+                avance.ciclo = ciclo_actual  # Se asigna el ciclo actual
+                avance.save()
                 messages.success(request, "Avance registrado correctamente.")
                 return redirect("avance_meta_general_list")
             abrir_modal_avance = True
             messages.error(request, "Error al registrar el avance.")
 
+        # Editar avance
         elif "editar_avance" in request.POST and puede_editar:
             avance_id = request.POST.get("avance_id")
             avance = get_object_or_404(AvanceMeta, id=avance_id)
@@ -249,12 +208,14 @@ def avance_meta_general_list(request):
             modo_edicion = True
             messages.error(request, "Error al editar el avance.")
 
+        # Eliminar avance
         elif "eliminar_avance" in request.POST and puede_eliminar:
             avance_id = request.POST.get("avance_id")
             avance = get_object_or_404(AvanceMeta, id=avance_id)
             avance.delete()
             messages.success(request, "Avance eliminado correctamente.")
             return redirect("avance_meta_general_list")
+
         else:
             messages.error(request, "No tienes permiso para realizar esta acción.")
 
@@ -271,15 +232,32 @@ def avance_meta_general_list(request):
             "avance_id": avance_id,
             "departamentos": departamentos,
             "metas_con_departamentos": json.dumps(metas_con_departamentos),
+            "ciclo_actual": ciclo_actual,
         },
     )
 
 
-@role_required("ADMIN", "APOYO", "DOCENTE")
+@role_required("ADMIN", "APOYO")
 def meta_comprometida_general_list(request):
-    comprometidas = MetaComprometida.objects.select_related("meta").all()
+    #  Ciclo activo desde la sesión
+    ciclo_id = request.session.get("ciclo_id")
+    if not ciclo_id:
+        messages.error(request, "No hay un ciclo activo seleccionado.")
+        return redirect("seleccionar_ciclo")
+
+    ciclo_actual = get_object_or_404(Ciclo, id=ciclo_id)
+
+    # Filtrar metas comprometidas solo del ciclo activo
+    comprometidas = (
+        MetaComprometida.objects.select_related("meta", "ciclo")
+        .filter(ciclo=ciclo_actual)
+        .order_by("-id")
+    )
+
     comprometida_form = MetaComprometidaGeneralForm()
-    metas_con_comprometida = MetaComprometida.objects.values_list("meta_id", flat=True)
+    metas_con_comprometida = MetaComprometida.objects.filter(
+        ciclo=ciclo_actual
+    ).values_list("meta_id", flat=True)
 
     hay_comprometidas = comprometidas.exists()
 
@@ -287,43 +265,56 @@ def meta_comprometida_general_list(request):
     modo_edicion = False
     comprometida_id = None
 
-    # permisos por rol
+    # Permisos por rol
     puede_crear = request.user.role in ["ADMIN", "APOYO"]
     puede_editar = request.user.role in ["ADMIN", "APOYO"]
     puede_eliminar = request.user.role == "ADMIN"
 
+    # Manejo de acciones POST
     if request.method == "POST":
+        # --- Crear meta comprometida ---
         if "crear_comprometida" in request.POST and puede_crear:
             comprometida_form = MetaComprometidaGeneralForm(request.POST)
             if comprometida_form.is_valid():
                 meta = comprometida_form.cleaned_data["meta"]
-                if MetaComprometida.objects.filter(meta=meta).exists():
+
+                # Evitar duplicados por meta y ciclo
+                if MetaComprometida.objects.filter(
+                    meta=meta, ciclo=ciclo_actual
+                ).exists():
                     messages.error(
                         request,
-                        "Ya existe una meta comprometida para esta meta principal.",
+                        "Ya existe una meta comprometida para esta meta en el ciclo actual.",
                     )
                     abrir_modal_comprometida = True
                 else:
-                    comprometida_form.save()
+                    nueva_comp = comprometida_form.save(commit=False)
+                    nueva_comp.ciclo = ciclo_actual
+                    nueva_comp.save()
                     messages.success(request, "Meta comprometida creada correctamente.")
                     return redirect("meta_comprometida_general_list")
             else:
                 abrir_modal_comprometida = True
                 messages.error(request, "Error al crear la meta comprometida.")
 
+        # --- Editar meta comprometida ---
         elif "editar_comprometida" in request.POST and puede_editar:
             comprometida_id = request.POST.get("comprometida_id")
             comp = get_object_or_404(MetaComprometida, id=comprometida_id)
             comprometida_form = MetaComprometidaGeneralForm(request.POST, instance=comp)
             if comprometida_form.is_valid():
                 meta = comprometida_form.cleaned_data["meta"]
+
+                # Validar duplicado en ciclo actual
                 if (
                     comp.meta != meta
-                    and MetaComprometida.objects.filter(meta=meta).exists()
+                    and MetaComprometida.objects.filter(
+                        meta=meta, ciclo=ciclo_actual
+                    ).exists()
                 ):
                     messages.error(
                         request,
-                        "Ya existe una meta comprometida para esta meta principal.",
+                        "Ya existe una meta comprometida para esta meta en el ciclo actual.",
                     )
                     abrir_modal_comprometida = True
                     modo_edicion = True
@@ -338,15 +329,18 @@ def meta_comprometida_general_list(request):
                 modo_edicion = True
                 messages.error(request, "Error al editar la meta comprometida.")
 
+        # --- Eliminar meta comprometida ---
         elif "eliminar_comprometida" in request.POST and puede_eliminar:
             comprometida_id = request.POST.get("comprometida_id")
             comp = get_object_or_404(MetaComprometida, id=comprometida_id)
             comp.delete()
             messages.success(request, "Meta comprometida eliminada correctamente.")
             return redirect("meta_comprometida_general_list")
+
         else:
             messages.error(request, "No tienes permiso para realizar esta acción.")
 
+    # Renderizar la plantilla
     return render(
         request,
         "metas/gestion_lista_mComprometida.html",
@@ -358,6 +352,7 @@ def meta_comprometida_general_list(request):
             "modo_edicion": modo_edicion,
             "comprometida_id": comprometida_id,
             "metas_con_comprometida": list(metas_con_comprometida),
+            "ciclo_actual": ciclo_actual,
         },
     )
 
@@ -366,7 +361,20 @@ def meta_comprometida_general_list(request):
 @role_required("ADMIN", "APOYO", "DOCENTE")
 def gestion_meta_avances(request, meta_id):
     meta = get_object_or_404(Meta, id=meta_id)
-    avances = AvanceMeta.objects.filter(metaCumplir=meta).order_by("-fecha_registro")
+
+    # Obtenemos el ciclo activo desde la sesión
+    ciclo_id = request.session.get("ciclo_id")
+    ciclo_activo = None
+    if ciclo_id:
+        ciclo_activo = get_object_or_404(Ciclo, id=ciclo_id)
+    else:
+        messages.warning(request, "No hay un ciclo activo seleccionado.")
+
+    #  Filtramos los avances solo del ciclo activo
+    avances = AvanceMeta.objects.filter(metaCumplir=meta, ciclo=ciclo_activo).order_by(
+        "-fecha_registro"
+    )
+
     avance_form = AvanceMetaForm(meta=meta)
     comprometida_form = MetaComprometidaForm()
 
@@ -383,6 +391,7 @@ def gestion_meta_avances(request, meta_id):
             if avance_form.is_valid():
                 avance = avance_form.save(commit=False)
                 avance.metaCumplir = meta
+                avance.ciclo = ciclo_activo  #  Vinculamos el ciclo automáticamente
                 if meta.departamento:
                     avance.departamento = meta.departamento
                 avance.save()
@@ -427,83 +436,96 @@ def gestion_meta_avances(request, meta_id):
             "avance_form": avance_form,
             "comprometida_form": comprometida_form,
             "abrir_modal_avance": abrir_modal_avance,
+            "ciclo_activo": ciclo_activo,  #  Enviamos al template por si lo quieres mostrar
         },
     )
 
 
-@login_required
+@role_required("ADMIN", "APOYO", "DOCENTE")
 def gestion_meta_comprometida(request, meta_id):
     meta = get_object_or_404(Meta, id=meta_id)
-    comprometida = MetaComprometida.objects.filter(meta=meta).first()
-    comprometida_form = MetaComprometidaForm(initial={"meta": meta})
+    comprometidas = MetaComprometida.objects.filter(meta=meta).select_related("ciclo")
 
-    abrir_modal_comprometida = False
+    comprometida_form = MetaComprometidaForm(initial={"meta": meta})
+    abrir_modal = False
     modo_edicion = False
 
-    # permisos por rol
+    # Roles
     puede_crear = request.user.role in ["ADMIN", "APOYO"]
     puede_editar = request.user.role in ["ADMIN", "APOYO"]
     puede_eliminar = request.user.role == "ADMIN"
 
+    # Ciclos disponibles (los que aún no tienen meta comprometida)
+    ciclos_asignados = comprometidas.values_list("ciclo_id", flat=True)
+    ciclos_disponibles = Ciclo.objects.exclude(id__in=ciclos_asignados)
+
     if request.method == "POST":
+        # CREAR
         if "crear_comprometida" in request.POST and puede_crear:
-            comprometida_form = MetaComprometidaForm(request.POST)
-            if comprometida_form.is_valid():
-                if MetaComprometida.objects.filter(meta=meta).exists():
+            form = MetaComprometidaForm(request.POST)
+            if form.is_valid():
+                meta_instance = form.cleaned_data["meta"]
+                ciclo_instance = form.cleaned_data["ciclo"]
+
+                # Evitar duplicados
+                if MetaComprometida.objects.filter(
+                    meta=meta_instance, ciclo=ciclo_instance
+                ).exists():
                     messages.error(
-                        request, "Ya existe una meta comprometida para esta meta."
+                        request, "Ya existe una meta comprometida para ese ciclo."
                     )
-                    abrir_modal_comprometida = True
+                    abrir_modal = True
                 else:
-                    comprometida_form.save()
+                    form.save()
                     messages.success(request, "Meta comprometida creada correctamente.")
                     return redirect("gestion_meta_comprometida", meta_id=meta.id)
             else:
-                abrir_modal_comprometida = True
+                abrir_modal = True
                 messages.error(request, "Error en el formulario. Verifica los datos.")
 
+        # EDITAR
         elif "editar_comprometida" in request.POST and puede_editar:
             comprometida_id = request.POST.get("comprometida_id")
-            comp = get_object_or_404(MetaComprometida, id=comprometida_id, meta=meta)
-            comprometida_form = MetaComprometidaForm(request.POST, instance=comp)
-            if comprometida_form.is_valid():
+            comprometida_obj = get_object_or_404(
+                MetaComprometida, id=comprometida_id, meta=meta
+            )
+            form = MetaComprometidaForm(request.POST, instance=comprometida_obj)
+
+            if form.is_valid():
                 try:
-                    comprometida_form.save()
+                    form.save()
                     messages.success(
                         request, "Meta comprometida actualizada correctamente."
                     )
                     return redirect("gestion_meta_comprometida", meta_id=meta.id)
                 except IntegrityError:
-                    abrir_modal_comprometida = True
+                    abrir_modal = True
                     modo_edicion = True
                     messages.error(request, "Error al actualizar la meta comprometida.")
             else:
-                abrir_modal_comprometida = True
+                abrir_modal = True
                 modo_edicion = True
                 messages.error(request, "Error en el formulario. Verifica los datos.")
 
+        # ELIMINAR
         elif "eliminar_comprometida" in request.POST and puede_eliminar:
             comprometida_id = request.POST.get("comprometida_id")
-            comp = get_object_or_404(MetaComprometida, id=comprometida_id, meta=meta)
-            try:
-                comp.delete()
-                messages.success(request, "Meta comprometida eliminada correctamente.")
-                return redirect("gestion_meta_comprometida", meta_id=meta.id)
-            except Exception as e:
-                messages.error(
-                    request, f"Error al eliminar la meta comprometida: {str(e)}"
-                )
-        else:
-            messages.error(request, "No tienes permiso para realizar esta acción.")
+            comprometida_obj = get_object_or_404(
+                MetaComprometida, id=comprometida_id, meta=meta
+            )
+            comprometida_obj.delete()
+            messages.success(request, "Meta comprometida eliminada correctamente.")
+            return redirect("gestion_meta_comprometida", meta_id=meta.id)
 
     return render(
         request,
         "metas/gestion_metaComprometida.html",
         {
             "meta": meta,
-            "comprometida": comprometida,
+            "comprometidas": comprometidas,
             "comprometida_form": comprometida_form,
-            "abrir_modal_comprometida": abrir_modal_comprometida,
+            "ciclos_disponibles": ciclos_disponibles,
+            "abrir_modal": abrir_modal,
             "modo_edicion": modo_edicion,
         },
     )
@@ -513,57 +535,53 @@ def gestion_meta_comprometida(request, meta_id):
 @role_required("ADMIN", "APOYO", "DOCENTE")
 def TablaSeguimiento(request):
     user = request.user
-    # Obtener el ciclo activo o el más reciente
-    ciclo = (
-        Ciclo.objects.filter(activo=True).first()
-        or Ciclo.objects.order_by("-fecha_inicio").first()
-    )
 
-    # Obtener todas las metas y ordenarlas
-    metas = (
-        Meta.objects.all().order_by("id")
-        if request.GET.get("view") == "simple"
-        else Meta.objects.filter(activa=True).order_by("id")
-    )
-    # --- Filtrar metas según rol del usuario ---
-    if user.role == "ADMIN":
-        metas = metas  # Ve todo
-    elif user.role == "APOYO":
-        # APOYO solo ve las metas de su departamento
-        metas = metas
-    elif user.role == "DOCENTE":
-        # DOCENTE ve solo las metas asignadas directamente a él o a su departamento
-        metas = metas.filter(departamento=user.departamento)
+    # 1) Obtener el ciclo
+    ciclo_id = request.session.get("ciclo_id")
+    ciclo = None
+    if ciclo_id:
+        ciclo = Ciclo.objects.filter(id=ciclo_id).first()
+    if not ciclo:
+        ciclo = (
+            Ciclo.objects.filter(activo=True).first()
+            or Ciclo.objects.order_by("-fecha_inicio").first()
+        )
+
+    # 2) Obtener metas según vista y rol
+    if request.GET.get("view") == "simple":
+        metas_qs = Meta.objects.all().order_by("id")
     else:
-        # Cualquier otro rol no debería ver nada
+        metas_qs = Meta.objects.filter(activa=True).order_by("id")
+
+    if user.role == "ADMIN":
+        metas = metas_qs
+    elif user.role in ("APOYO", "DOCENTE"):
+        metas = metas_qs.filter(departamento=user.departamento)
+    else:
         metas = Meta.objects.none()
 
-    # Obtener lista de meses del ciclo
+    # 3) Generar meses
     meses = []
     if ciclo:
-        current_date = ciclo.fecha_inicio
-        while current_date <= ciclo.fecha_fin:
+        current = ciclo.fecha_inicio.replace(day=1)
+        fin = ciclo.fecha_fin
+        while current <= fin:
             meses.append(
                 {
-                    "nombre": current_date.strftime("%b"),
-                    "numero": current_date.month,
-                    "anio": current_date.year,
+                    "nombre": current.strftime("%b"),
+                    "numero": current.month,
+                    "anio": current.year,
                 }
             )
-            # Avanzar un mes
-            if current_date.month == 12:
-                current_date = current_date.replace(year=current_date.year + 1, month=1)
+            if current.month == 12:
+                current = current.replace(year=current.year + 1, month=1)
             else:
-                current_date = current_date.replace(month=current_date.month + 1)
+                current = current.replace(month=current.month + 1)
     else:
-        # Si no hay ciclo activo, usar últimos 12 meses
-        current_date = timezone.now()
-        for i in range(12):
-            month = current_date.month - i
-            year = current_date.year
-            if month <= 0:
-                month += 12
-                year -= 1
+        hoy = timezone.now().date().replace(day=1)
+        for i in range(11, -1, -1):
+            year = hoy.year - ((hoy.month - i - 1) // 12)
+            month = ((hoy.month - i - 1) % 12) + 1
             meses.append(
                 {
                     "nombre": timezone.datetime(year, month, 1).strftime("%b"),
@@ -571,63 +589,151 @@ def TablaSeguimiento(request):
                     "anio": year,
                 }
             )
-        meses.reverse()
 
-    # Construir la tabla
+    # 4) Construir tabla
     tabla = []
+
     for meta in metas:
-        avances = AvanceMeta.objects.filter(metaCumplir=meta)
+        # Obtener MetaCiclo
+        meta_ciclo = MetaCiclo.objects.filter(meta=meta, ciclo=ciclo).first()
+        if not meta_ciclo:
+            continue
 
-        # Total acumulado (suma de avances)
-        total = avances.aggregate(total=Sum("avance"))["total"] or Decimal("0")
+        # Obtener avances
+        avances = []
+        posibles_campos = ["metaCumplir", "meta"]
+        for campo in posibles_campos:
+            if hasattr(AvanceMeta, campo):
+                filter_kwargs = {campo: meta, "ciclo": ciclo}
+                avances_query = AvanceMeta.objects.filter(**filter_kwargs).order_by(
+                    "fecha_registro"
+                )
+                avances = list(avances_query)
+                if avances:
+                    break
 
-        # Calcular porcentaje de avance correctamente
-        if meta.metacumplir and meta.metacumplir > 0:
-            porcentaje = (total / meta.metacumplir) * Decimal("100")
+        # 🔥 **CÁLCULO DEL TOTAL COMPLETADO: SUMA DE TODOS LOS AVANCES**
+        total = Decimal("0")
+        for av in avances:
+            if av.avance is not None:
+                total += Decimal(str(av.avance))
 
-        else:
+        linea_base = (
+            meta_ciclo.lineaBase if meta_ciclo.lineaBase is not None else Decimal("0")
+        )
+        meta_cumplir = (
+            meta_ciclo.metaCumplir
+            if meta_ciclo.metaCumplir is not None
+            else Decimal("0")
+        )
+
+        # Cálculo de porcentaje
+        porcentaje = Decimal("0")
+        try:
+            denominador = meta_cumplir - linea_base
+            if denominador != Decimal("0"):
+                porcentaje = ((total - linea_base) / denominador) * Decimal("100")
+                porcentaje = max(Decimal("0"), min(porcentaje, Decimal("100")))
+        except (InvalidOperation, TypeError, ZeroDivisionError):
             porcentaje = Decimal("0")
 
-        # Lista ordenada de avances por mes (como porcentaje)
+        # 🔥 **VISUALIZACIÓN POR MES SEGÚN TIPO DE META**
         valores_por_mes = []
-        for mes_info in meses:
-            # Filtrar los avances de este mes y sumarlos
-            avances_mes = avances.filter(
-                fecha_registro__year=mes_info["anio"],
-                fecha_registro__month=mes_info["numero"],
-            ).aggregate(total_mes=Sum("avance"))["total_mes"] or Decimal("0")
 
-            if avances_mes > 0:
-                if meta.porcentages:
-                    valor = avances_mes * Decimal("100")
-                    avance_mes = f"{valor.quantize(Decimal('0.00'))} %"
+        if meta.acumulable:
+            # METAS ACUMULABLES: Mostrar SUMA de avances de cada mes
+            for m in meses:
+                year = m["anio"]
+                month = m["numero"]
+
+                # Filtrar avances del mes y sumarlos
+                avances_mes = [
+                    av
+                    for av in avances
+                    if av.fecha_registro.year == year
+                    and av.fecha_registro.month == month
+                ]
+
+                suma_mes = Decimal("0")
+                for av in avances_mes:
+                    if av.avance is not None:
+                        suma_mes += Decimal(str(av.avance))
+
+                # Formatear para mostrar
+                if suma_mes == Decimal("0"):
+                    valores_por_mes.append("-")
                 else:
-                    avance_mes = f"{avances_mes.quantize(Decimal('0.00'))}"
-            else:
-                avance_mes = "-"
+                    if meta.porcentages:
+                        display = (suma_mes * Decimal("100")).quantize(Decimal("0.00"))
+                        valores_por_mes.append(f"{display} %")
+                    else:
+                        display = suma_mes.quantize(Decimal("0.00"))
+                        valores_por_mes.append(f"{display}")
+        else:
+            # METAS INCREMENTALES: Mostrar ÚLTIMO avance de cada mes
+            for m in meses:
+                year = m["anio"]
+                month = m["numero"]
 
-            valores_por_mes.append(avance_mes)
+                # Filtrar avances del mes y tomar el último
+                avances_mes = [
+                    av
+                    for av in avances
+                    if av.fecha_registro.year == year
+                    and av.fecha_registro.month == month
+                ]
 
-        # Actividades relacionadas
-        actividades = meta.actividad_set.all()
+                ultimo_mes = avances_mes[-1] if avances_mes else None
+                valor_mes_raw = (
+                    Decimal(str(ultimo_mes.avance))
+                    if ultimo_mes and ultimo_mes.avance is not None
+                    else None
+                )
+
+                # Formatear para mostrar
+                if valor_mes_raw is None or valor_mes_raw == Decimal("0"):
+                    valores_por_mes.append("-")
+                else:
+                    if meta.porcentages:
+                        display = (valor_mes_raw * Decimal("100")).quantize(
+                            Decimal("0.00")
+                        )
+                        valores_por_mes.append(f"{display} %")
+                    else:
+                        display = valor_mes_raw.quantize(Decimal("0.00"))
+                        valores_por_mes.append(f"{display}")
+
+        # Formateo final
+        if meta.porcentages:
+            total_display = f"{(total * Decimal('100')).quantize(Decimal('0.00'))} %"
+            linea_base_display = (
+                f"{(linea_base * Decimal('100')).quantize(Decimal('0.00'))} %"
+            )
+            meta_cumplir_display = (
+                f"{(meta_cumplir * Decimal('100')).quantize(Decimal('0.00'))} %"
+            )
+        else:
+            total_display = f"{total.quantize(Decimal('0.00'))}"
+            linea_base_display = f"{linea_base.quantize(Decimal('0.00'))}"
+            meta_cumplir_display = f"{meta_cumplir.quantize(Decimal('0.00'))}"
 
         tabla.append(
             {
                 "id": meta.id,
                 "meta": meta,
+                "clave": meta.clave,
+                "meta_nombre": meta.nombre,
+                "categoria": "Acumulable" if meta.acumulable else "Incremental",
+                "linea_base": linea_base_display,
+                "meta_cumplir": meta_cumplir_display,
                 "valores_por_mes": valores_por_mes,
-                "total": (
-                    f"{(total * Decimal('100')).quantize(Decimal('0.00'))} %"
-                    if meta.porcentages
-                    else f"{total.quantize(Decimal('0.00'))}"
-                ),
+                "total": total_display,
                 "porcentaje": porcentaje.quantize(Decimal("0.00")),
-                "actividades": actividades,
+                "meta_ciclo": meta_ciclo,
             }
         )
 
     context = {"tabla": tabla, "ciclo": ciclo, "meses": meses}
-
     template = (
         "metas/tablaSeg_Completa.html"
         if request.GET.get("view") == "simple"
@@ -637,16 +743,104 @@ def TablaSeguimiento(request):
 
 
 # ==========================ASIGNACION DE METAS=========================
+@role_required("ADMIN", "APOYO", "DOCENTE")
+def asignar_ciclo_meta(request, meta_id):
+    """
+    Vista para asignar los valores de la linea base y meta a cumplir a ciclos específicos.
+    """
+    meta = get_object_or_404(Meta, id=meta_id)
+    es_docente = request.user.role == "DOCENTE"
+
+    if request.method == "POST":
+        print("POST data:", request.POST)
+
+        # Manejo de eliminación de ciclo
+        if "eliminar_ciclo" in request.POST:
+            meta_ciclo_id = request.POST.get("meta_ciclo_id")
+            if meta_ciclo_id:
+                try:
+                    meta_ciclo = get_object_or_404(
+                        MetaCiclo, id=meta_ciclo_id, meta=meta
+                    )
+                    meta_ciclo.delete()
+                    messages.success(request, "Ciclo eliminado correctamente.")
+                except Exception as e:
+                    messages.error(request, f"Error al eliminar el ciclo: {str(e)}")
+            return redirect("asignar_ciclo_meta", meta_id=meta.id)
+
+        form = AsignarCicloMetaForm(request.POST, user=request.user, meta=meta)
+
+        if form.is_valid():
+            meta_ciclo_id = request.POST.get("meta_ciclo_id")
+            meta_cumplir = form.cleaned_data.get("meta_cumplir")
+            linea_base = form.cleaned_data.get("linea_base")
+            ciclo = form.cleaned_data.get("ciclo")
+
+            if es_docente:
+                if meta_ciclo_id:
+                    mc = get_object_or_404(MetaCiclo, id=meta_ciclo_id, meta=meta)
+                    mc.metaCumplir = meta_cumplir
+                    mc.save()
+                    messages.success(request, "Meta actualizada correctamente.")
+                else:
+                    messages.error(request, "No puedes crear un nuevo ciclo.")
+                return redirect("asignar_ciclo_meta", meta_id=meta.id)
+
+            else:  # ADMIN o APOYO
+                if meta_ciclo_id:
+                    # EDITAR registro existente
+                    mc = get_object_or_404(MetaCiclo, id=meta_ciclo_id, meta=meta)
+                    mc.ciclo = ciclo
+                    mc.lineaBase = linea_base
+                    mc.metaCumplir = meta_cumplir
+                    mc.save()
+                    messages.success(request, "Ciclo actualizado correctamente.")
+                else:
+                    # CREAR nuevo registro - VERIFICAR DUPLICADO
+                    if MetaCiclo.objects.filter(meta=meta, ciclo=ciclo).exists():
+                        messages.warning(
+                            request,
+                            "Ya existe un ciclo asignado para esta meta y ciclo.",
+                        )
+                    else:
+                        MetaCiclo.objects.create(
+                            meta=meta,
+                            ciclo=ciclo,
+                            lineaBase=linea_base,
+                            metaCumplir=meta_cumplir,
+                        )
+                        messages.success(request, "Ciclo asignado correctamente.")
+
+                return redirect("asignar_ciclo_meta", meta_id=meta.id)
+
+        else:
+            # MANEJO MEJORADO DE ERRORES - Mostrar solo los mensajes sin prefijos
+            for error in form.errors.values():
+                messages.error(request, error)
+
+    else:
+        form = AsignarCicloMetaForm(user=request.user, meta=meta)
+
+    metas_ciclo = MetaCiclo.objects.filter(meta=meta)
+    return render(
+        request,
+        "metas/asignar_ciclo_meta.html",
+        {
+            "meta": meta,
+            "form": form,
+            "metas_ciclo": metas_ciclo,
+            "es_docente": es_docente,
+        },
+    )
 
 
 @role_required("ADMIN", "APOYO")
 def asignacion_metas(request):
     """
-    Vista para asignar metas a ciclos y departamentos.
+    Vista para asignar metas a departamentos.
     El carrito se maneja en el frontend y se envía como lista de IDs.
     """
     metas = Meta.objects.filter(activa=True).order_by("clave")
-    ciclos = Ciclo.objects.all()
     departamentos = Departamento.objects.all()
 
     puede_aplicar = request.user.role in ["ADMIN", "APOYO"]
@@ -660,17 +854,9 @@ def asignacion_metas(request):
         action = data.get("action")
 
         if action == "apply" and puede_aplicar:
-            ciclo_id = data.get("ciclo")
             departamento_id = data.get("departamento")
             meta_ids = data.get("metas", [])
 
-            print("🧺 Carrito recibido desde frontend:")
-            print("Ciclo:", ciclo_id)
-            print("Departamento:", departamento_id)
-            print("Metas:", meta_ids)
-            print("--------------------------------")
-
-            ciclo = Ciclo.objects.filter(id=ciclo_id).first() if ciclo_id else None
             departamento = (
                 Departamento.objects.filter(id=departamento_id).first()
                 if departamento_id
@@ -687,10 +873,6 @@ def asignacion_metas(request):
                         meta.lineabase = meta.lineabase * 100
                         meta.metacumplir = meta.metacumplir * 100
 
-                    print(f"Actualizando Meta ID {meta.id}...")
-                    print("Objeto completo:", meta.__dict__)
-                    if ciclo:
-                        meta.ciclo = ciclo
                     if departamento:
                         meta.departamento = departamento
                     meta.save()
@@ -700,11 +882,6 @@ def asignacion_metas(request):
                     errores.append(f"Meta {meta_id} no encontrada")
                 except Exception as e:
                     errores.append(f"Meta {meta_id}: {e}")
-
-            if errores:
-                print("Errores durante la asignación:")
-                for e in errores:
-                    print("  -", e)
 
             return JsonResponse(
                 {
@@ -724,7 +901,6 @@ def asignacion_metas(request):
     # --- PETICIÓN GET NORMAL ---
     context = {
         "metas": metas,
-        "ciclos": ciclos,
         "departamentos": departamentos,
     }
     return render(request, "metas/asignacion_metas.html", context)
@@ -800,27 +976,37 @@ def activar_metas(request):
 
 
 # =========================API=============================
-
-
 class MetaViewSet(viewsets.ModelViewSet):
     serializer_class = MetaDetailSerializer
 
     def get_queryset(self):
         user = self.request.user
-        if user.role in ["ADMIN", "APOYO", "INVITADO"]:
-            return Meta.objects.all()
-        elif user.role == "DOCENTE":
-            return Meta.objects.filter(departamento=user.departamento)
-        return Meta.objects.none()
+        ciclo_id = self.request.query_params.get("ciclo")  # Permitir filtrar por ciclo
+        queryset = Meta.objects.all()
+
+        # Si se especifica un ciclo, filtrar metas que tengan datos asociados a ese ciclo
+        if ciclo_id:
+            queryset = queryset.filter(metaciclo__ciclo_id=ciclo_id).distinct()
+
+        if user.role == "DOCENTE":
+            queryset = queryset.filter(departamento=user.departamento)
+
+        elif user.role == "INVITADO":
+            queryset = queryset.filter(
+                activa=True
+            )  # solo metas activas o públicas, si aplica
+
+        return queryset
 
     def get_permissions(self):
-        if self.request.user.role == "ADMIN":
+        role = getattr(self.request.user, "role", None)
+        if role == "ADMIN":
             return [IsAdmin()]
-        elif self.request.user.role == "APOYO":
+        elif role == "APOYO":
             return [IsApoyo()]
-        elif self.request.user.role == "DOCENTE":
+        elif role == "DOCENTE":
             return [IsDocente()]
-        elif self.request.user.role == "INVITADO":
+        elif role == "INVITADO":
             return [IsInvitado()]
         return [permissions.IsAuthenticated()]
 
@@ -830,22 +1016,30 @@ class AvanceMetaViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.role in ["ADMIN", "APOYO"]:
-            return AvanceMeta.objects.all()
+        ciclo_id = self.request.query_params.get("ciclo")
+
+        # Corregido: usar metaCumplir en lugar de meta
+        queryset = AvanceMeta.objects.select_related("metaCumplir", "ciclo")
+
+        # Filtrar por ciclo si se indica (muy importante para evitar mezclar años)
+        if ciclo_id:
+            queryset = queryset.filter(ciclo_id=ciclo_id)
+
+        if user.role in ["ADMIN", "APOYO", "INVITADO"]:
+            return queryset
         elif user.role == "DOCENTE":
-            return AvanceMeta.objects.filter(departamento=user.departamento)
-        elif user.role == "INVITADO":
-            return AvanceMeta.objects.all()  # solo lectura
+            return queryset.filter(metaCumplir__departamento=user.departamento)
         return AvanceMeta.objects.none()
 
     def get_permissions(self):
-        if self.request.user.role == "ADMIN":
+        role = getattr(self.request.user, "role", None)
+        if role == "ADMIN":
             return [IsAdmin()]
-        elif self.request.user.role == "APOYO":
+        elif role == "APOYO":
             return [IsApoyo()]
-        elif self.request.user.role == "DOCENTE":
+        elif role == "DOCENTE":
             return [IsDocente()]
-        elif self.request.user.role == "INVITADO":
+        elif role == "INVITADO":
             return [IsInvitado()]
         return [permissions.IsAuthenticated()]
 
@@ -855,23 +1049,28 @@ class MetaComprometidaViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        ciclo_id = self.request.query_params.get("ciclo")
+        queryset = MetaComprometida.objects.select_related("meta", "ciclo")
+
+        if ciclo_id:
+            queryset = queryset.filter(ciclo_id=ciclo_id)
+
         if user.role in ["ADMIN", "APOYO"]:
-            return MetaComprometida.objects.all()
+            return queryset
         elif user.role == "DOCENTE":
-            return MetaComprometida.objects.none()  # sin acceso
+            return queryset.filter(meta__departamento=user.departamento)
         elif user.role == "INVITADO":
-            return MetaComprometida.objects.all()  # solo lectura
+            return queryset  # solo lectura
         return MetaComprometida.objects.none()
 
     def get_permissions(self):
-        if self.request.user.role == "ADMIN":
+        role = getattr(self.request.user, "role", None)
+        if role == "ADMIN":
             return [IsAdmin()]
-        elif self.request.user.role == "APOYO":
+        elif role == "APOYO":
             return [IsApoyo()]
-
-        elif self.user.role == "DOCENTE":
-            # solo autenticación básica, sin permisos adicionales
-            return [permissions.IsAuthenticated()]
-        elif self.user.role == "INVITADO":
+        elif role == "DOCENTE":
+            return [IsDocente()]
+        elif role == "INVITADO":
             return [IsInvitado()]
         return [permissions.IsAuthenticated()]

@@ -19,7 +19,7 @@ $(document).ready(function () {
     $('.btn-editar').on('click', function () {
         $('#mitigacion_id').val($(this).data('id'));
         $('#id_accion').val($(this).data('accion'));
-        $('#id_fecha_accion').val($(this).data('fecha_accion'));
+        $('#fecha_accion').val($(this).data('fecha_accion'));
         $('#Eid_responsable').val($(this).data('responsable_id'));
         $('#Eid_riesgo').val($(this).data('riesgo_id'));
 
@@ -73,6 +73,7 @@ $(document).ready(function () {
 
     // Validación del formulario de edición
     $('#formEditar').on('submit', function (e) {
+        this.e.preventDefault();
         // Limpiar errores previos
         $('#erroresEditar').addClass('d-none').empty();
         $('input, select', this).removeClass('is-invalid');
@@ -85,7 +86,7 @@ $(document).ready(function () {
             errores.push('El campo Acción es obligatorio.');
             camposInvalidos.accion = $('#id_accion');
         }
-        if (!$('#id_fecha_accion').val()) {
+        if (!$('#fecha_accion').val()) {
             errores.push('El campo Fecha Acción es obligatorio.');
             camposInvalidos.fecha_accion = $('#id_fecha_accion');
         }

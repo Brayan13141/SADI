@@ -64,13 +64,14 @@
                 </tr>
             </thead>
             <tbody>
-                {% for a in data %}
+                {% for a in data|dictsort:"meta" %}
+                    {% ifchanged a.meta a.ciclo %}
                     <tr class="text-wrap">
                         <td>{{ a.departamento }}</td>
                         <td>{{ a.meta }}</td>
                         <td>{{ a.proyecto }}</td>
                         <td>{{ a.ciclo }}</td>
-                        <td>{{ a.fecha_registro }}</td>
+                        <td>{{ a.fecha_registro|date:"d/m/Y" }}</td>
                         <td>{{ a.avance }}</td>
                         <td>{{ a.meta_cumplir }}</td>
                         <td>
@@ -79,6 +80,7 @@
                             </span>
                         </td>
                     </tr>
+                    {% endifchanged %}
                 {% empty %}
                     <tr>
                         <td colspan="8" class="text-center text-muted">
@@ -102,6 +104,7 @@ $(document).ready(function() {
         scrollCollapse: true,
         lengthMenu: [5, 10, 20, 50, 100],
         pageLength: 10,
+        order: [[0, 'asc'], [1, 'asc']], // ordena por departamento y meta
         language: {
             url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json',
         },

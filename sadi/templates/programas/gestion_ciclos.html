@@ -50,11 +50,14 @@
                             <td>{{ ciclo.id }}</td>
                             <td class="text-start">{{ ciclo.programa.nombre }}</td>
                             <td>
-                                {% if ciclo.activo %}
+                                {% if ciclo.estado == "Activo" %}
                                     <span class="badge bg-success">Activo</span>
-                                {% else %}
+                                {% elif ciclo.estado == "Inactivo" %}
                                     <span class="badge bg-secondary">Inactivo</span>
+                                {% elif ciclo.estado == "En proceso" %}
+                                    <span class="badge bg-warning text-dark">En proceso</span>
                                 {% endif %}
+
                             </td>
                             <td>{{ ciclo.fecha_inicio|date:"d/m/Y" }}</td>
                             <td>{{ ciclo.fecha_fin|date:"d/m/Y" }}</td>
@@ -128,9 +131,10 @@
           <div class="row">
             <div class="col-md-6 mb-3">
               <label for="id_activo" class="form-label">Estado</label>
-              <select class="form-select" id="id_activo" name="activo">
-                <option value="True">Activo</option>
-                <option value="False">Inactivo</option>
+              <select class="form-select" id="id_activo" name="estado">
+                <option value="Activo">Activo</option>
+                <option value="Inactivo">Inactivo</option>
+                <option value="En proceso">En proceso</option>
               </select>
             </div>
             <div class="col-md-6 mb-3">
@@ -183,9 +187,10 @@
           <div class="row">
             <div class="col-md-6 mb-3">
               <label for="id_activo_crear" class="form-label">Estado</label>
-              <select class="form-select" id="id_activo_crear" name="activo">
-                <option value="true">Activo</option>
-                <option value="false">Inactivo</option>
+              <select class="form-select" id="id_activo_crear" name="estado">
+                <option value="Activo">Activo</option>
+                <option value="Inactivo">Inactivo</option>
+                <option value="En proceso">En proceso</option>
               </select>
             </div>
             <div class="col-md-6 mb-3">

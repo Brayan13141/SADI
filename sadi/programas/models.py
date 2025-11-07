@@ -24,8 +24,18 @@ class ProgramaEstrategico(models.Model):
 
 
 class Ciclo(models.Model):
-    activo = models.BooleanField(default=True, blank=False, null=False)
-    nombre = models.CharField(max_length=100)
+    ESTADOS = [
+        ("Activo", "Activa"),
+        ("Inactivo", "Inactivo"),
+        ("En proceso", "En proceso"),
+    ]
+
+    estado = models.CharField(
+        max_length=15,
+        choices=ESTADOS,
+        default="Activo",
+    )
+    nombre = models.CharField(max_length=100, blank=True, null=True)
     fecha_inicio = models.DateField()
     fecha_fin = models.DateField()
     duracion = models.IntegerField(blank=True, null=True)
