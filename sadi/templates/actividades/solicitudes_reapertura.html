@@ -1,6 +1,7 @@
 {% extends "core/base.html" %}
 {% load static %}
 
+{% block title %}Solicitudes de Reapertura{% endblock %}
 {% block content %}
 <div class="container-fluid py-4">
     <!-- Header con estadísticas -->
@@ -24,7 +25,7 @@
                         <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-1" style="width: 50px; height: 50px;">
                             <strong>{{ solicitudes_aprobadas_count }}</strong>
                         </div>
-                        <small class="text-muted">Aprobadas</small>
+                        <small class="text-muted">Terminadas</small>
                     </div>
                 </div>
             </div>

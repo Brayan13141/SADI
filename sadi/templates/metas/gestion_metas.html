@@ -14,11 +14,9 @@
 }
 /* Estilo para la fila seleccionada */
 .fila-seleccionada {
-  background-color: #1f73ceff !important; /* azul claro */
+  background-color: #1f73ceff !important;
   color: #000 !important;
 }
-
-
 </style>
 {% endblock %}
 
@@ -59,7 +57,6 @@
         <h6 class="mb-0">Gestión de Metas</h6>
         <div class="d-flex align-items-center">
           <div class="me-2">
-
             {% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
             <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#modalCrear">
                 + Agregar Meta
@@ -77,14 +74,11 @@
                     </button>
                 {% endif %}
             </form>
-          <a href="{% url 'activar_metas' %}" class="btn btn-sm btn-light text-black">
-            Activar Metas
-          </a>
-
+            <a href="{% url 'activar_metas' %}" class="btn btn-sm btn-light text-black">
+              Activar Metas
+            </a>
             {% endif %}
-
-
-        </div>
+          </div>
         </div>
       </div>
       <div class="card-body">
@@ -97,12 +91,12 @@
                           <th>Nombre</th>
                           <th>Proyecto</th>
                           <th>Departamento</th>
-                          <th>LB</th>
-                          <th>MC</th>
-                          <th>Ciclo</th>
                           <th>Estado</th>
                           <th>Acumulable</th>
-                          <th>Acciones</th>
+                          {% if request.user.role == "ADMIN" or request.user.role == "APOYO"%}
+                          <th>Acciones Meta</th>
+                          {% endif %}
+                          <th>Derivados Meta</th>
                       </tr>
                   </thead>
                  <tbody>
@@ -110,37 +104,12 @@
                 <tr class="fila-meta align-middle"
                   data-id="{{ meta.id }}"
                   data-clave="{{ meta.clave }}"
-                  data-nombre="{{ meta.nombre }}"
-                  data-comprometida-id="{{ meta.metacomprometida.id|default:'' }}"
-                  data-comprometida-valor="{{ meta.metacomprometida.valor|default:'' }}"
-                >
+                  data-nombre="{{ meta.nombre }}">
                     <td class="text-center">{{ meta.id }}</td>
                     <td class="text-center">{{ meta.clave }}</td>
                     <td class="text-center text-wrap">{{ meta.nombre }}</td>
                     <td class="text-center text-wrap">{{ meta.proyecto.nombre }}</td>
                     <td class="text-center">{{ meta.departamento|default:"-" }}</td>
-                    
-                    <!-- Línea Base -->
-                    <td class="text-center">
-                      {% if meta.porcentages %}
-                        {{ meta.lineabase_display }}
-                      {% else %}
-                        {{ meta.lineabase_display }}
-                      {% endif %}
-                    </td>
-                    
-                    <!-- Meta a Cumplir -->
-                    <td class="text-center">
-                      {% if meta.porcentages %}
-                        {{ meta.metacumplir_display }}
-                      {% else %}
-                        {{ meta.metacumplir_display }}
-                      {% endif %}
-                    </td>
-                    
-                   
-                    <!-- Ciclo -->
-                    <td class="text-center text-wrap">{{ meta.ciclo|default:"-" }}</td>
                     
                     <!-- Estado -->
                     <td class="text-center">
@@ -155,15 +124,15 @@
                     <td class="text-center">{{ meta.acumulable|default_if_none:False|yesno:'Sí,No' }}</td>
                     
                     <!-- Acciones -->
+                     {% if request.user.role == "ADMIN" or request.user.role == "APOYO"%}
                     <td class="text-center text-wrap">
-                      <a href="{% url 'gestion_meta_avances' meta.id %}" class="btn btn-sm btn-outline-info">Avances</a>
-                      {% if meta.variableB == true or request.user.role == "ADMIN" %}
+                      {% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
                       <button class="btn btn-sm btn-outline-primary btn-editar"
                               data-id="{{ meta.id }}"
                               data-clave="{{ meta.clave }}"
                               data-nombre="{{ meta.nombre }}"
+                              data-enunciado="{{ meta.enunciado }}"
                               data-variableb="{{ meta.variableB|default:0 }}"
-                              data-ciclo="{{ meta.ciclo.id|default:'' }}"
                               data-proyecto="{{ meta.proyecto.id }}"
                               data-departamento="{{ meta.departamento.id|default_if_none:'' }}"
                               data-activa="{{ meta.activa }}"
@@ -172,13 +141,6 @@
                               data-indicador="{{ meta.indicador|default:'' }}"
                               data-unidadmedida="{{ meta.unidadMedida|default:'' }}"
                               data-metodocalculo="{{ meta.metodoCalculo|default:'' }}"
-                              {% if meta.porcentages %}
-                              data-lineabase="{{ meta.lineabase_button|default:0 }}"
-                              data-metacumplir="{{ meta.metacumplir_button|default:0 }}"
-                              {% else %}
-                              data-lineabase="{{ meta.lineabase_display }}"
-                              data-metacumplir="{{ meta.metacumplir_display }}"
-                              {% endif %}
                               data-variableb="{{ meta.variableB|default:0 }}"
                               data-porcentages="{{ meta.porcentages}}">
                         Editar
@@ -191,6 +153,12 @@
                       </button>
                       {% endif %}
                     </td>
+                    {% endif %}
+                    <!-- Derivados -->
+                    <td class="text-center text-wrap">
+                      <a href="{% url 'gestion_meta_avances' meta.id %}" class="btn btn-sm btn-outline-info">Avances</a>
+                      <a href="{% url 'asignar_ciclo_meta' meta.id %}" class="btn btn-sm btn-outline">Asignar {% if request.user.role == "ADMIN" or request.user.role == "APOYO" %} ciclo {% else %} valores {% endif %}</a>
+                    </td> 
                 </tr>
                 
                 {% if request.user.role == "ADMIN" %}
@@ -221,14 +189,13 @@
                 
                 {% endfor %}
               </tbody>
-
               </table>
           </div>
       </div>
   </div>
 </div>
 
-{% if request.user.role == "ADMIN" %}
+{% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
 <!-- Modal Crear -->
 <div class="modal fade" id="modalCrear" tabindex="-1">
   <div class="modal-dialog modal-lg">
@@ -243,123 +210,83 @@
         <div class="modal-body">
           <div id="erroresCrear" class="alert alert-danger d-none"></div>
           
-          <!-- Campos principales -->
+          <!-- Campos del formulario Django -->
           <div class="row">
             <div class="col-md-6">
-            <div class="mb-2">
-              <label class="form-label">Clave</label>
-              <input type="text" class="form-control" id="inputclave" placeholder="Dejar blanco para generar automáticamente">
-              <input type="hidden" name="clave_oculta" id="inputclaveoculta" name="clave" value="AUTO">
-            </div>
+              <div class="mb-2">
+                <label class="form-label">Clave</label>
+                {{ form.clave }}
+              </div>
             </div>
             <div class="col-md-6">
               <div class="mb-2">
                 <label class="form-label">Nombre</label>
-                <input type="text" class="form-control" name="nombre" required>
+                {{ form.nombre }}
               </div>
             </div>
           </div>
 
+          <div class="mb-2">
+            <label class="form-label">Enunciado</label>
+            {{ form.enunciado }}
+          </div>
 
           <div class="row">
             <div class="col-md-6">
               <div class="mb-2">
                 <label class="form-label">Proyecto</label>
-                <select class="form-select" name="proyecto" required>
-                  <option value="">Selecciona un proyecto</option>
-                  {% for proyecto in form.fields.proyecto.queryset %}
-                    <option value="{{ proyecto.id }}">{{ proyecto.nombre }}</option>
-                  {% endfor %}
-                </select>
+                {{ form.proyecto }}
               </div>
             </div>
             <div class="col-md-6">
               <div class="mb-2">
                 <label class="form-label">Departamento</label>
-                <select class="form-select" name="departamento" required>
-                  <option value="">---------</option>
-                  {% for dep in form.fields.departamento.queryset %}
-                    <option value="{{ dep.id }}">{{ dep.nombre }}</option>
-                  {% endfor %}
-                </select>
+                {{ form.departamento }}
               </div>
             </div>
           </div>
 
           <div class="mb-2">
             <label class="form-label">Indicador</label>
-            <textarea class="form-control" name="indicador" rows="3" required></textarea>
+            {{ form.indicador }}
           </div>
-          <div class="mb-2">
-           <label class="form-label">Incremental/Acumulable</label>
-                <div class="form-check form-switch mt-2">
-                  <input class="form-check-input" type="checkbox" name="acumulable" id="id_acumulable">
-                  <label class="form-check-label">Acumulable</label>
-                </div>
-          </div>
+
           <div class="row">
             <div class="col-md-6">
               <div class="mb-2">
                 <label class="form-label">Unidad de Medida</label>
-                <input type="text" class="form-control" name="unidadMedida" required>
+                {{ form.unidadMedida }}
               </div>
             </div>
             <div class="col-md-6">
               <div class="mb-2">
                 <label class="form-label">Método de Cálculo</label>
-                <textarea class="form-control" name="metodoCalculo" rows="3" required></textarea>
+                {{ form.metodoCalculo }}
               </div>
             </div>
           </div>
 
           <div class="row">
             <div class="col-md-4">
-              <div class="mb-2">
-                <label class="form-label">Línea Base(LB)</label>
-                <input type="number" step="0.0001" class="form-control" name="lineabase">
+              <div class="form-check form-switch mt-2">
+                {{ form.acumulable }}
+                <label class="form-check-label">Acumulable</label>
               </div>
             </div>
             <div class="col-md-4">
-              <div class="mb-2">
-                <label class="form-label">Meta a Cumplir(MC)</label>
-                <input type="number" class="form-control" name="metacumplir">
+              <div class="form-check form-switch mt-2">
+                {{ form.porcentages }}
+                <label class="form-check-label">Porcentajes</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-check form-switch mt-2">
+                {{ form.activa }}
+                <label class="form-check-label">Activa</label>
               </div>
             </div>
           </div>
 
-          <div class="row">
-            <div class="col-md-6">
-              <div class="mb-2">
-                <label class="form-label">Ciclo</label>
-                <select class="form-select" name="ciclo">
-                  <option value="">Selecciona un ciclo</option>
-                  {% for ciclo in ciclos %}
-                    <option value="{{ ciclo.id }}">
-                      {% if ciclo %}
-                    {{ciclo.nombre}}
-                      {% else %}
-                        No definido
-                      {% endif %}
-                    </option>
-                  {% endfor %}
-                </select>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="mb-2">
-                <label class="form-label">Opciones</label>
-                <div class="form-check form-switch mt-2">
-                  <input class="form-check-input" type="checkbox" name="activa" checked>
-                  <label class="form-check-label">Activa</label>
-                </div>
-                <label class="form-label">Valores LB y MC</label>
-                <div class="form-check form-switch mt-2">
-                  <input class="form-check-input" type="checkbox" id="id_porcentages" name="porcentages">
-                  <label class="form-check-label">Porcentajes</label>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
         <div class="modal-footer">
           <button type="submit" class="btn btn-primary">Guardar</button>
@@ -370,8 +297,6 @@
   </div>
 </div>
 {% endif %}
-
-
 
 <!-- Modal Editar -->
 <div class="modal fade" id="modalEditar" tabindex="-1">
@@ -393,27 +318,27 @@
             <div class="col-md-6">
               <div class="mb-2">
                 <label class="form-label">Clave</label>
-                <input type="text" class="form-control" id="id_clave" name="clave" required>
+                <input type="text" class="form-control" id="eid_clave" name="clave" required>
               </div>
             </div>
             <div class="col-md-6">
               <div class="mb-2">
                 <label class="form-label">Nombre</label>
-                <input type="text" class="form-control" id="id_nombre" name="nombre" required>
+                <input type="text" class="form-control" id="eid_nombre" name="nombre" required>
               </div>
             </div>
           </div>
 
           <div class="mb-2">
             <label class="form-label">Enunciado</label>
-            <textarea class="form-control" id="id_enunciado" name="enunciado" rows="3" required></textarea>
+            <textarea class="form-control" id="eid_enunciado" name="enunciado" rows="3" required></textarea>
           </div>
 
           <div class="row">
             <div class="col-md-6">
               <div class="mb-2">
                 <label class="form-label">Proyecto</label>
-                <select class="form-select" id="id_proyecto" name="proyecto" required>
+                <select class="form-select" id="eid_proyecto" name="proyecto" required>
                   <option value="">Selecciona un proyecto</option>
                   {% for proyecto in form.fields.proyecto.queryset %}
                     <option value="{{ proyecto.id }}">{{ proyecto.nombre }}</option>
@@ -424,7 +349,7 @@
             <div class="col-md-6">
               <div class="mb-2">
                 <label class="form-label">Departamento</label>
-                <select class="form-select" id="id_departamento" name="departamento" required>
+                <select class="form-select" id="eid_departamento" name="departamento">
                   <option value="">---------</option>
                   {% for dep in form.fields.departamento.queryset %}
                     <option value="{{ dep.id }}">{{ dep.nombre }}</option>
@@ -436,94 +361,46 @@
 
           <div class="mb-2">
             <label class="form-label">Indicador</label>
-            <textarea class="form-control" id="id_indicador" name="indicador" rows="3" required></textarea>
+            <textarea class="form-control" id="eid_indicador" name="indicador" rows="3" required></textarea>
           </div>
-          <div class="mb-2">
-           <label class="form-label">Incremental/Acumulable</label>
-                <div class="form-check form-switch mt-2">
-                  <input class="form-check-input" type="checkbox" name="acumulable" id="Eid_acumulable">
-                  <label class="form-check-label">Acumulable</label>
-                </div>
-          </div>
+
           <div class="row">
             <div class="col-md-6">
               <div class="mb-2">
                 <label class="form-label">Unidad de Medida</label>
-                <input type="text" class="form-control" id="id_unidadmedida" name="unidadMedida" required>
+                <input type="text" class="form-control" id="eid_unidadmedida" name="unidadMedida" required>
               </div>
             </div>
             <div class="col-md-6">
               <div class="mb-2">
                 <label class="form-label">Método de Cálculo</label>
-                <textarea class="form-control" id="id_metodocalculo" name="metodoCalculo" rows="3" required></textarea>
+                <textarea class="form-control" id="eid_metodocalculo" name="metodoCalculo" rows="3" required></textarea>
               </div>
             </div>
           </div>
 
           <div class="row">
             <div class="col-md-4">
-              {% if request.user.role == "ADMIN" %}
-              <div class="mb-2">
-                <label class="form-label">Línea Base(LB)</label>
-                <input type="number" class="form-control" id="eid_lineabase" name="lineabase">
-                <small id="labelEjemplo" class="form-text text-muted"></small>  
+              <div class="form-check form-switch mt-2">
+                <input class="form-check-input" type="checkbox" id="e id_acumulable" name="acumulable">
+                <label class="form-check-label">Acumulable</label>
               </div>
-              {% else %}
-              <div class="mb-2">
-                <input type="hidden" class="form-control" id="eid_lineabase" name="lineabase">
-              </div>
-              {% endif %}
-
             </div>
             <div class="col-md-4">
-              <div class="mb-2">
-                <label class="form-label">Meta a Cumplir(MC)</label>
-                <input type="number" class="form-control" id="eid_metacumplir" name="metacumplir">
+              <div class="form-check form-switch mt-2">
+                <input class="form-check-input" type="checkbox" id="eid_porcentages" name="porcentages">
+                <label class="form-check-label">Porcentajes</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-check form-switch mt-2">
+                <input class="form-check-input" type="checkbox" id="eid_activa" name="activa">
+                <label class="form-check-label">Activa</label>
               </div>
             </div>
           </div>
 
-          <div class="row">
-            <div class="col-md-6">
-              <div class="mb-2">
-                <label class="form-label">Ciclo</label>
-                <select class="form-select" id="id_ciclo" name="ciclo">
-                  <option value="">Selecciona un ciclo</option>
-                  {% for ciclo in form.fields.ciclo.queryset %}
-                    <option value="{{ ciclo.id }}"> {% if ciclo %}
-                                    {{ciclo.nombre}}
-                                {% else %}
-                                    No definido
-                                {% endif %}</option>
-                  {% endfor %}
-                </select>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="mb-2">
-                <label class="form-label">Estado</label>
-                <div class="d-flex align-items-center mt-2">
-                  <div class="form-check form-switch me-4">
-                    <input class="form-check-input" type="checkbox" id="id_activa" name="activa">
-                    <label class="form-check-label" for="id_activa">Activa</label>
-                  </div>
-                {% if request.user.role == "ADMIN" %}
-                  <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="Eid_porcentages" name="porcentages">
-                    <label class="form-check-label" for="id_porcentages">Porcentajes</label>
-                  </div>
-                {% else %}
-                  <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="Eid_porcentages" name="porcentages" hidden>
-                  </div>
-                {% endif %}
-                </div>
-
-              </div>
-             
-            </div>
-
-          </div>
+       
         </div>
         <div class="modal-footer">
           <button type="submit" class="btn btn-success">Actualizar</button>
@@ -589,18 +466,17 @@
 
 <script>
   // Mostrar modales si hay errores
-    {% if abrir_modal_crear %}
-        $('#modalCrear').modal('show');
-    {% endif %}
-    
-    {% if abrir_modal_editar %}
-        // Buscar y hacer clic en el botón de editar correspondiente
-        var metaId = "{{ meta_editar_id }}";
-        $('.btn-editar[data-id="' + metaId + '"]').click();
-    {% endif %}
- 
+  {% if abrir_modal_crear %}
+      $('#modalCrear').modal('show');
+  {% endif %}
   
-    const usuarioRol = "{{ request.user.role }}"; // ADMIN, APOYO o DOCENTE
+  {% if abrir_modal_editar %}
+      // Buscar y hacer clic en el botón de editar correspondiente
+      var metaId = "{{ meta_editar_id }}";
+      $('.btn-editar[data-id="' + metaId + '"]').click();
+  {% endif %}
+
+  const usuarioRol = "{{ request.user.role }}";
 </script>
 <script src="{% static "JS/Metas/gestion_metas.js" %}"></script>
 {% endblock %}
