@@ -1,13 +1,15 @@
 document.addEventListener('DOMContentLoaded', function () {
-    // Botón Editar -> cargar datos al modal
-    const btnEditar = document.querySelector('.btn-editar-comprometida');
-    if (btnEditar) {
+    // Botones Editar -> cargar datos al modal
+    const btnEditarList = document.querySelectorAll('.btn-editar-comprometida');
+    btnEditarList.forEach((btnEditar) => {
         btnEditar.addEventListener('click', function () {
             const id = this.getAttribute('data-id');
             const valor = this.getAttribute('data-valor');
+            const ciclo = this.getAttribute('data-ciclo');
 
             document.getElementById('comprometida_id').value = id;
             document.getElementById('id_valor_editar').value = valor;
+            document.getElementById('ciclo_editar').value = ciclo;
 
             // Limpiar errores previos al abrir el modal
             document
@@ -16,13 +18,22 @@ document.addEventListener('DOMContentLoaded', function () {
             document
                 .getElementById('id_valor_editar')
                 .classList.remove('is-invalid');
-
-            const modal = new bootstrap.Modal(
-                document.getElementById('modalEditarComprometida')
-            );
-            modal.show();
         });
-    }
+    });
+
+    // Botones Eliminar -> cargar datos al modal
+    const btnEliminarList = document.querySelectorAll(
+        '.btn-eliminar-comprometida'
+    );
+    btnEliminarList.forEach((btnEliminar) => {
+        btnEliminar.addEventListener('click', function () {
+            const id = this.getAttribute('data-id');
+            const valor = this.getAttribute('data-valor');
+
+            document.getElementById('eliminar_id').value = id;
+            document.getElementById('eliminar_valor').textContent = valor;
+        });
+    });
 
     // Validación de formularios (solo al enviar)
     function validarValor(valor) {
@@ -39,19 +50,35 @@ document.addEventListener('DOMContentLoaded', function () {
     if (formCrear) {
         formCrear.addEventListener('submit', function (e) {
             const valorInput = this.querySelector('input[name="valor"]');
+            const cicloSelect = this.querySelector('select[name="ciclo"]');
             const errorDiv = document.getElementById(
                 'erroresCrearComprometida'
             );
-            const errorMsg = validarValor(valorInput.value);
+            let errorMsg = '';
+
+            // Validar ciclo
+            if (!cicloSelect.value) {
+                errorMsg = 'El ciclo es obligatorio.';
+                cicloSelect.classList.add('is-invalid');
+            } else {
+                cicloSelect.classList.remove('is-invalid');
+            }
+
+            // Validar valor
+            const valorError = validarValor(valorInput.value);
+            if (valorError) {
+                errorMsg = errorMsg ? errorMsg + ' ' + valorError : valorError;
+                valorInput.classList.add('is-invalid');
+            } else {
+                valorInput.classList.remove('is-invalid');
+            }
 
             if (errorMsg) {
                 e.preventDefault();
                 errorDiv.textContent = errorMsg;
                 errorDiv.classList.remove('d-none');
-                valorInput.classList.add('is-invalid');
             } else {
                 errorDiv.classList.add('d-none');
-                valorInput.classList.remove('is-invalid');
             }
         });
     }
@@ -79,22 +106,52 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Limpiar errores al cerrar modales
-    const modales = ['modalCrearComprometida', 'modalEditarComprometida'];
+    const modales = [
+        'modalCrearComprometida',
+        'modalEditarComprometida',
+        'modalEliminarComprometida',
+    ];
     modales.forEach(function (modalId) {
         const modal = document.getElementById(modalId);
         if (modal) {
             modal.addEventListener('hidden.bs.modal', function () {
-                const errorDiv = this.querySelector('.alert-danger');
-                if (errorDiv) {
-                    errorDiv.classList.add('d-none');
-                    errorDiv.textContent = '';
-                }
-
-                const inputs = this.querySelectorAll('input');
-                inputs.forEach((input) => {
-                    input.classList.remove('is-invalid');
+                // Limpiar mensajes de error
+                const errorDivs = this.querySelectorAll('.alert-danger');
+                errorDivs.forEach((div) => {
+                    div.classList.add('d-none');
+                    div.textContent = '';
                 });
+
+                // Limpiar clases de invalid
+                const invalidElements = this.querySelectorAll('.is-invalid');
+                invalidElements.forEach((el) => {
+                    el.classList.remove('is-invalid');
+                });
+
+                // Limpiar campos del modal de crear
+                if (modalId === 'modalCrearComprometida') {
+                    const form = document.getElementById(
+                        'formCrearComprometida'
+                    );
+                    if (form) {
+                        form.reset();
+                    }
+                }
             });
         }
     });
+
+    // Limpiar formulario de crear cuando se abre el modal
+    const modalCrear = document.getElementById('modalCrearComprometida');
+    if (modalCrear) {
+        modalCrear.addEventListener('show.bs.modal', function () {
+            const form = document.getElementById('formCrearComprometida');
+            if (form) {
+                form.reset();
+            }
+            document
+                .getElementById('erroresCrearComprometida')
+                .classList.add('d-none');
+        });
+    }
 });

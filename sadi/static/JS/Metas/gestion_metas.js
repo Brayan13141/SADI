@@ -1,15 +1,4 @@
 $(document).ready(function () {
-    const inputclave = document.getElementById('inputclave');
-    const inputclaveoculta = document.getElementById('inputclaveoculta');
-
-    inputclave.addEventListener('input', () => {
-        if (inputclave.value.trim() !== '') {
-            inputclaveoculta.value = inputclave.value.trim();
-        } else {
-            inputclaveoculta.value = 'AUTO';
-        }
-    });
-
     // DataTable
     $('#metasTable').DataTable({
         scrollX: true,
@@ -70,8 +59,7 @@ $(document).ready(function () {
         const metaId = $(this).data('id');
         const clave = $(this).data('clave');
         const nombre = $(this).data('nombre');
-        const lineaB = $(this).data('lineabase');
-        const metaCumplir = $(this).data('metacumplir');
+        const enunciado = $(this).data('enunciado');
         const proyectoId = $(this).data('proyecto');
         const departamentoId = $(this).data('departamento');
         const indicador = $(this).data('indicador');
@@ -85,21 +73,18 @@ $(document).ready(function () {
 
         // Llenar el formulario
         $('#meta_id').val(metaId);
-        $('#id_clave').val(clave);
-        $('#id_nombre').val(nombre);
-        $('#eid_lineabase').val(lineaB);
-        $('#eid_metacumplir').val(metaCumplir);
-        $('#id_proyecto').val(proyectoId);
-        $('#id_departamento').val(departamentoId);
-        $('#id_indicador').val(indicador);
-        $('#id_acumulable').prop('checked', acumulable);
-        $('#id_unidadmedida').val(unidadMedida);
-        $('#id_metodocalculo').val(metodoCalculo);
-        $('#Eid_variableb').prop('checked', variableB);
-        $('#id_ciclo').val(cicloId);
-        $('#id_activa').prop('checked', activa);
-        $('#Eid_porcentages').prop('checked', porcentages);
-        $('#Eid_acumulable').prop('checked', acumulable);
+        $('#eid_clave').val(clave);
+        $('#eid_nombre').val(nombre);
+        $('#eid_enunciado').val(enunciado);
+        $('#eid_proyecto').val(proyectoId);
+        $('#eid_departamento').val(departamentoId);
+        $('#eid_indicador').val(indicador);
+        $('#eid_acumulable').prop('checked', acumulable);
+        $('#eid_unidadmedida').val(unidadMedida);
+        $('#eid_metodocalculo').val(metodoCalculo);
+        $('#eid_activa').prop('checked', activa);
+        $('#eid_porcentages').prop('checked', porcentages);
+        $('#eid_acumulable').prop('checked', acumulable);
 
         // Mostrar ejemplo dinámico si está activado
         togglePorcentajeUI(porcentages);

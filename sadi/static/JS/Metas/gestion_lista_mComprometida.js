@@ -1,34 +1,31 @@
 $(document).ready(function () {
-    // DataTable
-
     // --- ABRIR MODAL DE EDICIÓN ---
     $('.btn-editar-comprometida').on('click', function () {
         const id = $(this).data('id');
-        const programa = $(this).data('programa');
         const valor = $(this).data('valor');
         const meta = $(this).data('meta');
         const metaNombre = $(this).data('meta-nombre');
 
+        // Llenar campos del formulario de edición
         $('#comprometida_id_editar').val(id);
-        $('#id_programa_editar').val(programa);
         $('#id_meta_editar').val(meta);
         $('#meta_nombre_editar').val(metaNombre);
+        $('#id_valor_editar').val(valor);
 
-        // Limpiar clases de error al abrir el modal
-        $(
-            '#formEditarComprometida input, #formEditarComprometida select'
-        ).removeClass('is-invalid');
+        // Limpiar errores anteriores
+        $('#formEditarComprometida input').removeClass('is-invalid');
         $('#erroresEditarComprometida').addClass('d-none').empty();
 
+        // Mostrar modal
         $('#modalEditarComprometida').modal('show');
     });
 
-    // --- VALIDACIÓN DE FORMULARIOS ---
-    // Validación Crear
+    // --- VALIDACIÓN DE FORMULARIO CREAR ---
     $('#formCrearComprometida').on('submit', function (e) {
-        // Limpiar errores previos
         $('#erroresCrearComprometida').addClass('d-none').empty();
-        $('input, select', this).removeClass('is-invalid');
+        $(
+            '#formCrearComprometida input, #formCrearComprometida select'
+        ).removeClass('is-invalid');
 
         let errores = [];
         let camposInvalidos = [];
@@ -49,32 +46,24 @@ $(document).ready(function () {
             camposInvalidos.push($('#id_valor'));
         }
 
+        // Mostrar errores si hay
         if (errores.length > 0) {
             e.preventDefault();
-
-            // Aplicar clase is-invalid a los campos con error
-            camposInvalidos.forEach(function (campo) {
-                campo.addClass('is-invalid');
-            });
-
+            camposInvalidos.forEach((campo) => campo.addClass('is-invalid'));
             $('#erroresCrearComprometida')
                 .removeClass('d-none')
                 .html('<ul><li>' + errores.join('</li><li>') + '</li></ul>');
-        } else {
-            $('#erroresCrearComprometida').addClass('d-none').empty();
         }
     });
 
-    // Validación Editar
+    // --- VALIDACIÓN DE FORMULARIO EDITAR ---
     $('#formEditarComprometida').on('submit', function (e) {
-        // Limpiar errores previos
         $('#erroresEditarComprometida').addClass('d-none').empty();
-        $('input, select', this).removeClass('is-invalid');
+        $('#formEditarComprometida input').removeClass('is-invalid');
 
         let errores = [];
         let camposInvalidos = [];
 
-        // Validar valor
         const valorVal = parseFloat($('#id_valor_editar').val());
         if (isNaN(valorVal)) {
             errores.push('El valor debe ser un número válido.');
@@ -86,34 +75,37 @@ $(document).ready(function () {
 
         if (errores.length > 0) {
             e.preventDefault();
-
-            // Aplicar clase is-invalid a los campos con error
-            camposInvalidos.forEach(function (campo) {
-                campo.addClass('is-invalid');
-            });
-
+            camposInvalidos.forEach((campo) => campo.addClass('is-invalid'));
             $('#erroresEditarComprometida')
                 .removeClass('d-none')
                 .html('<ul><li>' + errores.join('</li><li>') + '</li></ul>');
-        } else {
-            $('#erroresEditarComprometida').addClass('d-none').empty();
         }
     });
 
-    // Quitar el resaltado de error cuando el usuario empiece a escribir
-    $('input, select').on('input change', function () {
-        $(this).removeClass('is-invalid');
-    });
-
-    // Limpiar validaciones al cerrar modales
+    // --- LIMPIAR FORMULARIOS AL CERRAR MODALES ---
     $('#modalCrearComprometida').on('hidden.bs.modal', function () {
         $('#formCrearComprometida')[0].reset();
-        $('input, select', '#formCrearComprometida').removeClass('is-invalid');
+        $(
+            '#formCrearComprometida input, #formCrearComprometida select'
+        ).removeClass('is-invalid');
         $('#erroresCrearComprometida').addClass('d-none').empty();
     });
 
     $('#modalEditarComprometida').on('hidden.bs.modal', function () {
-        $('input, select', '#formEditarComprometida').removeClass('is-invalid');
+        $('#formEditarComprometida input').removeClass('is-invalid');
         $('#erroresEditarComprometida').addClass('d-none').empty();
     });
+
+    // --- DESHABILITAR ACCIONES PARA DOCENTE ---
+    const userRole = '{{ request.user.role|default:"" }}';
+    if (userRole === 'DOCENTE' || userRole === 'INVITADO') {
+        $('.btn-editar-comprometida').prop('disabled', true);
+        $('#formCrearComprometida button[type="submit"]').prop(
+            'disabled',
+            true
+        );
+        $(
+            '#modalCrearComprometida button, #modalEditarComprometida button'
+        ).prop('disabled', true);
+    }
 });
