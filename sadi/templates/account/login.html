@@ -67,57 +67,85 @@
             width: 100%;
             text-align: center;
         }
+
+        /* Pie de página sutil */
+        .footer-login {
+            position: absolute;
+            bottom: 15px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #6c757d;
+            opacity: 0.8;
+        }
+
+        .footer-login a {
+            color: #6c757d;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .footer-login a:hover {
+            color: var(--bs-success);
+        }
     </style>
 </head>
 <body>
-     <h1> Sistema de Gestión del Desempeño Institucional</h1>
-        <h2 class="page-title">(SADI)</h2>
+     <h1>Sistema de Gestión del Desempeño Institucional</h1>
+     <h2 class="page-title">(SADI)</h2>
+
     <div class="login-box">
         <h2 class="welcome-text">¡Bienvenido!</h2>
         <p class="subtitle">Contacta al equipo para poder ingresar a la página</p>
 
-       <form method="POST" action="{% url 'account_login' %}" novalidate>
-    {% csrf_token %}
-    
-    <!-- Errores generales (como credenciales inválidas) -->
-    {% if form.non_field_errors %}
-        <div class="alert alert-danger">
-            {% for error in form.non_field_errors %}
-                {{ error }}
-            {% endfor %}
+        <form method="POST" action="{% url 'account_login' %}" novalidate>
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="form-group">
+                <input 
+                    class="form-control {% if form.login.errors %}is-invalid{% endif %}" 
+                    name="login" 
+                    placeholder="Usuario o correo" 
+                    value="{{ form.login.value|default:'' }}"
+                    required>
+                {% for error in form.login.errors %}
+                    <div class="invalid-feedback">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                <input 
+                    type="password" 
+                    class="form-control {% if form.password.errors %}is-invalid{% endif %}" 
+                    name="password" 
+                    placeholder="Contraseña" 
+                    required>
+                {% for error in form.password.errors %}
+                    <div class="invalid-feedback">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <button type="submit" class="btn btn-custom">Ingresar</button>
+        </form>
+
+        <div class="mt-3">
+            <a href="{% url 'account_reset_password' %}">¿Olvidaste tu contraseña?</a>
         </div>
-    {% endif %}
-    <div class="form-group">
-        <input 
-            class="form-control {% if form.login.errors %}is-invalid{% endif %}" 
-            name="login" 
-            placeholder="Usuario o correo" 
-            value="{{ form.login.value|default:'' }}"
-            required>
-        {% for error in form.login.errors %}
-            <div class="invalid-feedback">{{ error }}</div>
-        {% endfor %}
     </div>
 
-    <div class="form-group">
-        <input 
-            type="password" 
-            class="form-control {% if form.password.errors %}is-invalid{% endif %}" 
-            name="password" 
-            placeholder="Contraseña" 
-            required>
-        {% for error in form.password.errors %}
-            <div class="invalid-feedback">{{ error }}</div>
-        {% endfor %}
-    </div>
-
-    <button type="submit" class="btn btn-custom">Ingresar</button>
-</form>
-    <div class="mt-3">
-    <a href="{% url 'account_reset_password' %}">¿Olvidaste tu contraseña?</a>
-</div>
-
-
+    <!-- Pie de página sutil -->
+    <div class="footer-login col-12 col-md-6 order-2 order-md-0 text-sm-center text-md-start last-paragraph-no-margin">
+        <p class="alt-font font-weight-500 d-block">
+            2025 TecNM Campus Sur de Guanajuato | Powered by 
+            <a href="https://github.com/Brayan13141" target="_blank">Bryan Sanchez</a>
+        </p>
     </div>
 
     <!-- Bootstrap JS -->

@@ -4,12 +4,30 @@
 {% block title %}Reporte de Proyectos{% endblock %}
 
 {% block extra_css %}
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
 <link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+
+<style>
+    .card {
+        border-radius: 1rem;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
+    }
+    .table td, .table th {
+        vertical-align: middle;
+        text-align: center;
+    }
+    .badge {
+        font-size: 0.9rem;
+        padding: 0.5em 0.8em;
+    }
+    .bg-orange {
+        background-color: #fd7e14 !important;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -22,26 +40,17 @@
         </a>
     </div>
 
-    <!-- ENCABEZADO Y FILTRO DE CICLO -->
+    <!-- ENCABEZADO Y BOTÓN EXPORTAR -->
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-2">
         <h2 class="fw-bold text-primary mb-0">Reporte de Proyectos y Metas</h2>
 
-        <form method="get" class="d-flex align-items-center gap-2">
-            <select name="ciclo" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width: 180px;">
-                <option value="">-- Seleccionar Ciclo --</option>
-                {% for c in ciclos %}
-                    <option value="{{ c.id }}" {% if ciclo_seleccionado and ciclo_seleccionado.id == c.id %}selected{% endif %}>
-                        {{ c.nombre }}
-                    </option>
-                {% endfor %}
-            </select>
-            <button type="submit" class="btn btn-primary btn-sm">
-                <i class="fas fa-filter me-1"></i> Filtrar
+        {% if hay_datos %}
+        <form method="get" action="">
+            <button type="submit" name="exportar" value="1" class="btn btn-success shadow-sm">
+                <i class="fas fa-file-excel me-1"></i> Exportar a Excel
             </button>
-            <a href="?exportar=1{% if ciclo_seleccionado %}&ciclo={{ ciclo_seleccionado.id }}{% endif %}" class="btn btn-success btn-sm">
-                <i class="fas fa-file-excel"></i> Exportar
-            </a>
         </form>
+        {% endif %}
     </div>
 
     <!-- === RESUMEN GENERAL === -->
@@ -49,7 +58,7 @@
         <div class="col-md-4">
             <div class="card bg-success text-white">
                 <div class="card-body">
-                    <h5>🟢 Proyectos Cumplidos</h5>
+                    <h5>Proyectos Cumplidos</h5>
                     <h3>{{ total_cumplidas }}</h3>
                 </div>
             </div>
@@ -57,7 +66,7 @@
         <div class="col-md-4">
             <div class="card bg-warning text-dark">
                 <div class="card-body">
-                    <h5>🟡 En Progreso</h5>
+                    <h5>En Progreso</h5>
                     <h3>{{ total_en_progreso }}</h3>
                 </div>
             </div>
@@ -65,7 +74,7 @@
         <div class="col-md-4">
             <div class="card bg-danger text-white">
                 <div class="card-body">
-                    <h5>🔴 Rezagados</h5>
+                    <h5>Rezagados</h5>
                     <h3>{{ total_rezagadas }}</h3>
                 </div>
             </div>
@@ -132,41 +141,26 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- === SCRIPTS === -->
 <script>
 document.addEventListener("DOMContentLoaded", function() {
     {% if hay_datos %}
     $('#tablaProyectos').DataTable({
         lengthMenu: [5, 10, 20, 50],
         pageLength: 5,
-        language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json',
-        }
-    });      
+        language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' }
+    });
     {% endif %}
 
-    // === Gráfico ===
+    // === Gráfico de barras ===
     const ctx = document.getElementById("chartProyectos");
     new Chart(ctx, {
         type: "bar",
         data: {
             labels: {{ nombres_proyectos|safe }},
             datasets: [
-                {
-                    label: "Cumplidos",
-                    data: {{ cumplidas|safe }},
-                    backgroundColor: "rgba(40, 167, 69, 0.7)",
-                },
-                {
-                    label: "En Progreso",
-                    data: {{ en_progreso|safe }},
-                    backgroundColor: "rgba(255, 193, 7, 0.7)",
-                },
-                {
-                    label: "Rezagados",
-                    data: {{ rezagadas|safe }},
-                    backgroundColor: "rgba(220, 53, 69, 0.7)",
-                },
+                { label: "Cumplidos", data: {{ cumplidas|safe }}, backgroundColor: "rgba(40, 167, 69, 0.7)" },
+                { label: "En Progreso", data: {{ en_progreso|safe }}, backgroundColor: "rgba(255, 193, 7, 0.7)" },
+                { label: "Rezagados", data: {{ rezagadas|safe }}, backgroundColor: "rgba(220, 53, 69, 0.7)" },
             ],
         },
         options: {
@@ -183,4 +177,4 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 });
 </script>
-{% endblock%}
+{% endblock %}

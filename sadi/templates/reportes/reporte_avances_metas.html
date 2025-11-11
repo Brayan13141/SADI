@@ -60,7 +60,7 @@
                     <th>Fecha Registro</th>
                     <th>Avance</th>
                     <th>Meta a Cumplir</th>
-                    <th>% Cumplimiento</th>
+                    
                 </tr>
             </thead>
             <tbody>
@@ -71,14 +71,9 @@
                         <td>{{ a.meta }}</td>
                         <td>{{ a.proyecto }}</td>
                         <td>{{ a.ciclo }}</td>
-                        <td>{{ a.fecha_registro|date:"d/m/Y" }}</td>
+                        <td>{{ a.fecha_registro }}</td>
                         <td>{{ a.avance }}</td>
                         <td>{{ a.meta_cumplir }}</td>
-                        <td>
-                            <span class="fw-bold {% if a.porcentaje_cumplimiento >= 100 %}text-success{% elif a.porcentaje_cumplimiento >= 50 %}text-warning{% else %}text-danger{% endif %}">
-                                {{ a.porcentaje_cumplimiento }}%
-                            </span>
-                        </td>
                     </tr>
                     {% endifchanged %}
                 {% empty %}

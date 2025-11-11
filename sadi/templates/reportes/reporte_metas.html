@@ -87,11 +87,10 @@
                                 <div class="card-body py-3">
                                     <h4 class="card-title">{{ metas_cumplidas }}</h4>
                                     <p class="card-text mb-0 small">Metas Cumplidas</p>
-                                    <small>{{ porcentaje_cumplimiento }}%</small>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-4 d-flex flex-column">
+                        <div class="col-md-4 mb-3 mb-md-0 d-flex flex-column">
                             <div class="card bg-warning text-dark flex-fill d-flex flex-column justify-content-center">
                                 <div class="card-body py-3">
                                     <h4 class="card-title">{{ metas_pendientes }}</h4>
@@ -127,7 +126,8 @@
                                 <p class="text-muted mb-0 small">
                                     <strong>Clave:</strong> {{ meta.clave }} | 
                                     <strong>Proyecto:</strong> {{ meta.proyecto }} |
-                                    <strong>Departamento:</strong> {{ meta.departamento }}
+                                    <strong>Departamento:</strong> {{ meta.departamento }} |
+                                    <strong>Categoría:</strong> {{ meta.categoria }}
                                 </p>
                             </div>
                             <div class="col-md-4 text-md-end">
@@ -160,16 +160,12 @@
                                                 <span class="text-muted">{{ meta.indicador|truncatewords:8 }}</span>
                                             </div>
                                             <div class="col-6 mt-2">
-                                                <strong>Meta a Cumplir:</strong><br>
-                                                {{ meta.metacumplir|default:"N/A" }}
+                                                <strong>Línea Base:</strong><br>
+                                                {{ meta.lineabase|default:"N/A" }}
                                             </div>
                                             <div class="col-6 mt-2">
-                                                <strong>Total Acumulado:</strong><br>
-                                                {{ meta.total_acumulado|default:"N/A" }}
-                                            </div>
-                                            <div class="col-12 mt-2">
-                                                <strong>Progreso General:</strong><br>
-                                                {{ meta.cumplimiento }}%
+                                                <strong>Meta a Cumplir:</strong><br>
+                                                {{ meta.metacumplir|default:"N/A" }}
                                             </div>
                                         </div>
                                     </div>
@@ -179,10 +175,39 @@
                             <div class="col-lg-6 mt-3 mt-lg-0">
                                 <div class="card bg-light h-100">
                                     <div class="card-body">
-                                        <h6 class="card-title"><i class="fas fa-chart-bar me-1"></i>Progreso de Actividades</h6>
-                                        <div class="text-center">
-                                            <!-- Barra de progreso -->
-                                            <div class="progress mb-2" style="height: 25px;">
+                                        <h6 class="card-title"><i class="fas fa-chart-bar me-1"></i>Progreso</h6>
+                                        
+                                        <!-- Barra de progreso del avance real -->
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between small mb-1">
+                                                <span>Avances:</span>
+                                                <span class="fw-bold">{{ meta.porcentaje_avance }}%</span>
+                                            </div>
+                                            <div class="progress mb-2" style="height: 20px;">
+                                                <div class="progress-bar 
+                                                    {% if meta.porcentaje_avance >= 110 %}bg-info
+                                                    {% elif meta.porcentaje_avance >= 91 %}bg-success
+                                                     {% elif meta.porcentaje_avance >= 71 %}bg-warning
+                                                    {% else %}bg-danger{% endif %}" 
+                                                    role="progressbar" 
+                                                    style="width: {{ meta.porcentaje_avance }}%" 
+                                                    aria-valuenow="{{ meta.porcentaje_avance }}" 
+                                                    aria-valuemin="0">
+                                                    {{ meta.porcentaje_avance }}%
+                                                </div>
+                                            </div>
+                                            <small class="text-muted">
+                                                Basado en registros de avance
+                                            </small>
+                                        </div>
+
+                                        <!-- Barra de progreso de actividades -->
+                                        <div>
+                                            <div class="d-flex justify-content-between small mb-1">
+                                                <span>Progreso de Actividades:</span>
+                                                <span class="fw-bold">{{ meta.cumplimiento }}%</span>
+                                            </div>
+                                            <div class="progress mb-2" style="height: 20px;">
                                                 <div class="progress-bar 
                                                     {% if meta.estado == 'Cumplida' %}bg-success
                                                     {% elif meta.estado == 'En progreso' %}bg-warning
@@ -190,8 +215,7 @@
                                                     role="progressbar" 
                                                     style="width: {{ meta.cumplimiento }}%" 
                                                     aria-valuenow="{{ meta.cumplimiento }}" 
-                                                    aria-valuemin="0" 
-                                                    aria-valuemax="100">
+                                                    aria-valuemin="0">
                                                     {{ meta.cumplimiento }}%
                                                 </div>
                                             </div>
@@ -319,33 +343,4 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 });
 </script>
-
-<style>
-.card {
-    border: 1px solid #e3e6f0;
-    border-radius: 0.5rem;
-    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-}
-.card-header {
-    border-bottom: 1px solid #e3e6f0;
-    font-weight: 600;
-}
-.badge {
-    font-size: 0.75em;
-}
-.table th {
-    border-top: none;
-    font-weight: 600;
-    font-size: 0.875rem;
-}
-.collapse-hide {
-    display: none;
-}
-.progress {
-    border-radius: 0.5rem;
-}
-.progress-bar {
-    font-weight: 600;
-}
-</style>
-{% endblock %}
+{% endblock %}  
