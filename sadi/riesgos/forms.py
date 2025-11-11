@@ -2,7 +2,6 @@ from django import forms
 from django.utils import timezone
 from .models import Riesgo, Mitigacion
 from actividades.models import Actividad
-from usuarios.models import Usuario
 
 
 class RiesgoForm(forms.ModelForm):
