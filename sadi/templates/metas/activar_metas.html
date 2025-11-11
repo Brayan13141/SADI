@@ -16,6 +16,12 @@
 {% endblock %}
 
 {% block content %}
+ <!-- Botón volver -->
+    <div class="mb-3">
+        <a href="{% url 'gestion_metas' %}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Volver a Metas
+        </a>
+    </div>
 {% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
 <div class="container-fluid">
     <h1 class="h3 mb-4 text-gray-800">Activación/Desactivación de Metas</h1>

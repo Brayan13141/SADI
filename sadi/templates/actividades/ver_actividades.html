@@ -5,7 +5,7 @@
 <div class="container mt-4">
   <h3>Actividades de la meta: {{ meta.nombre }}</h3>
   <a href="{% url 'tabla_seguimiento' %}" class="btn btn-secondary mb-3">← Volver</a>
-  <a href="{% url 'agregar_actividad' meta.id %}" class="btn btn-success mb-3">➕ Agregar actividad</a>
+
 
   {% if actividades %}
     <table class="table table-bordered">

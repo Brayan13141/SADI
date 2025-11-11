@@ -5,6 +5,16 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css"/>
+<style>
+    .action-buttons {
+        display: flex;
+        gap: 5px;
+        flex-wrap: nowrap;
+    }
+    .action-buttons .btn {
+        white-space: nowrap;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -57,7 +67,7 @@
                                             data-enunciado="{{ riesgo.enunciado }}"
                                             data-probabilidad="{{ riesgo.probabilidad }}"
                                             data-impacto="{{ riesgo.impacto }}"
-                                            data-actividad_id="{{ riesgo.actividad.id }}">
+                                            data-actividad="{{ riesgo.actividad.id }}">
                                         Editar
                                     </button>
                                     {% if request.user.role == "ADMIN" or request.user.role == "DOCENTE" %}
@@ -164,23 +174,28 @@
           
           <div class="mb-3">
             <label class="form-label">Enunciado</label>
-            <input type="text" class="form-control" id="id_enunciado" name="enunciado" required>
+            <input type="text" class="form-control" id="eid_enunciado" name="enunciado" required>
           </div>
           <div class="mb-3">
             <label class="form-label">Probabilidad (1-10)</label>
-            <input type="number" class="form-control" id="id_probabilidad" name="probabilidad" min="1" max="10" required onchange="calcularRiesgoEditar()">
+            <input type="number" class="form-control" id="eid_probabilidad" name="probabilidad" min="1" max="10" required>
           </div>
           <div class="mb-3">
             <label class="form-label">Impacto (1-10)</label>
-            <input type="number" class="form-control" id="id_impacto" name="impacto" min="1" max="10" required onchange="calcularRiesgoEditar()">
+            <input type="number" class="form-control" id="eid_impacto" name="impacto" min="1" max="10" required>
           </div>
           <div class="mb-3">
             <label class="form-label">Nivel de Riesgo Calculado</label>
             <div id="riesgo-calculado-editar" class="form-control-plaintext fw-bold">0</div>
           </div>
           <div class="mb-3">
-              <label class="form-label">Actividad</label>
-              {{ form.actividad }}
+            <label class="form-label">Actividad</label>
+            <select class="form-select" id="eid_actividad" name="actividad" required>
+              <option value="">Seleccione una actividad</option>
+              {% for actividad in actividades %}
+              <option value="{{ actividad.id }}">{{ actividad.nombre }}</option>
+              {% endfor %}
+            </select>
           </div>
         </div>
         <div class="modal-footer">
@@ -198,13 +213,20 @@
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+
 <script src="{% static 'JS/Riesgos/gestion_riesgos.js' %}"></script>
 <script>
-    {% if abrir_modal_crear %}
-        new bootstrap.Modal(document.getElementById('modalCrear')).show();
-    {% endif %}
-    {% if abrir_modal_editar %}
-        new bootstrap.Modal(document.getElementById('modalEditar')).show();
-    {% endif %}
+// Script para abrir modales automáticamente si es necesario
+{% if abrir_modal_crear %}
+$(document).ready(function() {
+    $('#modalCrear').modal('show');
+});
+{% endif %}
+
+{% if abrir_modal_editar %}
+$(document).ready(function() {
+    $('#modalEditar').modal('show');
+});
+{% endif %}
 </script>
 {% endblock %}

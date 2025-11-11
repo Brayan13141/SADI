@@ -52,14 +52,15 @@ class ActividadForm(forms.ModelForm):
         user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
 
-        hoy = timezone.now().date()
-        self.fields["fecha_inicio"].widget.attrs.update(
-            {
-                "min": hoy.strftime("%Y-%m-%d"),
-                "value": hoy.strftime("%Y-%m-%d"),
-            }
-        )
-        self.fields["fecha_inicio"].initial = hoy
+        if user and user.role == "DOCENTE":
+            hoy = timezone.now().date()
+            self.fields["fecha_inicio"].widget.attrs.update(
+                {
+                    "min": hoy.strftime("%Y-%m-%d"),
+                    "value": hoy.strftime("%Y-%m-%d"),
+                }
+            )
+            self.fields["fecha_inicio"].initial = hoy
 
         if user:
             if user.role == "DOCENTE":

@@ -31,6 +31,9 @@ from .forms import (
 
 @role_required("ADMIN", "APOYO", "DOCENTE")
 def gestion_metas(request):
+
+    ciclo_id = request.session.get("ciclo_id")
+
     usuario = request.user
     # --- 1. Cargar solo las metas globales (sin sus ciclos) ---
     if usuario.role == "ADMIN" or usuario.role == "APOYO":
@@ -39,6 +42,23 @@ def gestion_metas(request):
         metas = Meta.objects.select_related("proyecto", "departamento").filter(
             departamento=usuario.departamento
         )
+
+    for meta in metas:
+        # Busca la MetaComprometida del ciclo
+        comprometida = MetaCiclo.objects.filter(meta=meta, ciclo=ciclo_id).first()
+        if meta.porcentages:
+            meta.metaComprometida = (
+                (comprometida.metaCumplir * Decimal("100")).quantize(Decimal("0.01"))
+                if comprometida
+                else None
+            )
+        else:
+            meta.metaComprometida = (
+                comprometida.metaCumplir.quantize(Decimal("0.01"))
+                if comprometida
+                else None
+            )
+
     abrir_modal_crear = False
     abrir_modal_editar = False
     meta_editar_id = None
@@ -375,7 +395,7 @@ def gestion_meta_avances(request, meta_id):
         "-fecha_registro"
     )
 
-    avance_form = AvanceMetaForm(meta=meta)
+    avance_form = AvanceMetaForm(meta=meta, user=request.user)
     comprometida_form = MetaComprometidaForm()
 
     abrir_modal_avance = False
@@ -387,7 +407,7 @@ def gestion_meta_avances(request, meta_id):
 
     if request.method == "POST":
         if "crear_avance" in request.POST and puede_crear:
-            avance_form = AvanceMetaForm(request.POST, meta=meta)
+            avance_form = AvanceMetaForm(request.POST, meta=meta, user=request.user)
             if avance_form.is_valid():
                 avance = avance_form.save(commit=False)
                 avance.metaCumplir = meta
@@ -436,7 +456,7 @@ def gestion_meta_avances(request, meta_id):
             "avance_form": avance_form,
             "comprometida_form": comprometida_form,
             "abrir_modal_avance": abrir_modal_avance,
-            "ciclo_activo": ciclo_activo,  #  Enviamos al template por si lo quieres mostrar
+            "ciclo_activo": ciclo_activo,
         },
     )
 
@@ -594,116 +614,65 @@ def TablaSeguimiento(request):
     tabla = []
 
     for meta in metas:
-        # Obtener MetaCiclo
         meta_ciclo = MetaCiclo.objects.filter(meta=meta, ciclo=ciclo).first()
         if not meta_ciclo:
             continue
 
-        # Obtener avances
-        avances = []
-        posibles_campos = ["metaCumplir", "meta"]
-        for campo in posibles_campos:
-            if hasattr(AvanceMeta, campo):
-                filter_kwargs = {campo: meta, "ciclo": ciclo}
-                avances_query = AvanceMeta.objects.filter(**filter_kwargs).order_by(
-                    "fecha_registro"
-                )
-                avances = list(avances_query)
-                if avances:
-                    break
-
-        # 🔥 **CÁLCULO DEL TOTAL COMPLETADO: SUMA DE TODOS LOS AVANCES**
-        total = Decimal("0")
-        for av in avances:
-            if av.avance is not None:
-                total += Decimal(str(av.avance))
-
-        linea_base = (
-            meta_ciclo.lineaBase if meta_ciclo.lineaBase is not None else Decimal("0")
-        )
-        meta_cumplir = (
-            meta_ciclo.metaCumplir
-            if meta_ciclo.metaCumplir is not None
-            else Decimal("0")
+        # Obtener todos los avances asociados a la meta y ciclo
+        avances = AvanceMeta.objects.filter(metaCumplir=meta, ciclo=ciclo).order_by(
+            "fecha_registro"
         )
 
-        # Cálculo de porcentaje
+        if not avances.exists():
+            total = Decimal("0")
+        else:
+            if meta.acumulable:
+                #  Tomar SOLO el último avance registrado
+                ultimo_avance = avances.last()
+                total = Decimal(str(ultimo_avance.avance or 0))
+            else:
+                #  Sumar TODOS los avances
+                total = avances.aggregate(total=Sum("avance"))["total"] or Decimal("0")
+
+        # Base y meta comprometida
+        linea_base = meta_ciclo.lineaBase or Decimal("0")
+        meta_cumplir = meta_ciclo.metaCumplir or Decimal("0")
+
+        #  Calcular porcentaje usando la fórmula (B / A) * 100
         porcentaje = Decimal("0")
         try:
-            denominador = meta_cumplir - linea_base
-            if denominador != Decimal("0"):
-                porcentaje = ((total - linea_base) / denominador) * Decimal("100")
-                porcentaje = max(Decimal("0"), min(porcentaje, Decimal("100")))
+            if meta_cumplir != Decimal("0"):
+                porcentaje = (total / meta_cumplir) * Decimal("100")
         except (InvalidOperation, TypeError, ZeroDivisionError):
             porcentaje = Decimal("0")
 
-        # 🔥 **VISUALIZACIÓN POR MES SEGÚN TIPO DE META**
+        #  Mostrar valores mensuales (solo referencia visual)
         valores_por_mes = []
+        for m in meses:
+            year, month = m["anio"], m["numero"]
+            avances_mes = avances.filter(
+                fecha_registro__year=year, fecha_registro__month=month
+            )
 
-        if meta.acumulable:
-            # METAS ACUMULABLES: Mostrar SUMA de avances de cada mes
-            for m in meses:
-                year = m["anio"]
-                month = m["numero"]
+            if meta.acumulable:
+                # Mostrar solo el último del mes
+                av_mes = avances_mes.last()
+                valor_mes = av_mes.avance if av_mes else None
+            else:
+                # Sumar todos los avances del mes
+                valor_mes = avances_mes.aggregate(total=Sum("avance"))["total"]
 
-                # Filtrar avances del mes y sumarlos
-                avances_mes = [
-                    av
-                    for av in avances
-                    if av.fecha_registro.year == year
-                    and av.fecha_registro.month == month
-                ]
-
-                suma_mes = Decimal("0")
-                for av in avances_mes:
-                    if av.avance is not None:
-                        suma_mes += Decimal(str(av.avance))
-
-                # Formatear para mostrar
-                if suma_mes == Decimal("0"):
-                    valores_por_mes.append("-")
+            if not valor_mes or valor_mes == 0:
+                valores_por_mes.append("-")
+            else:
+                val = Decimal(str(valor_mes))
+                if meta.porcentages:
+                    val = (val * Decimal("100")).quantize(Decimal("0.00"))
+                    valores_por_mes.append(f"{val} %")
                 else:
-                    if meta.porcentages:
-                        display = (suma_mes * Decimal("100")).quantize(Decimal("0.00"))
-                        valores_por_mes.append(f"{display} %")
-                    else:
-                        display = suma_mes.quantize(Decimal("0.00"))
-                        valores_por_mes.append(f"{display}")
-        else:
-            # METAS INCREMENTALES: Mostrar ÚLTIMO avance de cada mes
-            for m in meses:
-                year = m["anio"]
-                month = m["numero"]
+                    valores_por_mes.append(f"{val.quantize(Decimal('0.00'))}")
 
-                # Filtrar avances del mes y tomar el último
-                avances_mes = [
-                    av
-                    for av in avances
-                    if av.fecha_registro.year == year
-                    and av.fecha_registro.month == month
-                ]
-
-                ultimo_mes = avances_mes[-1] if avances_mes else None
-                valor_mes_raw = (
-                    Decimal(str(ultimo_mes.avance))
-                    if ultimo_mes and ultimo_mes.avance is not None
-                    else None
-                )
-
-                # Formatear para mostrar
-                if valor_mes_raw is None or valor_mes_raw == Decimal("0"):
-                    valores_por_mes.append("-")
-                else:
-                    if meta.porcentages:
-                        display = (valor_mes_raw * Decimal("100")).quantize(
-                            Decimal("0.00")
-                        )
-                        valores_por_mes.append(f"{display} %")
-                    else:
-                        display = valor_mes_raw.quantize(Decimal("0.00"))
-                        valores_por_mes.append(f"{display}")
-
-        # Formateo final
+        # 🔹 Formato final
         if meta.porcentages:
             total_display = f"{(total * Decimal('100')).quantize(Decimal('0.00'))} %"
             linea_base_display = (

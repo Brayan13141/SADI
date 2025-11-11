@@ -49,18 +49,7 @@
     </h6>
 
     <h5>Avances registrados</h5>
-    {% if meta.acumulable %}
-    <div class="alert alert-info">
-        <strong>Total acumulado:</strong>
-        {{ meta.total_acumulado }}{% if meta.porcentages %}%{% endif %}
-
-        <div class="float-end">
-            <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#modalInfoAcumulable">
-                <i class="fas fa-info-circle me-1"></i> Ayuda
-            </button>
-        </div>
-    </div>
-    {% endif %}
+   
 
     <!-- Tabla de avances -->
     <div class="card shadow-sm">

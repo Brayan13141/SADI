@@ -93,6 +93,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "core.context_processors.estado_sistema",  # CONTEXTO GLOBAL ESTADO SISTEMA
             ],
         },
     },
@@ -192,7 +193,18 @@ AUTHENTICATION_BACKENDS = (
 )
 
 # Configuración del backend de correo electrónico para desarrollo
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+# EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+# Configuración del backend de correo electrónico para producción
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = config("EMAIL_HOST", default="smtp.gmail.com")
+EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = config("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = config(
+    "EMAIL_HOST_PASSWORD"
+)  # Se genera en https://myaccount.google.com/apppasswords
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
 
 # CONFIGURACIONES PARA DJANGO ALLAUTH
 SITE_ID = 1

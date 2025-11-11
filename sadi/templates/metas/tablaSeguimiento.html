@@ -13,10 +13,6 @@
     <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
     <h6 class="mb-0">Seguimiento de Metas Activas</h6>
-    {% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
-    <a href="?view=simple" class="btn btn-outline-light">
-    <i class="fas fa-list"></i> Ver todas las metas
-    {% endif %}
 </a>
 
     </div>
@@ -50,8 +46,8 @@
 
             <!-- Tabla -->
             
-            <div >
-                       <table id="seguimientoTable" class="table table-striped table-hover table-bordered table-sm">
+         <div >
+          <table id="seguimientoTable" class="table table-striped table-hover table-bordered table-sm">
           <thead>
             <tr class="text-nowrap text-center align-middle">
               <th>#</th>
@@ -108,8 +104,8 @@
                   <div class="progress flex-grow-1">
                     <div class="progress-bar 
                       {% if fila.porcentaje >= 110 %}bg-info
-                      {% elif fila.porcentaje >= 85 %}bg-success
-                      {% elif fila.porcentaje >= 25 %}bg-warning
+                      {% elif fila.porcentaje >= 91 %}bg-success
+                      {% elif fila.porcentaje >= 71 %}bg-warning
                       {% else %}bg-danger{% endif %}" 
                       style="width: {{ fila.porcentaje }}%">
                     </div>

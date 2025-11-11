@@ -32,10 +32,9 @@ $(document).ready(function () {
         let metaId = $(this).data('id');
         let clave = $(this).data('clave');
         let nombre = $(this).data('nombre');
-        let compId = $(this).data('comprometida-id');
-        let compValor = $(this).data('comprometida-valor');
+        let compValor = $(this).data('comprometida');
 
-        if (compId) {
+        if (compValor) {
             $('#infoComprometida').html(`
             <p><strong>Meta:</strong> ${clave} - ${nombre}</p>
             <p><strong>Valor comprometido:</strong> ${compValor}</p>

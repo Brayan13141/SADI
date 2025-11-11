@@ -4,9 +4,11 @@
 {% block title %}Reporte de Riesgos{% endblock %}
 
 {% block extra_css %}
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet">
 
 <style>
     .card {
@@ -22,12 +24,8 @@
         font-size: 0.9rem;
         padding: 0.5em 0.8em;
     }
-    .bg-orange {
-        background-color: #fd7e14 !important;
-    }
-    .text-orange {
-        color: #fd7e14 !important;
-    }
+    .bg-orange { background-color: #fd7e14 !important; }
+    .text-orange { color: #fd7e14 !important; }
 </style>
 {% endblock %}
 
@@ -41,33 +39,20 @@
         </a>
     </div>
 
-    <!-- ENCABEZADO -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="fw-bold text-primary">Reporte de Riesgos</h2>
+    <!-- ENCABEZADO Y BOTÓN DE EXPORTACIÓN -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-2">
+        <h2 class="fw-bold text-primary mb-0">Reporte de Riesgos</h2>
         <a href="?exportar=1" class="btn btn-success">
-            <i class="fas fa-file-excel"></i> Exportar a Excel
+            <i class="fas fa-file-excel me-1"></i> Exportar a Excel
         </a>
     </div>
 
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body text-center row">
-                    <div class="col-md-12 text-center mb-3 mb-md-0">
-                        <h4 class="text-primary">{{ total_riesgos }}</h4>
-                        <p class="text-muted mb-0">Total de Riesgos</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- === RESUMEN GENERAL === -->
-    <div class="row g-3 text-center mb-4">  
+    <div class="row g-3 text-center mb-4">
         <div class="col-md-3">
             <div class="card bg-success text-white">
                 <div class="card-body">
-                    <h5>🟢 Riesgo Bajo</h5>
+                    <h5>Bajo</h5>
                     <h3>{{ riesgos_bajos }}</h3>
                 </div>
             </div>
@@ -75,7 +60,7 @@
         <div class="col-md-3">
             <div class="card bg-warning text-dark">
                 <div class="card-body">
-                    <h5>🟡 Riesgo Medio</h5>
+                    <h5>Medio</h5>
                     <h3>{{ riesgos_medios }}</h3>
                 </div>
             </div>
@@ -83,7 +68,7 @@
         <div class="col-md-3">
             <div class="card bg-orange text-white">
                 <div class="card-body">
-                    <h5>🟠 Riesgo Alto</h5>
+                    <h5>Alto</h5>
                     <h3>{{ riesgos_altos }}</h3>
                 </div>
             </div>
@@ -91,20 +76,18 @@
         <div class="col-md-3">
             <div class="card bg-danger text-white">
                 <div class="card-body">
-                    <h5>🔴 Riesgo Crítico</h5>
+                    <h5>Crítico</h5>
                     <h3>{{ riesgos_criticos }}</h3>
                 </div>
             </div>
         </div>
     </div>
 
-   
-
     <!-- === GRÁFICO === -->
     <div class="card mb-4">
         <div class="card-body text-center">
             <h5 class="text-center mb-4">Distribución de Niveles de Riesgo</h5>
-            <div style="max-width: 400px; margin: 0 auto;">
+            <div style="max-width: 450px; margin: 0 auto;">
                 <canvas id="chartRiesgos"></canvas>
             </div>
         </div>
@@ -115,12 +98,13 @@
         <div class="card-body">
             <h5 class="text-center mb-3">Detalle de Riesgos</h5>
             <div class="table-responsive">
-                <table class="table table-bordered table-striped table-hover" id="riesgosTable" style="width:100%">
+                <table class="table table-bordered table-striped table-hover" id="tablaRiesgos" style="width:100%">
                     <thead class="table-light">
                         <tr class="text-nowrap">
                             <th>Nivel</th>
-                            <th>Meta Asociada</th>
-                            <th>Enunciado del Riesgo</th>
+                            <th>Meta</th>
+                            <th>Actividad</th>
+                            <th>Riesgo</th>
                             <th>Probabilidad</th>
                             <th>Impacto</th>
                             <th>Valor</th>
@@ -130,20 +114,19 @@
                     <tbody>
                         {% for r in data %}
                         <tr>
-                            <td>
-                                <span class="badge bg-{{ r.color }}">{{ r.icono }} {{ r.nivel_riesgo }}</span>
-                            </td>
+                            <td><span class="badge bg-{{ r.color }}">{{ r.nivel_riesgo }}</span></td>
                             <td>{{ r.meta }}</td>
+                            <td>{{ r.actividad }}</td>
                             <td class="text-start">{{ r.enunciado }}</td>
                             <td><span class="fw-bold">{{ r.probabilidad }}/10</span></td>
                             <td><span class="fw-bold">{{ r.impacto }}/10</span></td>
-                            <td><span class="fw-bold text-primary">{{ r.valor_riesgo }}/100</span></td>
+                            <td><span class="fw-bold text-{{r.color}}">{{ r.valor_riesgo }}/100</span></td>
                             <td class="text-wrap">
                                 {% if r.tiene_mitigaciones %}
                                     <span class="badge bg-info">
                                         <i class="fas fa-shield-alt me-1"></i>{{ r.total_mitigaciones }}
                                     </span>
-                                    <small class="d-block text-muted mt-1">{{ r.ultima_mitigacion   }}</small>
+                                    <small class="d-block text-muted mt-1">{{ r.ultima_mitigacion }}</small>
                                 {% else %}
                                     <span class="badge bg-secondary">
                                         <i class="fas fa-exclamation-triangle me-1"></i> Sin acciones
@@ -153,7 +136,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="7" class="text-center text-muted py-4">
+                            <td colspan="8" class="text-center text-muted py-4">
                                 <i class="fas fa-info-circle fa-2x mb-2"></i><br>
                                 No hay riesgos registrados.
                             </td>
@@ -166,33 +149,22 @@
     </div>
 
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-{% if hay_datos %}
-$('#riesgosTable').DataTable({
-        scrollX: true,
-        scrollY: '500px',
-        scrollCollapse: true,
-        fixedColumns: {
-            left: 1,
-        },
-        lengthMenu: [5, 10, 15, 20, 50],
-        autoWidth: false,
-        paging: true,
-        searching: true,
-        info: true,
+    {% if hay_datos %}
+    $('#tablaRiesgos').DataTable({
+        lengthMenu: [5, 10, 20, 50],
         pageLength: 5,
         language: {
             url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json',
-        },
-        // Configuración adicional para mejorar el rendimiento con muchas columnas
-        deferRender: true,
-        scroller: true,
-        stateSave: true,
+        }
     });
-{% endif %}
-    
+    {% endif %}
+
+    // === GRÁFICO DE PIE ===
     const ctx = document.getElementById("chartRiesgos");
     new Chart(ctx, {
         type: "pie",
@@ -201,10 +173,10 @@ $('#riesgosTable').DataTable({
             datasets: [{
                 data: {{ niveles_values|safe }},
                 backgroundColor: [
-                    "rgba(40, 167, 69, 0.8)",   // Verde (Bajo)
-                    "rgba(255, 193, 7, 0.8)",   // Amarillo (Medio)
-                    "rgba(253, 126, 20, 0.8)",  // Naranja (Alto)
-                    "rgba(220, 53, 69, 0.8)"    // Rojo (Crítico)
+                    "rgba(40, 167, 69, 0.8)",  // Bajo
+                    "rgba(255, 193, 7, 0.8)",  // Medio
+                    "rgba(253, 126, 20, 0.8)", // Alto
+                    "rgba(220, 53, 69, 0.8)"   // Crítico
                 ],
                 borderColor: [
                     "rgba(40, 167, 69, 1)",
@@ -232,8 +204,8 @@ $('#riesgosTable').DataTable({
                             const label = context.label || '';
                             const value = context.raw || 0;
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = Math.round((value / total) * 100);
-                            return `${label}: ${value} (${percentage}%)`;
+                            const pct = ((value / total) * 100).toFixed(1);
+                            return `${label}: ${value} (${pct}%)`;
                         }
                     }
                 }
@@ -241,8 +213,5 @@ $('#riesgosTable').DataTable({
         }
     });
 });
-
-
-
 </script>
 {% endblock %}

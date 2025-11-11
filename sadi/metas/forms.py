@@ -197,24 +197,23 @@ class AvanceMetaForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         # Obtener la meta desde los argumentos si está disponible
         meta = kwargs.pop("meta", None)
-
+        user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
 
-        hoy = timezone.now().date().strftime("%Y-%m-%d")
-        self.fields["fecha_registro"].widget.attrs.update(
-            {
-                "min": hoy,
-                "value": hoy,
-            }
-        )
+        if user.role == "DOCENTE":
+            hoy = timezone.now().date().strftime("%Y-%m-%d")
+            self.fields["fecha_registro"].widget.attrs.update(
+                {
+                    "min": hoy,
+                    "value": hoy,
+                }
+            )
 
     def clean_avance(self):
         avance = self.cleaned_data.get("avance")
         if avance is not None:
             if avance < 0:
                 raise forms.ValidationError("El avance no puede ser negativo.")
-            if avance > 100:
-                raise forms.ValidationError("El avance no puede ser mayor a 100%.")
         return avance
 
 
@@ -287,21 +286,11 @@ class AvanceMetaGeneralForm(forms.ModelForm):
         self.fields["ciclo"].queryset = Ciclo.objects.all()
         self.fields["departamento"].required = False  # Hacer que no sea obligatorio
 
-        hoy = timezone.now().date().strftime("%Y-%m-%d")
-        self.fields["fecha_registro"].widget.attrs.update(
-            {
-                "min": hoy,
-                "value": hoy,
-            }
-        )
-
     def clean_avance(self):
         avance = self.cleaned_data.get("avance")
         if avance is not None:
             if avance < 0:
                 raise forms.ValidationError("El avance no puede ser negativo.")
-            if avance > 100:
-                raise forms.ValidationError("El avance no puede ser mayor a 100%.")
         else:
             raise forms.ValidationError("El avance es obligatorio.")
         return avance
