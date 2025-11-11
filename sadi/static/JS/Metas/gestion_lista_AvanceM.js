@@ -46,8 +46,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (isNaN(valorAvance)) {
             mostrarError(avanceInput, 'El avance debe ser un número.');
             esValido = false;
-        } else if (valorAvance < 0 || valorAvance > 100) {
-            mostrarError(avanceInput, 'El avance debe estar entre 0 y 100.');
+        } else if (valorAvance < 0) {
+            mostrarError(avanceInput, 'El avance debe ser mayor a 0');
             esValido = false;
         }
 
