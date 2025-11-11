@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from django.db.models import Prefetch, Sum
 from usuarios.decorators import role_required
 import io
@@ -38,11 +38,14 @@ def gestion_reportes(request):
 @role_required("ADMIN", "APOYO")
 def reporte_metas_departamento(request):
     """
-    Reporte de Metas agrupadas por departamento y ciclo.
+    Reporte de Metas agrupadas por departamento y ciclo,
+    con cálculo de avance corregido según la lógica de la tabla de seguimiento.
     """
+
     # --- FILTROS ---
     departamento_id = request.GET.get("departamento")
     ciclo_id = request.session.get("ciclo_id")
+
     departamentos = Departamento.objects.all()
     ciclos = Ciclo.objects.all()
 
@@ -74,16 +77,65 @@ def reporte_metas_departamento(request):
 
     for mc in metas_ciclo:
         meta = mc.meta
-        actividades = meta.actividad_set.filter(ciclo_id=mc.ciclo_id)
+        ciclo = mc.ciclo
 
+        # --- CÁLCULO DE AVANCE BASADO EN AVANCEMETA (corregido) ---
+        avances = AvanceMeta.objects.filter(metaCumplir=meta, ciclo=ciclo).order_by(
+            "fecha_registro"
+        )
+
+        if not avances.exists():
+            total_avance = Decimal("0")
+        else:
+            if meta.acumulable:
+                # Tomar el último avance por fecha real
+                ultimo_avance = avances.last()
+                total_avance = Decimal(str(ultimo_avance.avance or 0))
+            else:
+                #  Sumar todos los avances del ciclo
+                total_avance = avances.aggregate(total=Sum("avance"))[
+                    "total"
+                ] or Decimal("0")
+
+        # --- BASE Y META COMPROMETIDA ---
+        linea_base = mc.lineaBase or Decimal("0")
+        meta_cumplir = mc.metaCumplir or Decimal("0")
+
+        # --- CÁLCULO DE PORCENTAJE ---
+        try:
+            if meta_cumplir > Decimal("0"):
+                porcentaje_avance = (total_avance / meta_cumplir) * Decimal("100")
+            else:
+                porcentaje_avance = Decimal("0")
+        except (InvalidOperation, TypeError, ZeroDivisionError):
+            porcentaje_avance = Decimal("0")
+
+        porcentaje_avance = max(Decimal("0"), min(porcentaje_avance, Decimal("100")))
+
+        # --- DISPLAY FORMATEADO ---
+        if meta.porcentages:
+            total_avance_display = (
+                f"{(total_avance * Decimal('100')).quantize(Decimal('0.00'))} %"
+            )
+            linea_base_display = (
+                f"{(linea_base * Decimal('100')).quantize(Decimal('0.00'))} %"
+            )
+            meta_cumplir_display = (
+                f"{(meta_cumplir * Decimal('100')).quantize(Decimal('0.00'))} %"
+            )
+        else:
+            total_avance_display = f"{total_avance.quantize(Decimal('0.00'))}"
+            linea_base_display = f"{linea_base.quantize(Decimal('0.00'))}"
+            meta_cumplir_display = f"{meta_cumplir.quantize(Decimal('0.00'))}"
+
+        # --- ESTADO BASADO EN ACTIVIDADES ---
+        actividades = meta.actividad_set.filter(ciclo_id=ciclo.id)
         total_acts = actividades.count()
-
         completadas = (
             actividades.filter(estado__iexact="Cumplida").count()
             if total_acts > 0
             else 0
         )
-        cumplimiento = (completadas / total_acts) * 100 if total_acts > 0 else 0
 
         if total_acts == 0:
             estado = "Rezagada"
@@ -98,7 +150,10 @@ def reporte_metas_departamento(request):
             estado = "En progreso"
             stats["en_progreso"] += 1
 
-        restante = max(0, 100 - cumplimiento)
+        cumplimiento_actividades = (
+            (completadas / total_acts) * 100 if total_acts > 0 else 0
+        )
+        restante = max(0, 100 - cumplimiento_actividades)
 
         resultados.append(
             {
@@ -106,19 +161,21 @@ def reporte_metas_departamento(request):
                 "clave": meta.clave,
                 "nombre": meta.nombre,
                 "indicador": meta.indicador,
-                "metacumplir": mc.metacumplir_display,
-                "lineabase": mc.lineabase_display,
-                "total_acumulado": meta.total_acumulado,
+                "metacumplir": meta_cumplir_display,
+                "lineabase": linea_base_display,
+                "total_acumulado": total_avance_display,
+                "porcentaje_avance": round(float(porcentaje_avance), 2),
                 "proyecto": meta.proyecto.nombre if meta.proyecto else "N/A",
                 "departamento": (
                     meta.departamento.nombre if meta.departamento else "N/A"
                 ),
-                "ciclo": mc.ciclo.nombre if mc.ciclo else "N/A",
+                "ciclo": ciclo.nombre if ciclo else "N/A",
                 "estado": estado,
-                "cumplimiento": round(cumplimiento, 2),
+                "cumplimiento": round(cumplimiento_actividades, 2),
                 "restante": round(restante, 2),
                 "total_actividades": total_acts,
                 "actividades_cumplidas": completadas,
+                "categoria": "Acumulable" if meta.acumulable else "Incremental",
                 "actividades": [
                     {
                         "nombre": act.nombre,
@@ -139,11 +196,8 @@ def reporte_metas_departamento(request):
 
     # --- RESUMEN GENERAL ---
     total_metas = len(resultados)
-    porcentaje_cumplimiento = (
-        (stats["completadas"] / total_metas * 100) if total_metas > 0 else 0
-    )
 
-    # --- EXPORTAR A EXCEL ---
+    # --- EXPORTACIÓN A EXCEL ---
     if "exportar" in request.GET:
         import pandas as pd
         import io
@@ -157,11 +211,13 @@ def reporte_metas_departamento(request):
                 "Departamento": r["departamento"],
                 "Ciclo": r["ciclo"],
                 "Indicador": r["indicador"],
+                "Categoría": r["categoria"],
                 "Línea Base": r["lineabase"],
                 "Meta a Cumplir": r["metacumplir"],
-                "Total Acumulado": r["total_acumulado"],
-                "Estado": r["estado"],
-                "Cumplimiento (%)": r["cumplimiento"],
+                "Total Acumulado (Avance)": r["total_acumulado"],
+                "Porcentaje de Avance (%)": r["porcentaje_avance"],
+                "Estado Actividades": r["estado"],
+                "Cumplimiento Actividades (%)": r["cumplimiento"],
                 "Total Actividades": r["total_actividades"],
                 "Actividades Cumplidas": r["actividades_cumplidas"],
             }
@@ -173,7 +229,7 @@ def reporte_metas_departamento(request):
         with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
             df.to_excel(writer, index=False, sheet_name="Metas")
             worksheet = writer.sheets["Metas"]
-            worksheet.set_column("A:M", 20)
+            worksheet.set_column("A:O", 20)
 
         buffer.seek(0)
         response = HttpResponse(
@@ -196,7 +252,6 @@ def reporte_metas_departamento(request):
         "total_metas": total_metas,
         "metas_cumplidas": stats["completadas"],
         "metas_pendientes": stats["en_progreso"] + stats["rezagadas"],
-        "porcentaje_cumplimiento": round(porcentaje_cumplimiento, 1),
     }
 
     return render(request, "reportes/reporte_metas.html", context)
@@ -342,7 +397,6 @@ def reporte_avances_metas(request):
     departamentos = Departamento.objects.all()
     ciclos = Ciclo.objects.all()
 
-    # --- Consulta base optimizada ---
     avances_query = AvanceMeta.objects.select_related(
         "metaCumplir",
         "metaCumplir__proyecto",
@@ -351,28 +405,24 @@ def reporte_avances_metas(request):
         "departamento",
     )
 
-    # --- Aplicar filtros dinámicos ---
+    # --- Aplicar filtros ---
     if departamento_id:
         avances_query = avances_query.filter(departamento_id=departamento_id)
     if ciclo_id:
         avances_query = avances_query.filter(ciclo_id=ciclo_id)
 
     avances_query = avances_query.order_by(
-        "metaCumplir__departamento__nombre", "metaCumplir__nombre"
+        "metaCumplir__departamento__nombre", "metaCumplir__nombre", "fecha_registro"
     )
 
     data = []
     for a in avances_query:
         meta = a.metaCumplir
         ciclo = a.ciclo
-
         if not meta:
             continue
 
-        # Verificar si la meta es porcentual
         usa_porcentaje = getattr(meta, "porcentages", False)
-
-        # Buscar su MetaCiclo asociado para obtener la metaCumplir y lineaBase
         meta_ciclo = MetaCiclo.objects.filter(meta=meta, ciclo=ciclo).first()
 
         meta_cumplir_valor = (
@@ -380,17 +430,17 @@ def reporte_avances_metas(request):
         )
         linea_base = meta_ciclo.lineaBase if meta_ciclo and meta_ciclo.lineaBase else 0
 
-        # Cálculo de porcentaje de cumplimiento
-        try:
-            porcentaje_avance = (
-                (a.avance / meta_cumplir_valor) * 100 if meta_cumplir_valor else 0
-            )
-        except (TypeError, ZeroDivisionError):
-            porcentaje_avance = 0
+        # --- Determinar el nombre correcto del departamento ---
+        departamento_nombre = (
+            a.departamento.nombre
+            if a.departamento
+            else (meta.departamento.nombre if meta.departamento else "-")
+        )
 
+        # --- Construir los datos (sin porcentaje) ---
         data.append(
             {
-                "departamento": meta.departamento.nombre if meta.departamento else "-",
+                "departamento": departamento_nombre,
                 "meta": meta.nombre or meta.clave,
                 "proyecto": meta.proyecto.nombre if meta.proyecto else "-",
                 "ciclo": ciclo.nombre if ciclo else "-",
@@ -407,12 +457,11 @@ def reporte_avances_metas(request):
                 "avance": (
                     round(a.avance * 100, 2) if usa_porcentaje else round(a.avance, 2)
                 ),
-                "porcentaje_cumplimiento": round(porcentaje_avance, 2),
                 "fecha_registro": a.fecha_registro.strftime("%d/%m/%Y"),
             }
         )
 
-    # === EXPORTAR A EXCEL ===
+    # --- Exportar a Excel ---
     if "exportar" in request.GET:
         df = pd.DataFrame(data)
         response = HttpResponse(
@@ -421,7 +470,7 @@ def reporte_avances_metas(request):
         response["Content-Disposition"] = (
             'attachment; filename="reporte_avances_metas.xlsx"'
         )
-        df.to_excel(response, index=False)
+        df.to_excel(response, index=False, float_format="%.2f")
         return response
 
     context = {
@@ -439,38 +488,50 @@ def reporte_avances_metas(request):
 def reporte_riesgos(request):
     """
     Reporte general de riesgos con sus niveles y mitigaciones.
+    Filtra los riesgos por el ciclo activo en la sesión.
     Permite exportar a Excel.
     """
-    riesgos = (
-        Riesgo.objects.select_related("meta").prefetch_related("mitigacion_set").all()
-    )
+
+    ciclo_id = request.session.get("ciclo_id")
+
+    # === Filtro por ciclo activo ===
+    riesgos = Riesgo.objects.select_related(
+        "actividad", "actividad__meta"
+    ).prefetch_related("mitigacion_set")
+
+    if ciclo_id:
+        riesgos = riesgos.filter(actividad__ciclo_id=ciclo_id)
+
+    riesgos = riesgos.order_by("actividad__meta__nombre", "actividad__nombre")
 
     data = []
     niveles = {"Bajo": 0, "Medio": 0, "Alto": 0, "Crítico": 0}
 
     for r in riesgos:
-        meta_nombre = r.meta.nombre if r.meta else "-"
+        meta_nombre = (
+            r.actividad.meta.nombre
+            if hasattr(r.actividad, "meta") and r.actividad.meta
+            else "-"
+        )
+        actividad_nombre = r.actividad.nombre if r.actividad else "-"
+
         probabilidad = r.probabilidad or 0
         impacto = r.impacto or 0
         valor_riesgo = r.riesgo or (probabilidad * impacto)
 
-        # Clasificación correcta del riesgo
+        # === Clasificación de riesgo ===
         if valor_riesgo <= 25:
             nivel_riesgo = "Bajo"
             color = "success"
-            icono = "🟢"
         elif valor_riesgo <= 50:
             nivel_riesgo = "Medio"
             color = "warning"
-            icono = "🟡"
         elif valor_riesgo <= 90:
             nivel_riesgo = "Alto"
             color = "orange"
-            icono = "🟠"
         else:
             nivel_riesgo = "Crítico"
             color = "danger"
-            icono = "🔴"
 
         niveles[nivel_riesgo] += 1
 
@@ -480,13 +541,13 @@ def reporte_riesgos(request):
         data.append(
             {
                 "meta": meta_nombre,
+                "actividad": actividad_nombre,
                 "enunciado": r.enunciado,
                 "probabilidad": probabilidad,
                 "impacto": impacto,
                 "valor_riesgo": valor_riesgo,
                 "nivel_riesgo": nivel_riesgo,
                 "color": color,
-                "icono": icono,
                 "tiene_mitigaciones": mitigaciones.exists(),
                 "total_mitigaciones": mitigaciones.count(),
                 "ultima_mitigacion": (
@@ -495,7 +556,7 @@ def reporte_riesgos(request):
             }
         )
 
-    # Ordenar datos por nivel de riesgo (Crítico primero)
+    # Ordenar por nivel (Crítico primero)
     orden = {"Crítico": 4, "Alto": 3, "Medio": 2, "Bajo": 1}
     data.sort(key=lambda x: orden.get(x["nivel_riesgo"], 0), reverse=True)
 
@@ -504,6 +565,7 @@ def reporte_riesgos(request):
         excel_data = [
             {
                 "Meta": d["meta"],
+                "Actividad": d["actividad"],
                 "Riesgo": d["enunciado"],
                 "Probabilidad": d["probabilidad"],
                 "Impacto": d["impacto"],
@@ -520,7 +582,7 @@ def reporte_riesgos(request):
         with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
             df.to_excel(writer, index=False, sheet_name="Riesgos")
             worksheet = writer.sheets["Riesgos"]
-            worksheet.set_column("A:H", 25)
+            worksheet.set_column("A:I", 25)
 
         response = HttpResponse(
             buffer.getvalue(),
@@ -529,8 +591,8 @@ def reporte_riesgos(request):
         response["Content-Disposition"] = 'attachment; filename="reporte_riesgos.xlsx"'
         return response
 
-    hay_datos = len(data) > 0  # Verificar si hay datos
     # === Contexto para template ===
+    hay_datos = len(data) > 0
     context = {
         "data": data,
         "hay_datos": hay_datos,

@@ -5,14 +5,23 @@ from usuarios.decorators import role_required
 from .models import Riesgo, Mitigacion
 from .serializers import RiesgoDetailSerializer, MitigacionDetailSerializer
 from .forms import RiesgoForm, MitigacionForm
+from actividades.models import Actividad
 
 from usuarios.permissions import IsAdmin, IsApoyo, IsDocente, IsInvitado
 
 
 @role_required("ADMIN", "APOYO", "DOCENTE")
 def gestion_riesgos(request):
-    ciclo_id = request.session.get("ciclo_id")  #  Ciclo actual guardado en la sesión
+    user = request.user
+    ciclo_id = request.session.get("ciclo_id")
+    if user.role == "DOCENTE":
+        actividades = Actividad.objects.filter(
+            departamento=user.departamento, ciclo_id=ciclo_id
+        )
+    else:
+        actividades = Actividad.objects.filter(ciclo_id=ciclo_id)
 
+    print("Actividades filtradas para el usuario:", actividades)
     # Base del queryset: riesgos con su actividad y ciclo relacionados
     riesgos = Riesgo.objects.select_related(
         "actividad", "actividad__ciclo", "actividad__departamento"
@@ -43,6 +52,7 @@ def gestion_riesgos(request):
     #  CREAR RIESGO
     # ================================
     if request.method == "POST":
+        print(request.POST)
         if "crear_riesgo" in request.POST and puede_crear:
             form = RiesgoForm(request.POST, user=request.user)
             if form.is_valid():
@@ -111,6 +121,7 @@ def gestion_riesgos(request):
         "riesgos/gestion_riesgos.html",
         {
             "riesgos": riesgos,
+            "actividades": actividades,
             "form": form,
             "abrir_modal_crear": abrir_modal_crear,
             "abrir_modal_editar": abrir_modal_editar,

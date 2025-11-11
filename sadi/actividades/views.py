@@ -102,33 +102,34 @@ def gestion_actividades(request):
 
             if form.is_valid():
                 actividad = form.save(commit=False)
-                actividad.ciclo = ciclo_actual  # 🔹 Asignar ciclo actual
+                actividad.ciclo = ciclo_actual
+
+                # Si hay archivos, marcar como completada y bloquear edición
+                if archivos:
+                    actividad.estado = "Cumplida"
+                    actividad.editable = False
+
                 actividad.save()
 
                 for archivo in archivos:
                     Evidencia.objects.create(actividad=actividad, archivo=archivo)
 
-                actividad.estado = form.cleaned_data["estado"]
-                if archivos:
-                    actividad.editable = False
-                actividad.save()
-
                 messages.success(request, "Actividad creada correctamente.")
                 return redirect("gestion_actividades")
-            else:
-                messages.error(
-                    request, "Por favor corrija los errores en el formulario."
-                )
-                abrir_modal_crear = True
 
-        #  EDITAR ACTIVIDAD
+            messages.error(request, "Por favor corrija los errores en el formulario.")
+            abrir_modal_crear = True
+
+        # EDITAR ACTIVIDAD
         elif "editar_actividad" in request.POST and puede_editar:
             actividad_id = request.POST.get("actividad_id")
             actividad = get_object_or_404(Actividad, id=actividad_id)
 
-            # Seguridad: si no es editable, bloquear
             if not actividad.editable:
-                messages.error(request, "Esta actividad no es editable.")
+                messages.error(
+                    request,
+                    "Esta actividad ya no se puede editar, solicite una reapertura.",
+                )
                 return redirect("gestion_actividades")
 
             form = ActividadForm(request.POST, instance=actividad)
@@ -136,17 +137,17 @@ def gestion_actividades(request):
 
             if form.is_valid():
                 actividad = form.save(commit=False)
-                actividad.ciclo = ciclo_actual  # 🔹 Mantener ciclo actual
-                actividad.estado = form.cleaned_data["estado"]
-                actividad.save()
+                actividad.ciclo = ciclo_actual
 
                 for archivo in archivos:
                     Evidencia.objects.create(actividad=actividad, archivo=archivo)
 
+                # Si se agregan archivos nuevos, marcar completada y bloquear
                 if archivos:
-                    actividad.editable = False
                     actividad.estado = "Cumplida"
-                    actividad.save()
+                    actividad.editable = False
+
+                actividad.save()
 
                 messages.success(request, "Actividad editada correctamente.")
                 return redirect("gestion_actividades")
@@ -181,17 +182,40 @@ def gestion_actividades(request):
 
 @role_required("ADMIN", "APOYO", "DOCENTE")
 def ver_actividades(request, meta_id):
+    #  Obtener la meta
     meta = get_object_or_404(Meta, id=meta_id)
-    actividades = filter_actividades_by_role(
-        request.user, Actividad.objects.filter(meta=meta)
-    )
+
+    #  Obtener el ciclo desde la sesión (o el activo por defecto)
+    ciclo_id = request.session.get("ciclo_id")
+    ciclo = None
+    if ciclo_id:
+        ciclo = Ciclo.objects.filter(id=ciclo_id).first()
+    if not ciclo:
+        ciclo = (
+            Ciclo.objects.filter(activo=True).first()
+            or Ciclo.objects.order_by("-fecha_inicio").first()
+        )
+
+    #  Filtrar actividades según la meta y el ciclo
+    actividades_qs = Actividad.objects.filter(meta=meta, ciclo=ciclo)
+
+    # Filtrar por rol del usuario (usa tu helper existente)
+    actividades = filter_actividades_by_role(request.user, actividades_qs)
+
+    #  Renderizar el template con los datos
     return render(
         request,
         "actividades/ver_actividades.html",
-        {"meta": meta, "actividades": actividades},
+        {
+            "meta": meta,
+            "ciclo": ciclo,
+            "actividades": actividades,
+        },
     )
 
 
+# YA NO SE USA, QUITAR DESPUES POR AHORA SOLO SE OCULTA EL BOTON PARA AGREGAR
+# SE ENCUENTRA EN SEGUIMIENTO -> VER -> ACTIVIDADES
 @role_required("ADMIN", "APOYO")
 def agregar_actividad(request, meta_id):
     meta = get_object_or_404(Meta, id=meta_id)

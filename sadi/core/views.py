@@ -8,7 +8,6 @@ from metas.models import Meta
 from objetivos.models import ObjetivoEstrategico
 from proyectos.models import Proyecto
 from usuarios.decorators import role_required
-from django.db.models import Prefetch
 from programas.models import Ciclo
 from django.contrib import messages
 from django.shortcuts import redirect
