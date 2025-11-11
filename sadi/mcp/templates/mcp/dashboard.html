@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MCP - Asistente Local</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background-color: #f5f5f5;
+        }
+        .container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .chat-box { 
+            border: 1px solid #ddd; 
+            padding: 20px; 
+            margin-bottom: 20px; 
+            border-radius: 8px;
+        }
+        .messages { 
+            height: 400px; 
+            overflow-y: auto; 
+            border: 1px solid #eee; 
+            padding: 15px; 
+            margin-bottom: 15px;
+            background: #fafafa;
+            border-radius: 5px;
+        }
+        .message { 
+            margin-bottom: 10px; 
+            padding: 10px; 
+            border-radius: 8px;
+            line-height: 1.4;
+        }
+        .user-message { 
+            background-color: #e3f2fd; 
+            border-left: 4px solid #2196f3;
+        }
+        .assistant-message { 
+            background-color: #f5f5f5; 
+            border-left: 4px solid #4caf50;
+        }
+        .input-area { 
+            display: flex; 
+            gap: 10px; 
+            margin-top: 15px;
+        }
+        input, textarea, button { 
+            padding: 12px; 
+            font-size: 14px; 
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        textarea {
+            flex: 1;
+            resize: vertical;
+            min-height: 60px;
+            font-family: Arial, sans-serif;
+        }
+        button { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            cursor: pointer; 
+            transition: background 0.3s;
+        }
+        button:hover { 
+            background: #0056b3; 
+        }
+        .quick-actions {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #ff9800;
+        }
+        .quick-actions button {
+            margin: 5px;
+            background: #6c757d;
+        }
+        .quick-actions button:hover {
+            background: #545b62;
+        }
+        .system-info {
+            margin-top: 20px;
+            padding: 10px;
+            background: #e8f5e8;
+            border-radius: 5px;
+            border-left: 4px solid #4caf50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔮 MCP - Asistente del Sistema SADI</h1>
+        
+        <div class="system-info">
+            <strong>Estado del sistema:</strong> Conectado | <strong>Modelo:</strong> TinyLlama | <strong>Usuario:</strong> {{ user.username }}
+        </div>
+        
+        <div class="quick-actions">
+            <strong>Acciones Rápidas:</strong>
+            <button onclick="askAboutMetas()">🎯 Metas del Proyecto</button>
+            <button onclick="generateUserReport()">👥 Reporte de Usuarios</button>
+            <button onclick="getSystemInfo()">⚙️ Estado del Sistema</button>
+            <button onclick="clearChat()">🗑️ Limpiar Chat</button>
+        </div>
+        
+        <div class="chat-box">
+            <h3>💬 Chat con el Asistente MCP</h3>
+            <div class="messages" id="messages">
+                <div class="message assistant-message">
+                    <strong>Asistente:</strong> ¡Hola! Soy tu asistente MCP integrado con el sistema SADI. ¿En qué puedo ayudarte hoy?
+                </div>
+            </div>
+            
+            <div class="input-area">
+                <textarea id="prompt-input" placeholder="Escribe tu mensaje aquí..." rows="3"></textarea>
+                <button onclick="sendMessage()">Enviar</button>
+            </div>
+            
+            <div style="text-align: center; margin-top: 10px;">
+                <small>Presiona Enter para enviar (Shift+Enter para nueva línea)</small>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Esperar a que el DOM esté completamente cargado
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('MCP Dashboard cargado correctamente');
+            initializeChat();
+        });
+
+        function initializeChat() {
+            // Asegurarse de que el elemento messages existe
+            const messagesDiv = document.getElementById('messages');
+            if (!messagesDiv) {
+                console.error('Elemento messages no encontrado');
+                return;
+            }
+            console.log('Chat inicializado correctamente');
+        }
+
+        function addMessage(content, isUser = false) {
+            const messagesDiv = document.getElementById('messages');
+            if (!messagesDiv) {
+                console.error('No se puede agregar mensaje: elemento messages no encontrado');
+                return;
+            }
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'assistant-message'}`;
+            
+            const role = isUser ? '<strong>Tú:</strong>' : '<strong>Asistente:</strong>';
+            messageDiv.innerHTML = `${role} ${content}`;
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function sendMessage() {
+            const input = document.getElementById('prompt-input');
+            const prompt = input.value.trim();
+            
+            if (!prompt) {
+                alert('Por favor, escribe un mensaje');
+                return;
+            }
+            
+            addMessage(prompt, true);
+            input.value = '';
+            
+            // Mostrar indicador de typing
+            const typingIndicator = document.createElement('div');
+            typingIndicator.className = 'message assistant-message';
+            typingIndicator.innerHTML = '<strong>Asistente:</strong> <em>Escribiendo...</em>';
+            typingIndicator.id = 'typing-indicator';
+            document.getElementById('messages').appendChild(typingIndicator);
+            document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+            
+            fetch('/mcp/api/chat/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken(),
+                },
+                body: JSON.stringify({ 
+                    prompt: prompt, 
+                    action: 'chat' 
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error en la respuesta del servidor: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Remover indicador de typing
+                const typingIndicator = document.getElementById('typing-indicator');
+                if (typingIndicator) {
+                    typingIndicator.remove();
+                }
+                
+                if (data.success) {
+                    addMessage(data.response);
+                } else {
+                    addMessage(`❌ Error: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                // Remover indicador de typing
+                const typingIndicator = document.getElementById('typing-indicator');
+                if (typingIndicator) {
+                    typingIndicator.remove();
+                }
+                
+                console.error('Error:', error);
+                addMessage('❌ Error de conexión con el servidor. Verifica tu conexión.');
+            });
+        }
+        
+        function getCSRFToken() {
+            const name = 'csrftoken';
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        // Funciones de acciones rápidas
+        function askAboutMetas() {
+            const prompt = "Dame un listado de las metas de este año con su progreso actual y prioridades";
+            document.getElementById('prompt-input').value = prompt;
+            sendMessage();
+        }
+
+        function generateUserReport() {
+            // Mostrar indicador de generación
+            addMessage("📊 Generando reporte de usuarios...", false);
+            
+            fetch('/mcp/api/report/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken(),
+                },
+                body: JSON.stringify({ 
+                    report_type: 'usuarios'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    addMessage(`📊 **REPORTE DE USUARIOS**\n\n${data.report}\n\n*Datos fuente: ${JSON.stringify(data.data)}*`);
+                } else {
+                    addMessage(`❌ Error al generar reporte: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                addMessage('❌ Error de conexión al generar reporte');
+            });
+        }
+
+        function getSystemInfo() {
+            const prompt = "Dame información detallada del estado actual del sistema SADI, incluyendo métricas importantes y estado de los módulos";
+            document.getElementById('prompt-input').value = prompt;
+            sendMessage();
+        }
+
+        function clearChat() {
+            const messagesDiv = document.getElementById('messages');
+            if (messagesDiv && confirm('¿Estás seguro de que quieres limpiar la conversación?')) {
+                messagesDiv.innerHTML = '<div class="message assistant-message"><strong>Asistente:</strong> ¡Hola! Soy tu asistente MCP integrado con el sistema SADI. ¿En qué puedo ayudarte hoy?</div>';
+            }
+        }
+        
+        function testConnection() {
+            addMessage("🔍 Probando conexión con el servidor...", false);
+            
+            fetch('/mcp/api/chat/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken(),
+                },
+                body: JSON.stringify({ 
+                    prompt: 'Test de conexión', 
+                    action: 'chat' 
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    addMessage("✅ Conexión exitosa con el servidor MCP");
+                } else {
+                    addMessage("❌ Error en la conexión: " + data.error);
+                }
+            })
+            .catch(error => {
+                addMessage("❌ Error de conexión: " + error.message);
+            });
+        }
+
+        // Manejar Enter para enviar (Shift+Enter para nueva línea)
+        document.getElementById('prompt-input').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Auto-enfoque en el campo de texto al cargar
+        document.addEventListener('DOMContentLoaded', function() {
+            const input = document.getElementById('prompt-input');
+            if (input) {
+                input.focus();
+            }
+        });
+    </script>
+</body>
+</html>
