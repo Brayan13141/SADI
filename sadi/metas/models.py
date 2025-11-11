@@ -56,14 +56,14 @@ class Meta(models.Model):
         Si trabaja con porcentajes, multiplica por 100 para mostrar en porcentaje.
         """
         if self.acumulable:
-            total = self.total_avances
-        else:
             ultimo = self.avancemeta_set.order_by("-fecha_registro").first()
             total = (
                 Decimal(ultimo.avance)
                 if ultimo and ultimo.avance is not None
                 else Decimal("0")
             )
+        else:
+            total = self.total_avances
 
         # Ajustar formato si la meta es porcentual
         if self.porcentages:
@@ -88,15 +88,6 @@ class AvanceMeta(models.Model):
         if self.avance is not None:
             if self.avance < 0:
                 raise ValidationError({"avance": "No se permiten valores negativos."})
-
-            # Si la meta está en porcentajes y el valor es mayor a 100, marcar error
-            if self.metaCumplir and self.metaCumplir.porcentages:
-                if self.avance > 100:
-                    raise ValidationError(
-                        {
-                            "avance": "El valor no puede ser mayor a 100 cuando la meta está en porcentajes."
-                        }
-                    )
 
     def save(self, *args, **kwargs):
         if (

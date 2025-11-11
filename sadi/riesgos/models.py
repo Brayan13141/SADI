@@ -9,7 +9,9 @@ class Riesgo(models.Model):
     probabilidad = models.IntegerField()
     impacto = models.IntegerField()
     riesgo = models.IntegerField(default=0)
-    actividad = models.ForeignKey(Actividad, on_delete=models.RESTRICT)
+    actividad = models.ForeignKey(
+        Actividad, on_delete=models.RESTRICT, null=True, blank=True
+    )
 
     history = HistoricalRecords()
 
