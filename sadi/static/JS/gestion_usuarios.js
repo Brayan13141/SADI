@@ -139,4 +139,19 @@ $(document).ready(function () {
     $('input, select').on('input change', function () {
         $(this).removeClass('is-invalid');
     });
+
+    function togglePassword(inputId, buttonId) {
+        const input = document.getElementById(inputId);
+        const button = document.getElementById(buttonId);
+        const icon = button.querySelector('i');
+        button.addEventListener('click', function () {
+            const isPassword = input.type === 'password';
+            input.type = isPassword ? 'text' : 'password';
+            icon.classList.toggle('bi-eye');
+            icon.classList.toggle('bi-eye-slash');
+        });
+    }
+
+    togglePassword('id_password', 'togglePasswordEditar');
+    togglePassword('id_password_crear', 'togglePasswordCrear');
 });

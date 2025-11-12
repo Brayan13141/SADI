@@ -6,7 +6,8 @@ import torch
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+LOG_DIR = BASE_DIR / "logs"
+LOG_DIR.mkdir(exist_ok=True)
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -47,7 +48,7 @@ INSTALLED_APPS = [
     "actividades",
     "riesgos",
     "reportes",
-    "mcp"
+    "mcp",
 ]
 
 MIDDLEWARE = [
@@ -124,66 +125,68 @@ JAZZMIN_UI_TWEAKS = {
     "navbar": "navbar-dark navbar-primary",
     "sidebar": "sidebar-dark-primary",
     "brand_colour": "navbar-primary",
-}  # <-- CORREGIDO: Esta llave estaba mal cerrada
+}
 
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {message}',
-            'style': '{',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {message}",
+            "style": "{",
         },
     },
-    'handlers': {
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': '/home/sadi/SADI/sadi/debug.log',
-            'formatter': 'verbose',
+    "handlers": {
+        "file": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "filename": str(LOG_DIR / "debug.log"),
+            "formatter": "verbose",
         },
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
         },
     },
-    'loggers': {
-        'django': {
-            'handlers': ['console', 'file'],
-            'level': 'INFO',
-            'propagate': False,
+    "loggers": {
+        "django": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": False,
         },
-        'mcp': {
-            'handlers': ['file', 'console'],
-            'level': 'DEBUG',
-            'propagate': True,
+        "mcp": {
+            "handlers": ["file", "console"],
+            "level": "DEBUG",
+            "propagate": True,
         },
     },
 }
 
 MCP_CONFIG = {
-    'MODEL_NAME': 'TinyLlama/TinyLlama-1.1B-Chat-v1.0',  # Nombre completo del modelo
-    'MODEL_PATH': '/home/sadi/.cache/huggingface/hub/',
-    'MAX_LENGTH': 512,
-    'TEMPERATURE': 0.7,
-    'USE_GPU': torch.cuda.is_available(),
+    "MODEL_NAME": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",  # Nombre completo del modelo
+    "MODEL_PATH": "/home/sadi/.cache/huggingface/hub/",
+    "MAX_LENGTH": 512,
+    "TEMPERATURE": 0.7,
+    "USE_GPU": torch.cuda.is_available(),
 }
+
 
 def get_llm_model():
     """Función para cargar el modelo de lenguaje (mantener al final del archivo)"""
     try:
-        model_name = MCP_CONFIG['MODEL_NAME']
+        model_name = MCP_CONFIG["MODEL_NAME"]
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
-            torch_dtype=torch.float16 if MCP_CONFIG['USE_GPU'] else torch.float32,
-            device_map="auto" if MCP_CONFIG['USE_GPU'] else None,
+            torch_dtype=torch.float16 if MCP_CONFIG["USE_GPU"] else torch.float32,
+            device_map="auto" if MCP_CONFIG["USE_GPU"] else None,
         )
         return model, tokenizer
     except Exception as e:
         print(f"Error cargando el modelo: {e}")
         return None, None
+
 
 AUTH_USER_MODEL = "usuarios.Usuario"
 
