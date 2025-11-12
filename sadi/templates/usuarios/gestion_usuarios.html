@@ -174,11 +174,16 @@
               <input class="form-check-input" type="checkbox" id="Eis_active" name="is_active" {% if form.instance.is_active %}checked{% endif %}>
               <label class="form-check-label">Activo</label>
           </div>
-
           <div class="mb-2">
             <label class="form-label">Contraseña (Dejar en blanco para no cambiar)</label>
-            <input type="password" class="form-control" id="id_password" name="password" value="">
+            <div class="input-group">
+              <input type="password" class="form-control" id="id_password" name="password" value="">
+              <button class="btn btn-outline-secondary" type="button" id="togglePasswordEditar">
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
           </div>
+
           <div class="mb-2">
             <label class="form-label">Rol</label>
             <select class="form-select" id="id_role" name="role">
@@ -239,8 +244,14 @@
           </div>
           <div class="mb-2">
             <label class="form-label">Contraseña</label>
-            <input type="password" class="form-control" name="password" value="">
+            <div class="input-group">
+              <input type="password" class="form-control" id="id_password_crear" name="password" value="">
+              <button class="btn btn-outline-secondary" type="button" id="togglePasswordCrear">
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
           </div>
+
           
           <label class="form-label">Estado</label>
           <div class="form-check form-switch mt-2">

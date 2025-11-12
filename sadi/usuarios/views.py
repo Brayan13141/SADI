@@ -13,7 +13,6 @@ def gestion_usuarios(request):
     form = UsuarioForm()
     form_edit = UsuarioEditForm()
     abrir_modal_crear = False
-    print(request.POST)
 
     if request.method == "POST":
         if "crear_usuario" in request.POST:
@@ -25,7 +24,11 @@ def gestion_usuarios(request):
                 return redirect("gestion_usuarios")
             else:
                 abrir_modal_crear = True
-                messages.error(request, "Error al crear el usuario. Revisa los campos.")
+                print(form.errors)
+                messages.error(
+                    request,
+                    form.errors,
+                )
                 return redirect("gestion_usuarios")
 
         elif "editar_usuario" in request.POST:
