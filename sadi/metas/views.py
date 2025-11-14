@@ -9,7 +9,8 @@ from rest_framework import viewsets, permissions
 from departamentos.models import Departamento
 from .models import Meta, AvanceMeta, MetaComprometida, MetaCiclo
 from programas.models import Ciclo
-from django.db.models import Sum, Prefetch
+from proyectos.models import Proyecto
+from django.db.models import Sum
 from django.db import transaction
 from django.utils import timezone
 from django.contrib import messages
@@ -135,6 +136,14 @@ def gestion_metas(request):
 
     # --- 3. Form por rol ---
     form = MetaFormAdmin() if usuario.role in ["ADMIN", "APOYO"] else MetaFormDocente()
+    # --- 5. Generar clave sugerida (para mostrarla en el formulario de creación) ---
+    clave = None
+
+    # Solo si hay proyectos disponibles
+    proyecto = Proyecto.objects.first()
+    if proyecto:
+        count = Meta.objects.filter(proyecto=proyecto).count() + 1
+        clave = f"{proyecto.clave}-META{count}"
 
     # --- 4. Render solo con metas ---
     return render(
@@ -147,6 +156,7 @@ def gestion_metas(request):
             "abrir_modal_editar": abrir_modal_editar,
             "meta_editar_id": meta_editar_id,
             "editables": editables.variableB if editables else False,
+            "clave": clave,
             "puede_crear": puede_crear,
             "puede_editar": puede_editar,
             "puede_eliminar": puede_eliminar,

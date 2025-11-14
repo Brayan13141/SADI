@@ -25,7 +25,6 @@ import io
 # =====================CRUD=====================
 @role_required("ADMIN", "APOYO", "DOCENTE")
 def gestion_actividades(request):
-    from .models import Ciclo  # Asegúrate de tener este import
 
     departamentos = Departamento.objects.all()
 
@@ -65,15 +64,12 @@ def gestion_actividades(request):
     actividad_editar_id = None
     evidencias_editar = None
 
-    #  POST
     if request.method == "POST":
         #  Solicitud de reapertura
         if "solicitar_reapertura" in request.POST:
             actividad = get_object_or_404(
                 Actividad, id=request.POST.get("actividad_id")
             )
-            from .models import SolicitudReapertura
-
             # Evitar duplicadas
             existe_solicitud = SolicitudReapertura.objects.filter(
                 actividad=actividad, aprobada=False
@@ -104,19 +100,29 @@ def gestion_actividades(request):
                 actividad = form.save(commit=False)
                 actividad.ciclo = ciclo_actual
 
-                # Si hay archivos, marcar como completada y bloquear edición
-                if archivos:
-                    actividad.estado = "Cumplida"
-                    actividad.editable = False
-
                 actividad.save()
 
                 for archivo in archivos:
                     Evidencia.objects.create(actividad=actividad, archivo=archivo)
 
+                finalizar = request.POST.get("finalizar_actividad", None)
+
+                # Si el usuario envió el campo
+                if finalizar is not None:
+                    actividad.estado = "Cumplida"
+                    actividad.editable = False
+                    actividad.save(update_fields=["estado", "editable"])
+                    messages.success(request, "Actividad finalizada.")
+                else:
+                    # Si no se marcó finalizar, la actividad sigue activa
+                    actividad.estado = "Activa"
+                    actividad.editable = True
+                    actividad.save(update_fields=["estado", "editable"])
+
                 messages.success(request, "Actividad creada correctamente.")
                 return redirect("gestion_actividades")
 
+            print(form.errors)
             messages.error(request, "Por favor corrija los errores en el formulario.")
             abrir_modal_crear = True
 
@@ -142,10 +148,20 @@ def gestion_actividades(request):
                 for archivo in archivos:
                     Evidencia.objects.create(actividad=actividad, archivo=archivo)
 
-                # Si se agregan archivos nuevos, marcar completada y bloquear
-                if archivos:
+                # Si el usuario marcó finalizar_actividad
+                finalizar = request.POST.get("editable", None)
+
+                # Si el usuario envió el campo
+                if finalizar is not None:
                     actividad.estado = "Cumplida"
                     actividad.editable = False
+                    actividad.save(update_fields=["estado", "editable"])
+                    messages.success(request, "Actividad finalizada.")
+                else:
+                    # Si no se marcó finalizar, la actividad sigue activa
+                    actividad.estado = "Activa"
+                    actividad.editable = True
+                    actividad.save(update_fields=["estado", "editable"])
 
                 actividad.save()
 
