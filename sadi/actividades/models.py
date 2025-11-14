@@ -5,6 +5,11 @@ from programas.models import Ciclo
 from departamentos.models import Departamento
 from usuarios.models import Usuario
 from simple_history.models import HistoricalRecords
+import os
+import re
+import uuid
+from django.db import models
+from unidecode import unidecode  # quita acentos de forma segura
 
 
 class Actividad(models.Model):
@@ -43,13 +48,27 @@ class Actividad(models.Model):
 
 class Evidencia(models.Model):
     actividad = models.ForeignKey(
-        Actividad, related_name="evidencias", on_delete=models.CASCADE
+        "Actividad", related_name="evidencias", on_delete=models.CASCADE
     )
     archivo = models.FileField(upload_to="actividades/evidencias/")
     fecha_subida = models.DateTimeField(auto_now_add=True)
     history = HistoricalRecords()
 
     def save(self, *args, **kwargs):
+        if not self.pk and self.archivo:
+            original_name = os.path.splitext(self.archivo.name)[0]
+            ext = os.path.splitext(self.archivo.name)[1].lower()
+
+            # Quitar acentos, convertir a minúsculas y eliminar caracteres no válidos
+            base_name = unidecode(original_name)
+            base_name = re.sub(r"[^a-zA-Z0-9_-]+", "_", base_name).strip("_").lower()
+
+            # Evitar nombres repetidos con un hash corto UUID
+            safe_name = f"{base_name}_{uuid.uuid4().hex[:10]}{ext}"
+
+            # Cambiar el nombre del archivo antes de guardar
+            self.archivo.name = os.path.join("actividades/evidencias/", safe_name)
+
         # Bloquear edición si ya existe
         if self.pk:
             old = Evidencia.objects.get(pk=self.pk)
@@ -58,7 +77,11 @@ class Evidencia(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.archivo.name}"
+        # Mostrar nombre legible derivado del nombre del archivo guardado
+        nombre = os.path.basename(self.archivo.name)
+        # Eliminar hash y extensión para mostrar algo legible
+        nombre_legible = re.sub(r"_[a-f0-9]{10}\.[a-z0-9]+$", "", nombre)
+        return nombre_legible
 
 
 class SolicitudReapertura(models.Model):
