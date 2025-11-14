@@ -50,7 +50,6 @@
           <table id="seguimientoTable" class="table table-striped table-hover table-bordered table-sm">
           <thead>
             <tr class="text-nowrap text-center align-middle">
-              <th>#</th>
               <th>Meta</th>
               <th>LB</th>
               <th>Meta a Cumplir</th>
@@ -65,11 +64,8 @@
           <tbody>
             {% for fila in tabla %}
             <tr class="align-middle">
-              <!-- ID -->
-              <td class="text-center">{{ fila.id }}</td>
-
               <!-- Meta y departamento -->
-              <td class="text-center text-nowrap">
+              <td class="text-center text-wrap " style="min-width: 200px;">
                 <div class="fw-semibold">{{ fila.meta_nombre }}</div>
                 {% if fila.meta.departamento %}
                   <small class="text-muted">{{ fila.meta.departamento.nombre }}</small>

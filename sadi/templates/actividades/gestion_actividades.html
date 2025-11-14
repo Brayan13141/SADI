@@ -176,11 +176,11 @@
             </div>
 
             <div class="col-md-6 mb-3">
-              <label class="form-label">Fecha Inicio</label>
+              <label class="form-label">Fecha programada</label>
              {{ form.fecha_inicio }}
             </div>
             <div class="col-md-6 mb-3">
-              <label class="form-label">Fecha Fin</label>
+              <label class="form-label">Fecha Realizada</label>
               {{ form.fecha_fin }}
             </div>
 
@@ -211,7 +211,6 @@
               <input type="hidden" name="departamento" value="{{ request.user.departamento.id }}">
             {% endif %}
 
-           
               <div class="col-md-12 mb-3">
                   <label class="form-label">Evidencias</label>
                   <input type="file" name="archivo_evidencia" class="form-control" multiple>
@@ -220,6 +219,12 @@
             <div class="col-12 mb-3">
               <label class="form-label">Descripción</label>
               <textarea class="form-control" name="descripcion" rows="3" required></textarea>
+            </div>
+            <div class="col-md-4">
+                <div class="form-check form-switch mt-2">
+                  <input type="checkbox" name="editable" class="form-check-input" id="id_editable">
+                  <label class="form-check-label">FINALIZAR ACTIVIDAD</label>
+                </div>
             </div>
           </div>
         </div>
@@ -279,11 +284,11 @@
 
             <!-- Fechas -->
             <div class="col-md-6 mb-3">
-              <label class="form-label">Fecha Inicio</label>
+              <label class="form-label">Fecha programada</label>
               <input type="date" class="form-control" id="Eid_fecha_inicio" name="fecha_inicio" required>
             </div>
             <div class="col-md-6 mb-3">
-              <label class="form-label">Fecha Fin</label>
+              <label class="form-label">Fecha Realizada</label>
               <input type="date" class="form-control" id="Eid_fecha_fin" name="fecha_fin" required>
             </div>
 
@@ -334,15 +339,13 @@
                 Solicitar Reapertura
               </button>
             </div> 
-
-          
-
-
             <!-- Descripción -->
             <div class="col-12 mb-3">
               <label class="form-label">Descripción</label>
               <textarea class="form-control" id="id_descripcion" name="descripcion" rows="3" required></textarea>
             </div>
+
+            <div class="row" id="contenedorEditable"></div>
 
           </div>
         </div>
