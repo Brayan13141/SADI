@@ -5,6 +5,7 @@ from .serializers import (
     SolicitudReaperturaSerializer,
 )
 from django.db import transaction
+from core.models import ConfiguracionGlobal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from .models import Actividad, Evidencia, SolicitudReapertura
@@ -51,10 +52,19 @@ def gestion_actividades(request):
             .select_related("meta", "responsable", "departamento")
         )
 
+    cfg = ConfiguracionGlobal.objects.first()
+    estado_captura = cfg.captura_activa if cfg else True
+
     #  Permisos
     puede_crear = request.user.role in ["ADMIN", "APOYO", "DOCENTE"]
     puede_editar = request.user.role in ["ADMIN", "APOYO", "DOCENTE"]
     puede_eliminar = request.user.role in ["ADMIN", "DOCENTE"]
+
+    if not estado_captura:
+        if request.user.role == "DOCENTE":
+            puede_crear = False
+            puede_editar = False
+            puede_eliminar = False
 
     #  Formularios
     form = ActividadForm(user=request.user)
@@ -65,6 +75,12 @@ def gestion_actividades(request):
     evidencias_editar = None
 
     if request.method == "POST":
+        if not estado_captura and request.user.role == "DOCENTE":
+            messages.error(
+                request,
+                "La captura de actividades está desactivada. No puedes realizar cambios en este momento.",
+            )
+            return redirect("gestion_actividades")
         #  Solicitud de reapertura
         if "solicitar_reapertura" in request.POST:
             actividad = get_object_or_404(
@@ -105,7 +121,7 @@ def gestion_actividades(request):
                 for archivo in archivos:
                     Evidencia.objects.create(actividad=actividad, archivo=archivo)
 
-                finalizar = request.POST.get("finalizar_actividad", None)
+                finalizar = request.POST.get("editable", None)
 
                 # Si el usuario envió el campo
                 if finalizar is not None:

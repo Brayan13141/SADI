@@ -1,4 +1,5 @@
 from rest_framework import viewsets, permissions
+from core.models import ConfiguracionGlobal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from usuarios.decorators import role_required
@@ -44,15 +45,31 @@ def gestion_riesgos(request):
     abrir_modal_editar = False
     riesgo_editar_id = None
 
+    cfg = ConfiguracionGlobal.objects.first()
+    estado_captura = cfg.captura_activa if cfg else True
+
+    #  Permisos
     puede_crear = request.user.role in ["ADMIN", "APOYO", "DOCENTE"]
     puede_editar = request.user.role in ["ADMIN", "APOYO", "DOCENTE"]
     puede_eliminar = request.user.role in ["ADMIN", "DOCENTE"]
+
+    if not estado_captura:
+        if request.user.role == "DOCENTE":
+            puede_crear = False
+            puede_editar = False
+            puede_eliminar = False
 
     # ================================
     #  CREAR RIESGO
     # ================================
     if request.method == "POST":
-        print(request.POST)
+        if not estado_captura and request.user.role == "DOCENTE":
+            messages.error(
+                request,
+                "La captura de riesgos está desactivada. No puedes realizar cambios en este momento.",
+            )
+            return redirect("gestion_riesgos")
+
         if "crear_riesgo" in request.POST and puede_crear:
             form = RiesgoForm(request.POST, user=request.user)
             if form.is_valid():
@@ -176,14 +193,30 @@ def gestion_mitigaciones(request):
     # ==============================
     # PERMISOS
     # ==============================
-    puede_crear = user.role in ["ADMIN", "APOYO", "DOCENTE"]
-    puede_editar = user.role in ["ADMIN", "APOYO", "DOCENTE"]
-    puede_eliminar = user.role in ["ADMIN", "DOCENTE"]
+    cfg = ConfiguracionGlobal.objects.first()
+    estado_captura = cfg.captura_activa if cfg else True
 
+    #  Permisos
+    puede_crear = request.user.role in ["ADMIN", "APOYO", "DOCENTE"]
+    puede_editar = request.user.role in ["ADMIN", "APOYO", "DOCENTE"]
+    puede_eliminar = request.user.role in ["ADMIN", "DOCENTE"]
+
+    if not estado_captura:
+        if request.user.role == "DOCENTE":
+            puede_crear = False
+            puede_editar = False
+            puede_eliminar = False
     # ==============================
     # MANEJO DE FORMULARIOS
     # ==============================
     if request.method == "POST":
+        if not estado_captura and request.user.role == "DOCENTE":
+            messages.error(
+                request,
+                "La captura de mitigaciones está desactivada. No puedes realizar cambios en este momento.",
+            )
+            return redirect("gestion_mitigaciones")
+
         # CREAR
         if "crear_mitigacion" in request.POST and puede_crear:
             form = MitigacionForm(request.POST, user=user, ciclo_id=ciclo_id)
