@@ -6,69 +6,26 @@ from departamentos.models import Departamento
 from programas.models import Ciclo
 
 
-class AsignarCicloMetaForm(forms.Form):
-    ciclo = forms.ModelChoiceField(
-        queryset=Ciclo.objects.all().order_by("nombre"),
-        label="Selecciona el ciclo",
-        widget=forms.Select(attrs={"class": "form-control"}),
-    )
-    linea_base = forms.DecimalField(
-        required=False,
-        label="Línea base",
-        widget=forms.NumberInput(
-            attrs={"class": "form-control", "placeholder": "Ejemplo: 10.5"}
-        ),
-    )
-    meta_cumplir = forms.DecimalField(
-        required=False,
-        label="Meta a cumplir",
-        widget=forms.NumberInput(
-            attrs={"class": "form-control", "placeholder": "Ejemplo: 80.0"}
-        ),
-    )
+class AsignarCicloMetaForm(forms.ModelForm):
+
+    class Meta:
+        model = MetaCiclo
+        fields = ["ciclo", "lineaBase", "metaCumplir"]
+
+        widgets = {
+            "ciclo": forms.Select(attrs={"class": "form-control"}),
+            "lineaBase": forms.NumberInput(
+                attrs={"class": "form-control", "step": "0.01"}
+            ),
+            "metaCumplir": forms.NumberInput(
+                attrs={"class": "form-control", "step": "0.01"}
+            ),
+        }
 
     def __init__(self, *args, **kwargs):
-        # Recibir usuario y meta desde la vista
         self.user = kwargs.pop("user", None)
-        self.meta = kwargs.pop("meta", None)  # Nuevo: recibir la meta
+        self.meta_obj = kwargs.pop("meta", None)
         super().__init__(*args, **kwargs)
-
-        # Si el usuario es docente, no mostrar los campos restringidos
-        if self.user and self.user.role == "DOCENTE":
-            self.fields.pop("ciclo", None)
-            self.fields.pop("linea_base", None)
-
-    def clean(self):
-        cleaned_data = super().clean()
-        user = self.user
-        linea_base = cleaned_data.get("linea_base")
-        meta_cumplir = cleaned_data.get("meta_cumplir")
-
-        # --- Validación flexible según rol ---
-        if user and user.role in ["ADMIN", "APOYO"]:
-            if linea_base is None or meta_cumplir is None:
-                raise forms.ValidationError(
-                    "Debes ingresar línea base y meta a cumplir."
-                )
-        elif user and user.role == "DOCENTE":
-            if meta_cumplir is None:
-                raise forms.ValidationError("Debes ingresar la meta a cumplir.")
-
-        # --- NUEVA VALIDACIÓN: Porcentajes no mayores a 100 ---
-        if self.meta and self.meta.porcentages:
-            if meta_cumplir is not None and meta_cumplir > 100:
-                raise forms.ValidationError(
-                    {
-                        "La meta a cumplir no puede ser mayor a 100% para metas en porcentaje"
-                    }
-                )
-
-            if linea_base is not None and linea_base > 100:
-                raise forms.ValidationError(
-                    {"La línea base no puede ser mayor a 100% para metas en porcentaje"}
-                )
-
-        return cleaned_data
 
 
 class MetaFormAdmin(forms.ModelForm):
