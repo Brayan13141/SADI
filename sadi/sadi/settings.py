@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     # Third party
     "simple_history",
     # Local apps
+    "core",
     "usuarios",
     "departamentos",
     "programas",
@@ -100,6 +101,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "core.context_processors.estado_sistema",  # CONTEXTO GLOBAL ESTADO SISTEMA
+                "core.context_processors.estado_captura",  # CONTEXTO GLOBAL ESTADO CAPTURA
             ],
         },
     },
