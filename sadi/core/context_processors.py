@@ -3,6 +3,19 @@ from objetivos.models import ObjetivoEstrategico
 from proyectos.models import Proyecto
 from metas.models import Meta
 
+from .models import ConfiguracionGlobal
+
+
+# Context processor para obtener el estado de captura global METAS(VARIABLE B)
+def estado_captura(request):
+    cfg = ConfiguracionGlobal.objects.first()
+
+    # Si por algún motivo no existe, lo creamos (evita crashes)
+    if cfg is None:
+        cfg = ConfiguracionGlobal.objects.create(captura_activa=True)
+
+    return {"captura_activa": cfg.captura_activa}
+
 
 def estado_sistema(request):
     """
