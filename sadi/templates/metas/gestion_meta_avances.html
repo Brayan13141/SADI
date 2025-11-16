@@ -14,17 +14,21 @@
         </a>
     </div>
 
-    <!-- Mensajes Django -->
     {% if messages %}
-    <div class="mb-3">
-        {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-        {% endfor %}
+<div class="container mt-2">
+    {% for message in messages %}
+    <div class="alert 
+        {% if message.tags == 'error' %} alert-danger fw-bold
+        {% elif message.tags == 'success' %} alert-success fw-bold
+        {% elif message.tags == 'warning' %} alert-warning fw-bold
+        {% else %} alert-info fw-bold {% endif %}
+        shadow-sm">
+        {{ message }}
     </div>
-    {% endif %}
+    {% endfor %}
+</div>
+{% endif %}
+
 
     {% if avance_form_errors %}
     <div class="alert alert-danger">
@@ -201,35 +205,6 @@
   </div>
 </div>
 
-{% if meta.acumulable %}
-<div class="modal fade" id="modalInfoAcumulable" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header bg-info text-white">
-        <h5 class="modal-title">Información sobre metas acumulables</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <p>
-          Esta meta es <strong>acumulable</strong>.  
-          Al registrar un avance no debes ingresar el total, sino únicamente el valor que deseas <strong>sumar al acumulado</strong>.
-        </p>
-        <ul>
-          <li>Ejemplo: si el acumulado actual es <strong>30</strong> y necesitas llegar a <strong>40</strong>, no pongas 40, sino <strong>10</strong>.</li>
-          <li>El sistema se encarga de <strong>sumarlo automáticamente</strong> al total acumulado.</li>
-        </ul>
-        <div class="alert alert-secondary">
-          <i class="fas fa-info-circle"></i>
-          El total acumulado actual es: <strong>{{ meta.total_acumulado }}</strong>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Entendido</button>
-      </div>
-    </div>
-  </div>
-</div>
-{% endif %}
 
 {% if request.user.role == "ADMIN" %}
 <!-- Eliminar Avance -->

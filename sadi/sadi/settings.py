@@ -4,6 +4,11 @@ from decouple import config
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 
+SITE_NAME = "SADI"
+DOMAIN = "sadi.surguanajuato.tecnm.mx"
+# Dirección base para los enlaces en correos
+DEFAULT_FROM_EMAIL = f"no-reply@{DOMAIN}"
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 LOG_DIR = BASE_DIR / "logs"
@@ -39,6 +44,7 @@ INSTALLED_APPS = [
     # Third party
     "simple_history",
     # Local apps
+    "core",
     "usuarios",
     "departamentos",
     "programas",
@@ -95,6 +101,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "core.context_processors.estado_sistema",  # CONTEXTO GLOBAL ESTADO SISTEMA
+                "core.context_processors.estado_captura",  # CONTEXTO GLOBAL ESTADO CAPTURA
             ],
         },
     },

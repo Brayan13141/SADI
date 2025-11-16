@@ -28,7 +28,7 @@ class Meta(models.Model):
 
     def save(self, *args, **kwargs):
         # --- GENERAR CLAVE AUTOMÁTICA ---
-        if not self.clave or self.clave.strip().upper() == "AUTO":
+        if not self.clave:
             clave = self.proyecto.clave
             count = Meta.objects.filter(proyecto=self.proyecto).count() + 1
             self.clave = f"{clave}-{"META" + str(count)}"
@@ -206,33 +206,16 @@ class MetaCiclo(models.Model):
     class Meta:
         unique_together = ("meta", "ciclo")
 
-    def clean(self):
-        if self.meta and self.meta.porcentages:
-            if self.lineaBase is not None and (
-                self.lineaBase <= 0 or self.lineaBase > 100
-            ):
-                raise ValidationError(
-                    {
-                        "lineaBase": "Debe estar entre 1 y 100 si la meta usa porcentajes."
-                    }
-                )
-            if self.metaCumplir is not None and (
-                self.metaCumplir <= 0 or self.metaCumplir > 100
-            ):
-                raise ValidationError(
-                    {
-                        "metaCumplir": "Debe estar entre 1 y 100 si la meta usa porcentajes."
-                    }
-                )
-
     def save(self, *args, **kwargs):
+
         if self.meta and self.meta.porcentages:
-            divisor = Decimal("100")
-            if self.lineaBase is not None:
-                self.lineaBase = self.lineaBase / divisor
-            if self.metaCumplir is not None:
-                self.metaCumplir = self.metaCumplir / divisor
-        self.full_clean()
+
+            if self.lineaBase is not None and self.lineaBase > 1:
+                self.lineaBase = self.lineaBase / Decimal("100")
+
+            if self.metaCumplir is not None and self.metaCumplir > 1:
+                self.metaCumplir = self.metaCumplir / Decimal("100")
+
         super().save(*args, **kwargs)
 
     @property

@@ -9,8 +9,10 @@ from rest_framework import viewsets, permissions
 from departamentos.models import Departamento
 from .models import Meta, AvanceMeta, MetaComprometida, MetaCiclo
 from programas.models import Ciclo
-from django.db.models import Sum, Prefetch
+from proyectos.models import Proyecto
+from django.db.models import Sum
 from django.db import transaction
+from core.models import ConfiguracionGlobal
 from django.utils import timezone
 from django.contrib import messages
 from .serializers import (
@@ -67,21 +69,33 @@ def gestion_metas(request):
     puede_crear = usuario.role in ["ADMIN", "APOYO"]
     puede_editar = usuario.role in ["ADMIN", "APOYO"]
     puede_eliminar = usuario.role == "ADMIN"
-    editables = Meta.objects.first()
+
+    cfg = ConfiguracionGlobal.objects.first()
+    estado_captura = cfg.captura_activa if cfg else True
 
     if request.method == "POST":
         post_data = request.POST.copy()
         FormClass = MetaFormAdmin
 
-        # --- Activar/Desactivar edición ---
+        # --- Activar/Desactivar edición global ---
         if "activar_edicion" in post_data and usuario.role == "ADMIN":
-            Meta.objects.filter(activa=True).update(variableB=True)
-            messages.success(request, "Edición activada para docentes.")
+            cfg = ConfiguracionGlobal.objects.first()
+            if not cfg:
+                cfg = ConfiguracionGlobal.objects.create(captura_activa=True)
+
+            cfg.captura_activa = True
+            cfg.save(update_fields=["captura_activa"])
+            messages.success(request, "La captura global ha sido ACTIVADA.")
             return redirect("gestion_metas")
 
         elif "desactivar_edicion" in post_data and usuario.role == "ADMIN":
-            Meta.objects.update(variableB=False)
-            messages.success(request, "Edición desactivada para docentes.")
+            cfg = ConfiguracionGlobal.objects.first()
+            if not cfg:
+                cfg = ConfiguracionGlobal.objects.create(captura_activa=True)
+
+            cfg.captura_activa = False
+            cfg.save(update_fields=["captura_activa"])
+            messages.success(request, "La captura global ha sido DESACTIVADA.")
             return redirect("gestion_metas")
 
         # --- Crear meta ---
@@ -135,6 +149,14 @@ def gestion_metas(request):
 
     # --- 3. Form por rol ---
     form = MetaFormAdmin() if usuario.role in ["ADMIN", "APOYO"] else MetaFormDocente()
+    # --- 5. Generar clave sugerida (para mostrarla en el formulario de creación) ---
+    clave = None
+
+    # Solo si hay proyectos disponibles
+    proyecto = Proyecto.objects.first()
+    if proyecto:
+        count = Meta.objects.filter(proyecto=proyecto).count() + 1
+        clave = f"{proyecto.clave}-META{count}"
 
     # --- 4. Render solo con metas ---
     return render(
@@ -143,10 +165,11 @@ def gestion_metas(request):
         {
             "metas": metas,
             "form": form,
+            "estado_captura": estado_captura,
             "abrir_modal_crear": abrir_modal_crear,
             "abrir_modal_editar": abrir_modal_editar,
             "meta_editar_id": meta_editar_id,
-            "editables": editables.variableB if editables else False,
+            "clave": clave,
             "puede_crear": puede_crear,
             "puede_editar": puede_editar,
             "puede_eliminar": puede_eliminar,
@@ -405,6 +428,15 @@ def gestion_meta_avances(request, meta_id):
     puede_editar = request.user.role in ["ADMIN", "APOYO", "DOCENTE"]
     puede_eliminar = request.user.role == "ADMIN"
 
+    config = ConfiguracionGlobal.objects.first()
+    captura_activa = config.captura_activa if config else True
+
+    if not captura_activa:
+        if request.user.role == "DOCENTE":
+            puede_crear = False
+            puede_editar = False
+            puede_eliminar = False
+
     if request.method == "POST":
         if "crear_avance" in request.POST and puede_crear:
             avance_form = AvanceMetaForm(request.POST, meta=meta, user=request.user)
@@ -444,8 +476,17 @@ def gestion_meta_avances(request, meta_id):
             avance.delete()
             messages.success(request, "Avance eliminado correctamente.")
             return redirect("gestion_meta_avances", meta_id=meta.id)
+
         else:
-            messages.error(request, "No tienes permiso para realizar esta acción.")
+            # Si la captura está DESACTIVADA
+            if not captura_activa:
+                messages.error(
+                    request,
+                    "El sistema está cerrado. No es posible capturar ni modificar "
+                    "información hasta que un administrador lo active.",
+                )
+            else:
+                messages.error(request, "No tienes permiso para realizar esta acción.")
 
     return render(
         request,
@@ -461,7 +502,7 @@ def gestion_meta_avances(request, meta_id):
     )
 
 
-@role_required("ADMIN", "APOYO", "DOCENTE")
+@role_required("ADMIN", "APOYO")
 def gestion_meta_comprometida(request, meta_id):
     meta = get_object_or_404(Meta, id=meta_id)
     comprometidas = MetaComprometida.objects.filter(meta=meta).select_related("ciclo")
@@ -714,16 +755,22 @@ def TablaSeguimiento(request):
 # ==========================ASIGNACION DE METAS=========================
 @role_required("ADMIN", "APOYO", "DOCENTE")
 def asignar_ciclo_meta(request, meta_id):
-    """
-    Vista para asignar los valores de la linea base y meta a cumplir a ciclos específicos.
-    """
     meta = get_object_or_404(Meta, id=meta_id)
     es_docente = request.user.role == "DOCENTE"
+
+    # Configuración para deshabilitar captura a docentes
+    puede_editar = True
+    config = ConfiguracionGlobal.objects.first()
+    captura_activa = config.captura_activa if config else True
+    if not captura_activa and es_docente:
+        puede_editar = False
 
     if request.method == "POST":
         print("POST data:", request.POST)
 
-        # Manejo de eliminación de ciclo
+        # ============================================================
+        #         ELIMINAR CICLO
+        # ============================================================
         if "eliminar_ciclo" in request.POST:
             meta_ciclo_id = request.POST.get("meta_ciclo_id")
             if meta_ciclo_id:
@@ -737,60 +784,87 @@ def asignar_ciclo_meta(request, meta_id):
                     messages.error(request, f"Error al eliminar el ciclo: {str(e)}")
             return redirect("asignar_ciclo_meta", meta_id=meta.id)
 
-        form = AsignarCicloMetaForm(request.POST, user=request.user, meta=meta)
+        # ============================================================
+        #         CREAR / EDITAR CICLO
+        # ============================================================
+        meta_ciclo_id = request.POST.get("meta_ciclo_id")
+
+        if es_docente:
+            # DOCENTE -> sin instance, porque no debe tocar ciclo/lineaBase
+            form = AsignarCicloMetaForm(request.POST, user=request.user, meta=meta)
+        else:
+            # ADMIN / APOYO -> usa instance si aplica
+            if meta_ciclo_id:
+                meta_ciclo_inst = get_object_or_404(
+                    MetaCiclo, id=meta_ciclo_id, meta=meta
+                )
+                form = AsignarCicloMetaForm(
+                    request.POST, instance=meta_ciclo_inst, user=request.user, meta=meta
+                )
+            else:
+                form = AsignarCicloMetaForm(request.POST, user=request.user, meta=meta)
 
         if form.is_valid():
-            meta_ciclo_id = request.POST.get("meta_ciclo_id")
-            meta_cumplir = form.cleaned_data.get("meta_cumplir")
-            linea_base = form.cleaned_data.get("linea_base")
-            ciclo = form.cleaned_data.get("ciclo")
 
-            if es_docente:
+            # ============================================================
+            #        DOCENTE — SOLO EDITA metaCumplir
+            # ============================================================
+            if es_docente and puede_editar:
                 if meta_ciclo_id:
                     mc = get_object_or_404(MetaCiclo, id=meta_ciclo_id, meta=meta)
+
+                    meta_cumplir = form.cleaned_data.get("metaCumplir")
+
+                    # Guardar ÚNICAMENTE metaCumplir
                     mc.metaCumplir = meta_cumplir
                     mc.save()
+
                     messages.success(request, "Meta actualizada correctamente.")
-                else:
-                    messages.error(request, "No puedes crear un nuevo ciclo.")
-                return redirect("asignar_ciclo_meta", meta_id=meta.id)
-
-            else:  # ADMIN o APOYO
-                if meta_ciclo_id:
-                    # EDITAR registro existente
-                    mc = get_object_or_404(MetaCiclo, id=meta_ciclo_id, meta=meta)
-                    mc.ciclo = ciclo
-                    mc.lineaBase = linea_base
-                    mc.metaCumplir = meta_cumplir
-                    mc.save()
-                    messages.success(request, "Ciclo actualizado correctamente.")
-                else:
-                    # CREAR nuevo registro - VERIFICAR DUPLICADO
-                    if MetaCiclo.objects.filter(meta=meta, ciclo=ciclo).exists():
-                        messages.warning(
-                            request,
-                            "Ya existe un ciclo asignado para esta meta y ciclo.",
-                        )
-                    else:
-                        MetaCiclo.objects.create(
-                            meta=meta,
-                            ciclo=ciclo,
-                            lineaBase=linea_base,
-                            metaCumplir=meta_cumplir,
-                        )
-                        messages.success(request, "Ciclo asignado correctamente.")
 
                 return redirect("asignar_ciclo_meta", meta_id=meta.id)
+
+            # ============================================================
+            #        ADMIN / APOYO — EDITAN TODO
+            # ============================================================
+            ciclo = form.cleaned_data.get("ciclo")
+            linea_base = form.cleaned_data.get("lineaBase")
+            meta_cumplir = form.cleaned_data.get("metaCumplir")
+
+            if meta_ciclo_id:
+                # EDITAR
+                mc = get_object_or_404(MetaCiclo, id=meta_ciclo_id, meta=meta)
+                mc.ciclo = ciclo
+                mc.lineaBase = linea_base
+                mc.metaCumplir = meta_cumplir
+                mc.save()
+                messages.success(request, "Ciclo actualizado correctamente.")
+            else:
+                # CREAR — verificar duplicados
+                if MetaCiclo.objects.filter(meta=meta, ciclo=ciclo).exists():
+                    messages.warning(
+                        request, "Ya existe un ciclo asignado para esta meta y ciclo."
+                    )
+                else:
+                    MetaCiclo.objects.create(
+                        meta=meta,
+                        ciclo=ciclo,
+                        lineaBase=linea_base,
+                        metaCumplir=meta_cumplir,
+                    )
+                    messages.success(request, "Ciclo asignado correctamente.")
+            return redirect("asignar_ciclo_meta", meta_id=meta.id)
 
         else:
-            # MANEJO MEJORADO DE ERRORES - Mostrar solo los mensajes sin prefijos
-            for error in form.errors.values():
-                messages.error(request, error)
+            messages.error(
+                request, "Errores en el formulario: " + form.errors.as_text()
+            )
 
     else:
+        # GET
         form = AsignarCicloMetaForm(user=request.user, meta=meta)
 
     metas_ciclo = MetaCiclo.objects.filter(meta=meta)
+
     return render(
         request,
         "metas/asignar_ciclo_meta.html",
@@ -799,6 +873,7 @@ def asignar_ciclo_meta(request, meta_id):
             "form": form,
             "metas_ciclo": metas_ciclo,
             "es_docente": es_docente,
+            "puede_editar": puede_editar,
         },
     )
 

@@ -17,6 +17,7 @@ class ActividadForm(forms.ModelForm):
             "departamento",
             "meta",
             "responsable",
+            "editable",
         ]
         widgets = {
             "estado": forms.Select(attrs={"class": "form-select", "required": True}),
@@ -46,21 +47,12 @@ class ActividadForm(forms.ModelForm):
             "responsable": forms.Select(
                 attrs={"class": "form-select", "required": True}
             ),
+            "editable": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
-
-        if user and user.role == "DOCENTE":
-            hoy = timezone.now().date()
-            self.fields["fecha_inicio"].widget.attrs.update(
-                {
-                    "min": hoy.strftime("%Y-%m-%d"),
-                    "value": hoy.strftime("%Y-%m-%d"),
-                }
-            )
-            self.fields["fecha_inicio"].initial = hoy
 
         if user:
             if user.role == "DOCENTE":
@@ -82,14 +74,6 @@ class ActividadForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        fecha_inicio = cleaned_data.get("fecha_inicio")
-        fecha_fin = cleaned_data.get("fecha_fin")
-
-        if fecha_inicio and fecha_fin:
-            if fecha_fin <= fecha_inicio:
-                self.add_error(
-                    "fecha_fin", "La fecha fin debe ser posterior a la fecha inicio"
-                )
 
         return cleaned_data
 
