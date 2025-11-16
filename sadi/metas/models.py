@@ -207,13 +207,15 @@ class MetaCiclo(models.Model):
         unique_together = ("meta", "ciclo")
 
     def save(self, *args, **kwargs):
+
         if self.meta and self.meta.porcentages:
-            divisor = Decimal("100")
-            if self.lineaBase is not None:
-                self.lineaBase = self.lineaBase / divisor
-            if self.metaCumplir is not None:
-                self.metaCumplir = self.metaCumplir / divisor
-        self.full_clean()
+
+            if self.lineaBase is not None and self.lineaBase > 1:
+                self.lineaBase = self.lineaBase / Decimal("100")
+
+            if self.metaCumplir is not None and self.metaCumplir > 1:
+                self.metaCumplir = self.metaCumplir / Decimal("100")
+
         super().save(*args, **kwargs)
 
     @property
