@@ -57,27 +57,30 @@
         <h6 class="mb-0">Gestión de Metas</h6>
         <div class="d-flex align-items-center">
           <div class="me-2">
-            {% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
+          {% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
             <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#modalCrear">
                 + Agregar Meta
             </button>
             
-            <form method="post" class="d-inline">
-                {% csrf_token %}
-                {% if editables == False %}
-                     <button type="button" class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#confirmarActivar">
-                        Activar edición para usuarios
-                    </button>
-                {% else %}
-                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#confirmarDesactivar">
-                        Desactivar edición para usuarios
-                    </button>
-                {% endif %}
-            </form>
+            {% if request.user.role == "ADMIN" %}
+               {% if estado_captura %}
+                        <button class="btn btn-sm btn-danger"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalDesactivar">
+                            Desactivar captura
+                        </button>
+                    {% else %}
+                        <button class="btn btn-sm btn-light"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalActivar">
+                            Activar captura
+                        </button>
+                    {% endif %}
+            {% endif %}
             <a href="{% url 'activar_metas' %}" class="btn btn-sm btn-light text-black">
               Activar Metas
             </a>
-            {% endif %}
+          {% endif %}
           </div>
         </div>
       </div>
@@ -96,7 +99,9 @@
                           {% if request.user.role == "ADMIN" or request.user.role == "APOYO"%}
                           <th>Acciones Meta</th>
                           {% endif %}
+                          {% if estado_captura %}
                           <th>Derivados Meta</th>
+                          {% endif %}
                       </tr>
                   </thead>
                  <tbody>
@@ -157,10 +162,12 @@
                     </td>
                     {% endif %}
                     <!-- Derivados -->
+                     {% if estado_captura %}
                     <td class="text-center text-wrap">
                       <a href="{% url 'gestion_meta_avances' meta.id %}" class="btn btn-sm btn-outline-info">Avances</a>
                       <a href="{% url 'asignar_ciclo_meta' meta.id %}" class="btn btn-sm btn-outline">Asignar {% if request.user.role == "ADMIN" or request.user.role == "APOYO" %} ciclo {% else %} valores {% endif %}</a>
                     </td> 
+                    {% endif %}
                 </tr>
                 
                 {% if request.user.role == "ADMIN" %}
@@ -414,50 +421,60 @@
 </div>
 
 <!-- Modal Confirmar Activar -->
-<div class="modal fade" id="confirmarActivar" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-success">
-      <div class="modal-header bg-success text-white">
-        <h5 class="modal-title">Confirmar activación</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        ¿Estás seguro de que deseas <strong>activar la edición</strong> para todos los docentes?
-      </div>
-      <div class="modal-footer">
-        <form method="post">
-          {% csrf_token %}
-          <input type="hidden" name="activar_edicion" value="1">
-          <button type="submit" class="btn btn-success">Sí, activar</button>
+<div class="modal fade" id="modalActivar" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="activar_edicion" value="1">
+
+        <div class="modal-header">
+          <h5 class="modal-title">Activar captura</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          ¿Deseas abrir la captura de metas, avances y actividades?
+          <br><strong>Todos los usuarios con permisos podrán modificar.</strong>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-primary" type="submit">Sí, activar</button>
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        </form>
-      </div>
+        </div>
+      </form>
     </div>
   </div>
 </div>
 
+
 <!-- Modal Confirmar Desactivar -->
-<div class="modal fade" id="confirmarDesactivar" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-danger">
-      <div class="modal-header bg-danger text-white">
-        <h5 class="modal-title">Confirmar desactivación</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        ¿Estás seguro de que deseas <strong>desactivar la edición</strong> para todos los docentes?
-      </div>
-      <div class="modal-footer">
-        <form method="post">
-          {% csrf_token %}
-          <input type="hidden" name="desactivar_edicion" value="1">
-          <button type="submit" class="btn btn-danger">Sí, desactivar</button>
+<div class="modal fade" id="modalDesactivar" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="desactivar_edicion" value="1">
+
+        <div class="modal-header">
+          <h5 class="modal-title">Desactivar captura</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          ¿Seguro que deseas cerrar la captura de metas y actividades?
+          <br><strong>Nadie podrá editar, agregar ni eliminar.</strong>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-danger" type="submit">Sí, desactivar</button>
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        </form>
-      </div>
+        </div>
+      </form>
     </div>
   </div>
 </div>
+
 
 {% endif %}
 {% endblock %}
