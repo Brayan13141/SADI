@@ -24,7 +24,6 @@ def gestion_usuarios(request):
                 return redirect("gestion_usuarios")
             else:
                 abrir_modal_crear = True
-                print(form.errors)
                 messages.error(
                     request,
                     form.errors,
@@ -42,7 +41,8 @@ def gestion_usuarios(request):
                 return redirect("gestion_usuarios")
             else:
                 messages.error(
-                    request, "Error al editar el usuario. Revisa los campos."
+                    request,
+                    form.errors,
                 )
 
     return render(
