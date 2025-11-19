@@ -18,13 +18,18 @@
             <div class="row align-items-center">
                 <div class="col-md-8">
                     <h2 class="card-title text-primary mb-1">
-                        <i class="fas fa-user-graduate me-2"></i>{{ departamento }}
+                        <i class="fas fa-user-graduate me-2"></i>Reporte del Docente - {{ departamento.nombre }}
                     </h2>
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-calendar me-1"></i>Ciclo: {{ ciclo_actual.nombre }}
+                    </p>
                 </div>
                 <div class="col-md-4 text-md-end">
+                    {% if metas %}
                     <a href="?exportar=1" class="btn btn-success">
                         <i class="fas fa-file-excel me-1"></i> Exportar a Excel
                     </a>
+                    {% endif %}
                 </div>
             </div>
             <hr>
@@ -36,7 +41,7 @@
         <!-- RESUMEN EJECUTIVO -->
         <div class="col-lg-8">
             <div class="card h-100">
-                <div class="card-header bg-primary text-white">
+                <div class="card-header bg-{{ resumen.color_estado }} text-white">
                     <h6 class="card-title mb-0">
                         <i class="fas fa-chart-line me-1"></i>Resumen Ejecutivo
                     </h6>
@@ -44,24 +49,33 @@
                 <div class="card-body">
                     <div class="row align-items-center h-100">
                         <div class="col-md-3 text-center mb-3 mb-md-0">
-                            <div class="display-4">
-                                {% if resumen.estado_general == "🟢 Excelente desempeño" or resumen.estado_general == "🟢 Buen desempeño" %}
-                                    <i class="fas fa-check-circle text-success"></i>
-                                {% elif resumen.estado_general == "🟡 En riesgo" %}
-                                    <i class="fas fa-exclamation-triangle text-warning"></i>
-                                {% elif resumen.estado_general == "🔴 Crítico" %}
-                                    <i class="fas fa-times-circle text-danger"></i>
+                            <div class="display-4 text-{{ resumen.color_estado }}">
+                                {% if resumen.color_estado == "success" %}
+                                    <i class="fas fa-check-circle"></i>
+                                {% elif resumen.color_estado == "warning" %}
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                {% elif resumen.color_estado == "danger" %}
+                                    <i class="fas fa-times-circle"></i>
+                                {% elif resumen.color_estado == "info" %}
+                                    <i class="fas fa-chart-line"></i>
                                 {% else %}
-                                    <i class="fas fa-info-circle text-secondary"></i>
+                                    <i class="fas fa-info-circle"></i>
                                 {% endif %}
                             </div>
-                            <h5 class="mt-2">{{ resumen.estado_general }}</h5>
+                            <h5 class="mt-2 text-{{ resumen.color_estado }}">{{ resumen.estado_general }}</h5>
                         </div>
                         <div class="col-md-9">
                             <div class="border-start ps-3">
-                                <p class="mb-2"><strong>Logros principales:</strong> {{ resumen.logros_principales }}</p>
-                                <p class="mb-2"><strong>Problemas críticos:</strong> {{ resumen.problemas_criticos }}</p>
-                                <p class="mb-0"><strong>Recomendación:</strong> {{ resumen.recomendacion }}</p>
+                                <p class="mb-2">
+                                    <strong>Progreso General:</strong> 
+                                    {{ resumen.metas_cumplidas }} de {{ resumen.total_metas }} metas cumplidas ({{ resumen.porcentaje_cumplimiento }}%)
+                                </p>
+                                <p class="mb-2">
+                                    <strong>Metas en Progreso:</strong> {{ resumen.metas_en_progreso }}
+                                </p>
+                                <p class="mb-0">
+                                    <strong>Metas Rezagadas:</strong> {{ resumen.metas_rezagadas }}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -80,7 +94,7 @@
                         <div class="col-6 mb-3">
                             <div class="card border-primary">
                                 <div class="card-body py-2">
-                                    <h4 class="card-title text-primary mb-0">{{ total_metas }}</h4>
+                                    <h4 class="card-title text-primary mb-0">{{ resumen.total_metas }}</h4>
                                     <small class="text-muted">Total Metas</small>
                                 </div>
                             </div>
@@ -88,7 +102,7 @@
                         <div class="col-6 mb-3">
                             <div class="card border-success">
                                 <div class="card-body py-2">
-                                    <h4 class="card-title text-success mb-0">{{ metas_cumplidas }}</h4>
+                                    <h4 class="card-title text-success mb-0">{{ resumen.metas_cumplidas }}</h4>
                                     <small class="text-muted">Cumplidas</small>
                                 </div>
                             </div>
@@ -96,7 +110,7 @@
                         <div class="col-6">
                             <div class="card border-warning">
                                 <div class="card-body py-2">
-                                    <h4 class="card-title text-warning mb-0">{{ metas_en_progreso }}</h4>
+                                    <h4 class="card-title text-warning mb-0">{{ resumen.metas_en_progreso }}</h4>
                                     <small class="text-muted">En Progreso</small>
                                 </div>
                             </div>
@@ -104,7 +118,7 @@
                         <div class="col-6">
                             <div class="card border-danger">
                                 <div class="card-body py-2">
-                                    <h4 class="card-title text-danger mb-0">{{ metas_rezagadas }}</h4>
+                                    <h4 class="card-title text-danger mb-0">{{ resumen.metas_rezagadas }}</h4>
                                     <small class="text-muted">Rezagadas</small>
                                 </div>
                             </div>
@@ -120,23 +134,24 @@
         <div class="card-header bg-light d-flex justify-content-between align-items-center">
             <h6 class="card-title mb-0">
                 <i class="fas fa-list-check me-1"></i>Detalle de Metas Asignadas
-                <span class="badge bg-primary ms-2">{{ total_metas }}</span>
+                <span class="badge bg-primary ms-2">{{ resumen.total_metas }}</span>
             </h6>
             <small class="text-muted">Haz clic en cada meta para ver detalles</small>
         </div>
         <div class="card-body p-0">
             {% if metas %}
             <div class="row g-0">
-                {% for meta in metas %}
+             {% for meta in metas|dictsort:"clave" %}
                 <div class="col-12 border-bottom">
                     <div class="p-4">
                         <!-- HEADER DE LA META -->
                         <div class="row align-items-center mb-3">
                             <div class="col-md-8">
-                                <h5 class="card-title text-primary mb-1">{{ meta.meta|default:meta.clave }}</h5>
+                                <h5 class="card-title text-primary mb-1">{{ meta.nombre|default:meta.clave }}</h5>
                                 <p class="text-muted mb-0 small">
                                     <strong>Proyecto:</strong> {{ meta.proyecto }} | 
-                                    <strong>Clave:</strong> {{ meta.clave }}
+                                    <strong>Clave:</strong> {{ meta.clave }} |
+                                    <strong>Categoría:</strong> {{ meta.categoria }}
                                 </p>
                             </div>
                             <div class="col-md-4 text-md-end">
@@ -155,58 +170,91 @@
 
                         <!-- INFORMACIÓN DETALLADA -->
                         <div class="row">
-                            <div class="col-lg-6">
+                            <!-- Columna 1: Información de la Meta -->
+                            <div class="col-lg-4">
                                 <div class="card bg-light h-100">
                                     <div class="card-body">
                                         <h6 class="card-title"><i class="fas fa-info-circle me-1"></i>Información de la Meta</h6>
-                                        <div class="row small">
-                                            <div class="col-12 mb-2">
-                                                <strong>Objetivo:</strong><br>
-                                                <span class="text-muted">{{ meta.objetivo|truncatewords:15 }}</span>
-                                            </div>
-                                            <div class="col-12 mb-2">
+                                        <div class="small">
+                                            <div class="mb-2">
                                                 <strong>Indicador:</strong><br>
-                                                <span class="text-muted">{{ meta.indicador|truncatewords:10 }}</span>
+                                                <span class="text-muted">{{ meta.indicador|truncatewords:15 }}</span>
                                             </div>
-                                            <div class="col-6">
-                                                <strong>Meta a Cumplir:</strong><br>
-                                                {{ meta.meta_a_cumplir|default:"N/A" }}
-                                            </div>
-                                            <div class="col-6">
-                                                <strong>Acumulado:</strong><br>
-                                                {{ meta.acumulado|default:"N/A" }}
-                                            </div>
-                                            <div class="col-12 mt-2">
-                                                <strong>Progreso General:</strong><br>
-                                                {{ meta.cumplimiento }}%
+                                            <div class="row">
+                                                <div class="col-6">
+                                                    <strong>Línea Base:</strong><br>
+                                                    {{ meta.linea_base|default:"N/A" }}
+                                                </div>
+                                                <div class="col-6">
+                                                    <strong>Meta a Cumplir:</strong><br>
+                                                    {{ meta.meta_cumplir|default:"N/A" }}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             
-                            <div class="col-lg-6 mt-3 mt-lg-0">
+                            <!-- Columna 2: Avance de la Meta -->
+                            <div class="col-lg-4 mt-3 mt-lg-0">
                                 <div class="card bg-light h-100">
                                     <div class="card-body">
-                                        <h6 class="card-title"><i class="fas fa-chart-bar me-1"></i>Progreso de Actividades</h6>
+                                        <h6 class="card-title"><i class="fas fa-chart-line me-1"></i>Avance de la Meta</h6>
                                         <div class="text-center">
-                                            <!-- Barra de progreso -->
-                                            <div class="progress mb-2" style="height: 25px;">
+                                            <div class="mb-3">
+                                                <strong class="d-block">Avance Real:</strong>
+                                                <span class="h5 text-primary">{{ meta.avance_real }}</span>
+                                            </div>
+                                            <!-- Barra de progreso del avance -->
+                                            <div class="progress mb-2" style="height: 20px;">
                                                 <div class="progress-bar 
-                                                    {% if meta.estado == 'Cumplida' %}bg-success
-                                                    {% elif meta.estado == 'En progreso' %}bg-warning
+                                                    {% if meta.porcentaje_avance >= 100 %}bg-success
+                                                    {% elif meta.porcentaje_avance > 0 %}bg-warning
                                                     {% else %}bg-danger{% endif %}" 
                                                     role="progressbar" 
-                                                    style="width: {{ meta.cumplimiento }}%" 
-                                                    aria-valuenow="{{ meta.cumplimiento }}" 
+                                                    style="width: {{ meta.porcentaje_avance }}%" 
+                                                    aria-valuenow="{{ meta.porcentaje_avance }}" 
                                                     aria-valuemin="0" 
                                                     aria-valuemax="100">
-                                                    {{ meta.cumplimiento }}%
+                                                    {{ meta.porcentaje_avance }}%
+                                                </div>
+                                            </div>
+                                            <small class="text-muted">
+                                                Progreso basado en avances registrados
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Columna 3: Progreso de Actividades -->
+                            <div class="col-lg-4 mt-3 mt-lg-0">
+                                <div class="card bg-light h-100">
+                                    <div class="card-body">
+                                        <h6 class="card-title"><i class="fas fa-tasks me-1"></i>Progreso de Actividades</h6>
+                                        <div class="text-center">
+                                            <!-- Barra de progreso de actividades -->
+                                            <div class="progress mb-2" style="height: 20px;">
+                                                <div class="progress-bar 
+                                                    {% if meta.cumplimiento_actividades >= 100 %}bg-success
+                                                    {% elif meta.cumplimiento_actividades > 0 %}bg-info
+                                                    {% else %}bg-secondary{% endif %}" 
+                                                    role="progressbar" 
+                                                    style="width: {{ meta.cumplimiento_actividades }}%" 
+                                                    aria-valuenow="{{ meta.cumplimiento_actividades }}" 
+                                                    aria-valuemin="0" 
+                                                    aria-valuemax="100">
+                                                    {{ meta.cumplimiento_actividades }}%
                                                 </div>
                                             </div>
                                             <small class="text-muted">
                                                 {{ meta.actividades_cumplidas }} de {{ meta.total_actividades }} actividades cumplidas
                                             </small>
+                                            <div class="mt-2">
+                                                <small>
+                                                    <strong>Restante:</strong> {{ meta.restante_actividades }}%
+                                                </small>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -251,15 +299,19 @@
                                                         <td>
                                                             <span class="badge 
                                                                 {% if actividad.estado == 'Cumplida' %}bg-success
-                                                                {% elif actividad.estado == 'En Proceso' %}bg-warning text-dark
+                                                                {% elif actividad.estado == 'En Proceso' or actividad.estado == 'En progreso' %}bg-warning text-dark
                                                                 {% elif actividad.estado == 'Activa' %}bg-info
-                                                                {% else %}bg-danger{% endif %} small">
+                                                                {% else %}bg-secondary{% endif %} small">
                                                                 {{ actividad.estado }}
                                                             </span>
                                                         </td>
                                                         <td class="text-nowrap small">
-                                                            <div>{{ actividad.fecha_inicio|date:"d/m/Y" }}</div>
-                                                            <div class="text-muted">al {{ actividad.fecha_fin|date:"d/m/Y" }}</div>
+                                                            {% if actividad.fecha_inicio and actividad.fecha_fin %}
+                                                                <div>{{ actividad.fecha_inicio }}</div>
+                                                                <div class="text-muted">al {{ actividad.fecha_fin }}</div>
+                                                            {% else %}
+                                                                <span class="text-muted">Sin fechas</span>
+                                                            {% endif %}
                                                         </td>
                                                         <td class="small">{{ actividad.responsable }}</td>
                                                     </tr>
@@ -285,7 +337,7 @@
             <div class="text-center py-5 text-muted">
                 <i class="fas fa-search fa-3x mb-3"></i>
                 <h5>No se encontraron metas asignadas</h5>
-                <p class="mb-0">No tienes metas registradas en este momento</p>
+                <p class="mb-0">No tienes metas registradas para el ciclo {{ ciclo_actual.nombre }}</p>
             </div>
             {% endif %}
         </div>
@@ -355,6 +407,7 @@ document.addEventListener("DOMContentLoaded", function() {
 }
 .progress-bar {
     font-weight: 600;
+    font-size: 0.8rem;
 }
 .border-start {
     border-left: 3px solid #e9ecef !important;

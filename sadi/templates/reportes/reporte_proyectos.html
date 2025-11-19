@@ -27,6 +27,11 @@
     .bg-orange {
         background-color: #fd7e14 !important;
     }
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
 </style>
 {% endblock %}
 
@@ -40,17 +45,10 @@
         </a>
     </div>
 
-    <!-- ENCABEZADO Y BOTÓN EXPORTAR -->
+    <!-- ENCABEZADO -->
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-2">
         <h2 class="fw-bold text-primary mb-0">Reporte de Proyectos y Metas</h2>
 
-        {% if hay_datos %}
-        <form method="get" action="">
-            <button type="submit" name="exportar" value="1" class="btn btn-success shadow-sm">
-                <i class="fas fa-file-excel me-1"></i> Exportar a Excel
-            </button>
-        </form>
-        {% endif %}
     </div>
 
     <!-- === RESUMEN GENERAL === -->
@@ -59,7 +57,7 @@
             <div class="card bg-success text-white">
                 <div class="card-body">
                     <h5>Proyectos Cumplidos</h5>
-                    <h3>{{ total_cumplidas }}</h3>
+                    <h3>{{ proyectos_cumplidos }}</h3>
                 </div>
             </div>
         </div>
@@ -67,7 +65,7 @@
             <div class="card bg-warning text-dark">
                 <div class="card-body">
                     <h5>En Progreso</h5>
-                    <h3>{{ total_en_progreso }}</h3>
+                    <h3>{{ proyectos_en_progreso }}</h3>
                 </div>
             </div>
         </div>
@@ -75,17 +73,36 @@
             <div class="card bg-danger text-white">
                 <div class="card-body">
                     <h5>Rezagados</h5>
-                    <h3>{{ total_rezagadas }}</h3>
+                    <h3>{{ proyectos_rezagados }}</h3>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- === GRÁFICO === -->
-    <div class="card mb-4">
-        <div class="card-body text-center">
-            <h5 class="text-center mb-4">Distribución de Metas por Proyecto</h5>
-            <canvas id="chartProyectos"></canvas>
+    <!-- === GRÁFICOS === -->
+    <div class="row">
+        <!-- Gráfico de PROYECTOS por Estado -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-body text-center">
+                    <h5 class="text-center mb-4">Estado de los Proyectos</h5>
+                    <div class="chart-container">
+                        <canvas id="chartProyectosEstado"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gráfico de METAS por Proyecto -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-body text-center">
+                    <h5 class="text-center mb-4">Distribución de Metas por Proyecto</h5>
+                    <div class="chart-container">
+                        <canvas id="chartMetasProyecto"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -100,21 +117,35 @@
                             <th>Proyecto</th>
                             <th>Clave Meta</th>
                             <th>Nombre Meta</th>
-                            <th>Total Actividades</th>
-                            <th>Estado</th>
+                            <th>Meta Target</th>
+                            <th>Avance Real</th>
+                            <th>% Avance</th>
+                            <th>Estado Meta</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for p in data %}
                             {% for m in p.metas %}
                                 <tr>
-                                    <td>{{ p.proyecto }}</td>
+                                    <td><strong>{{ p.proyecto }}</strong></td>
                                     <td>{{ m.clave }}</td>
                                     <td class="text-start">{{ m.nombre }}</td>
-                                    <td>{{ m.total_actividades }}</td>
+                                    <td>{{ m.meta_target }}</td>
+                                    <td>{{ m.avance_real }}</td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar 
+                                                {% if m.porcentaje_real >= 100 %}bg-success
+                                                {% elif m.porcentaje_real > 0 %}bg-warning
+                                                {% else %}bg-danger{% endif %}" 
+                                                style="width: {{ m.porcentaje_real }}%">
+                                                {{ m.porcentaje_real }}%
+                                            </div>
+                                        </div>
+                                    </td>
                                     <td>
                                         {% if m.estado == "Cumplida" %}
-                                            <span class="badge bg-success">Cumplido</span>
+                                            <span class="badge bg-success">Cumplida</span>
                                         {% elif m.estado == "En progreso" %}
                                             <span class="badge bg-warning text-dark">En progreso</span>
                                         {% else %}
@@ -125,7 +156,7 @@
                             {% endfor %}
                         {% empty %}
                             <tr>
-                                <td colspan="5" class="text-center text-muted py-4">
+                                <td colspan="8" class="text-center text-muted py-4">
                                     <i class="fas fa-info-circle fa-2x mb-2"></i><br>
                                     No hay proyectos o metas registradas.
                                 </td>
@@ -144,37 +175,111 @@
 <script>
 document.addEventListener("DOMContentLoaded", function() {
     {% if hay_datos %}
+    // Configuración de DataTable
     $('#tablaProyectos').DataTable({
         lengthMenu: [5, 10, 20, 50],
-        pageLength: 5,
+        pageLength: 10,
         language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' }
     });
-    {% endif %}
 
-    // === Gráfico de barras ===
-    const ctx = document.getElementById("chartProyectos");
-    new Chart(ctx, {
+    // === GRÁFICO 1: Estado de Proyectos (Torta) ===
+    const ctxProyectos = document.getElementById("chartProyectosEstado");
+    new Chart(ctxProyectos, {
+        type: "doughnut",
+        data: {
+            labels: {{ labels_estados|safe }},
+            datasets: [{
+                data: {{ valores_estados|safe }},
+                backgroundColor: [
+                    "rgba(40, 167, 69, 0.8)",    // Verde - Cumplido
+                    "rgba(255, 193, 7, 0.8)",    // Amarillo - En progreso
+                    "rgba(220, 53, 69, 0.8)"     // Rojo - Rezago
+                ],
+                borderColor: [
+                    "rgba(40, 167, 69, 1)",
+                    "rgba(255, 193, 7, 1)", 
+                    "rgba(220, 53, 69, 1)"
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { 
+                    position: 'bottom',
+                    labels: { font: { size: 14 } }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = Math.round((value / total) * 100);
+                            return `${label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // === GRÁFICO 2: Metas por Proyecto (Barras) ===
+    const ctxMetas = document.getElementById("chartMetasProyecto");
+    new Chart(ctxMetas, {
         type: "bar",
         data: {
             labels: {{ nombres_proyectos|safe }},
             datasets: [
-                { label: "Cumplidos", data: {{ cumplidas|safe }}, backgroundColor: "rgba(40, 167, 69, 0.7)" },
-                { label: "En Progreso", data: {{ en_progreso|safe }}, backgroundColor: "rgba(255, 193, 7, 0.7)" },
-                { label: "Rezagados", data: {{ rezagadas|safe }}, backgroundColor: "rgba(220, 53, 69, 0.7)" },
+                { 
+                    label: "Metas Cumplidas", 
+                    data: {{ cumplidas|safe }}, 
+                    backgroundColor: "rgba(40, 167, 69, 0.7)",
+                    borderColor: "rgba(40, 167, 69, 1)",
+                    borderWidth: 1
+                },
+                { 
+                    label: "Metas en Progreso", 
+                    data: {{ en_progreso|safe }}, 
+                    backgroundColor: "rgba(255, 193, 7, 0.7)",
+                    borderColor: "rgba(255, 193, 7, 1)",
+                    borderWidth: 1
+                },
+                { 
+                    label: "Metas Rezagadas", 
+                    data: {{ rezagadas|safe }}, 
+                    backgroundColor: "rgba(220, 53, 69, 0.7)",
+                    borderColor: "rgba(220, 53, 69, 1)",
+                    borderWidth: 1
+                }
             ],
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             scales: {
-                x: { title: { display: true, text: "Proyectos" } },
-                y: { title: { display: true, text: "Cantidad de Metas" }, beginAtZero: true }
+                x: { 
+                    title: { display: true, text: "Proyectos" },
+                    ticks: { maxRotation: 45 }
+                },
+                y: { 
+                    title: { display: true, text: "Cantidad de Metas" }, 
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 }
+                }
             },
             plugins: {
                 legend: { position: "bottom" },
-                tooltip: { enabled: true }
+                tooltip: { 
+                    mode: 'index', 
+                    intersect: false 
+                }
             }
         }
     });
+    {% endif %}
 });
 </script>
 {% endblock %}
