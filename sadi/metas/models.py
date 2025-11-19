@@ -127,6 +127,7 @@ class AvanceMeta(models.Model):
         return f"Avance de {self.metaCumplir.clave if self.metaCumplir else 'Meta sin asignar'}"
 
 
+# YA NO SON NECESARIAS POR QUE LA META COMPROMEDITA POR CICLO ESTA EN MetaCiclo
 class MetaComprometida(models.Model):
     valor = models.DecimalField(max_digits=11, decimal_places=4, blank=True, null=True)
     meta = models.ForeignKey(Meta, on_delete=models.RESTRICT, blank=True, null=True)

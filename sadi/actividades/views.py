@@ -174,8 +174,6 @@ def gestion_actividades(request):
                     actividad.save(update_fields=["estado", "editable"])
                     messages.success(request, "Actividad finalizada.")
                 else:
-                    # Si no se marcó finalizar, la actividad sigue activa
-                    actividad.estado = "Activa"
                     actividad.editable = True
                     actividad.save(update_fields=["estado", "editable"])
 

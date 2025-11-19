@@ -24,6 +24,7 @@
 </div>
 
 <div class="container py-4">
+
     <h2 class="mb-4 text-center">📊 Reporte de Avances de Metas</h2>
 
     <!-- 🔍 Filtro por Departamento -->
@@ -38,9 +39,11 @@
                     </option>
                 {% endfor %}
             </select>
+
             <button type="submit" class="btn btn-primary">
                 <i class="fa-solid fa-filter"></i> Filtrar
             </button>
+
             <a href="?exportar=1{% if departamento_seleccionado %}&departamento={{ departamento_seleccionado }}{% endif %}" 
                class="btn btn-success">
                 <i class="fa-solid fa-file-excel"></i> Exportar a Excel
@@ -48,44 +51,62 @@
         </div>
     </form>
 
-    <!-- 📋 Tabla de Avances -->
+    <!-- 📋 TABLA -->
     <div class="table-responsive">
         <table id="reporteAvances" class="table table-hover align-middle">
             <thead>
                 <tr class="text-nowrap">
                     <th>Departamento</th>
-                    <th>Meta</th>
                     <th>Proyecto</th>
-                    <th>Ciclo</th>
-                    <th>Fecha Registro</th>
-                    <th>Avance</th>
+                    <th>Clave</th>
+                    <th>Meta</th>
+                    <th>Línea Base</th>
                     <th>Meta a Cumplir</th>
-                    
+                    <th>Avance Total</th>
+                    <th>% Avance</th>
+                    <th>Estado</th>
+                    <th>Tipo</th>
+                    <th>Acumulable</th>
                 </tr>
             </thead>
+
             <tbody>
-                {% for a in data|dictsort:"meta" %}
-                    {% ifchanged a.meta a.ciclo %}
-                    <tr class="text-wrap">
-                        <td>{{ a.departamento }}</td>
-                        <td>{{ a.meta }}</td>
-                        <td>{{ a.proyecto }}</td>
-                        <td>{{ a.ciclo }}</td>
-                        <td>{{ a.fecha_registro }}</td>
-                        <td>{{ a.avance }}</td>
-                        <td>{{ a.meta_cumplir }}</td>
-                    </tr>
-                    {% endifchanged %}
+                {% for a in data %}
+                <tr>
+                    <td>{{ a.departamento }}</td>
+                    <td>{{ a.proyecto }}</td>
+                    <td>{{ a.clave_meta }}</td>
+                    <td class="text-start">{{ a.meta }}</td>
+                    <td>{{ a.linea_base }}</td>
+                    <td>{{ a.meta_cumplir }}</td>
+                    <td>{{ a.avance_total }}</td>
+                    <td>{{ a.porcentaje_avance }}%</td>
+
+                    <td>
+                        {% if a.estado == "Cumplida" %}
+                            <span class="badge bg-success">Cumplida</span>
+                        {% elif a.estado == "En progreso" %}
+                            <span class="badge bg-warning text-dark">En progreso</span>
+                        {% else %}
+                            <span class="badge bg-danger">Rezago</span>
+                        {% endif %}
+                    </td>
+
+                    <td>{{ a.tipo_meta }}</td>
+                    <td>{{ a.acumulable }}</td>
+                </tr>
                 {% empty %}
-                    <tr>
-                        <td colspan="8" class="text-center text-muted">
-                            No se encontraron registros de avances.
-                        </td>
-                    </tr>
+                <tr>
+                    <td colspan="11" class="text-center text-muted py-4">
+                        <i class="fas fa-info-circle fa-2x mb-2"></i><br>
+                        No se encontraron registros de avances.
+                    </td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+
 </div>
 {% endblock %}
 
@@ -98,8 +119,8 @@ $(document).ready(function() {
         scrollY: '500px',
         scrollCollapse: true,
         lengthMenu: [5, 10, 20, 50, 100],
-        pageLength: 10,
-        order: [[0, 'asc'], [1, 'asc']], // ordena por departamento y meta
+        pageLength: 20,
+        order: [[0, 'asc'], [1, 'asc'], [3, 'asc']],
         language: {
             url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json',
         },

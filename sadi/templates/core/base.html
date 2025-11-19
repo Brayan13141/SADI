@@ -54,6 +54,47 @@
         font-size: 0.7rem;
         margin-left: 5px;
     }
+
+    /* Estilos para el modo colapsado */
+    .sidebar-icons {
+        display: none;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .sidebar.collapsed .sidebar-content {
+        display: none;
+    }
+    
+    .sidebar.collapsed .sidebar-icons {
+        display: flex;
+    }
+    
+    .sidebar-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.75rem;
+        color: #6c757d;
+        text-decoration: none;
+        border-radius: 0.25rem;
+        transition: all 0.2s;
+    }
+    
+    .sidebar-link:hover {
+        background-color: #e9ecef;
+        color: #495057;
+    }
+    
+    .sidebar-link.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .sidebar-link.disabled:hover {
+        background-color: transparent;
+        color: #6c757d;
+    }
  </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
@@ -328,10 +369,6 @@
                                                    class="nav-link text-dark {% if request.resolver_match.url_name == 'avance_meta_general_list' %}active{% endif %} {% if not estado_sistema.hay_proyectos or not estado_sistema.ciclo_activo %}disabled{% endif %}">
                                                 <i class="bi bi-graph-up-arrow me-2"></i> Avances
                                             </a></li>
-                                            <li><a href="{% if estado_sistema.hay_proyectos and estado_sistema.ciclo_activo %}{% url 'meta_comprometida_general_list' %}{% else %}#{% endif %}" 
-                                                   class="nav-link text-dark {% if request.resolver_match.url_name == 'meta_comprometida_general_list' %}active{% endif %} {% if not estado_sistema.hay_proyectos or not estado_sistema.ciclo_activo %}disabled{% endif %}">
-                                                <i class="bi bi-check2-circle me-2"></i> Comprometidas
-                                            </a></li>
                                             {% if request.user.role == "ADMIN" %}
                                             <li><a href="{% if estado_sistema.hay_proyectos and estado_sistema.ciclo_activo %}{% url 'asignacion_metas' %}{% else %}#{% endif %}" 
                                                    class="nav-link text-dark {% if request.resolver_match.url_name == 'asignacion_metas' %}active{% endif %} {% if not estado_sistema.hay_proyectos or not estado_sistema.ciclo_activo %}disabled{% endif %}">
@@ -494,26 +531,56 @@
             </div>
 
             <!-- Versión con solo iconos para modo colapsado -->
-            <!-- NOTA: Debido a la complejidad, recomiendo mantener la misma lógica de desbloqueo en el menú de iconos -->
-            <!-- Por brevedad, aquí solo incluyo un ejemplo básico - deberías aplicar la misma lógica que arriba -->
             <div class="sidebar-icons">
-                <!-- Dashboard -->
+                <!-- Dashboard - Siempre disponible -->
                 <a class="sidebar-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
                    href="{% url 'dashboard' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Dashboard">
                     <i class="bi bi-speedometer2"></i>
                 </a>
 
-                <!-- Seguimiento de Metas -->
+                <!-- Seguimiento de Metas - Solo para ADMIN, APOYO, DOCENTE con ciclo activo -->
                 {% if request.user.role == "ADMIN" or request.user.role == "APOYO" or request.user.role == "DOCENTE" %}
                 {% if estado_sistema.ciclo_activo %}
                 <a class="sidebar-link {% if request.resolver_match.url_name == 'tabla_seguimiento' %}active{% endif %}"
                    href="{% url 'tabla_seguimiento' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Seguimiento de Metas">
                     <i class="bi bi-award"></i>
                 </a>
+                {% else %}
+                <span class="sidebar-link disabled" data-bs-toggle="tooltip" data-bs-placement="right" title="Ciclo requerido">
+                    <i class="bi bi-award text-muted"></i>
+                </span>
                 {% endif %}
                 {% endif %}
 
-                <!-- ... (aplicar misma lógica para el resto del menú de iconos) ... -->
+                <!-- Programa de Trabajo - Solo para ADMIN, APOYO, DOCENTE con ciclo activo -->
+                {% if request.user.role == "ADMIN" or request.user.role == "APOYO" or request.user.role == "DOCENTE" %}
+                {% if estado_sistema.ciclo_activo %}
+                <a class="sidebar-link {% if request.resolver_match.url_name == 'programa_trabajo' %}active{% endif %}"
+                   href="{% url 'programa_trabajo' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Programa de Trabajo">
+                    <i class="bi bi-book"></i>
+                </a>
+                {% else %}
+                <span class="sidebar-link disabled" data-bs-toggle="tooltip" data-bs-placement="right" title="Ciclo requerido">
+                    <i class="bi bi-book text-muted"></i>
+                </span>
+                {% endif %}
+                {% endif %}
+
+
+                <!-- Reportes - Para ADMIN, APOYO, DOCENTE con metas y ciclo activo -->
+                {% if request.user.role == "ADMIN" or request.user.role == "APOYO" or request.user.role == "DOCENTE" %}
+                {% if estado_sistema.hay_metas and estado_sistema.ciclo_activo %}
+                <a class="sidebar-link {% if request.resolver_match.url_name == 'reportes' %}active{% endif %}"
+                   href="{% url 'reportes' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Reportes">
+                    <i class="bi bi-bar-chart"></i>
+                </a>
+                {% else %}
+                <span class="sidebar-link disabled" data-bs-toggle="tooltip" data-bs-placement="right" 
+                      title="{% if not estado_sistema.hay_metas %}Metas requeridas{% elif not estado_sistema.ciclo_activo %}Ciclo requerido{% endif %}">
+                    <i class="bi bi-bar-chart text-muted"></i>
+                </span>
+                {% endif %}
+                {% endif %}
             </div>
         </nav>
 
@@ -631,6 +698,74 @@
                     e.preventDefault();
                     e.stopPropagation();
                 });
+            });
+        });
+
+        // Función para expandir menús específicos cuando el sidebar está colapsado
+        function expandMenuForIcons(menuType) {
+            const sidebar = document.getElementById('sidebar');
+            
+            // Si el sidebar está expandido, no hacer nada (deja que Bootstrap maneje el colapso)
+            if (!sidebar.classList.contains('collapsed')) {
+                return;
+            }
+            
+            // Expandir el menú correspondiente
+            let collapseElement;
+            let buttonElement;
+            
+            switch(menuType) {
+                case 'admin':
+                    collapseElement = document.getElementById('admin-collapse');
+                    buttonElement = document.querySelector('[data-bs-target="#admin-collapse"]');
+                    break;
+                case 'docente':
+                    collapseElement = document.getElementById('docente-collapse');
+                    buttonElement = document.querySelector('[data-bs-target="#docente-collapse"]');
+                    break;
+            }
+            
+            if (collapseElement && buttonElement) {
+                // Crear una instancia de colapso de Bootstrap
+                const collapse = new bootstrap.Collapse(collapseElement, {
+                    toggle: true
+                });
+                
+                // Actualizar el estado del botón
+                buttonElement.setAttribute('aria-expanded', collapseElement.classList.contains('show') ? 'false' : 'true');
+                
+                // Actualizar el ícono
+                const icon = buttonElement.querySelector('i');
+                if (icon) {
+                    if (collapseElement.classList.contains('show')) {
+                        icon.classList.remove('bi-chevron-compact-up');
+                        icon.classList.add('bi-chevron-compact-down');
+                    } else {
+                        icon.classList.remove('bi-chevron-compact-down');
+                        icon.classList.add('bi-chevron-compact-up');
+                    }
+                }
+            }
+        }
+
+        // Actualizar tooltips cuando el sidebar se colapsa/expande
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.getElementById('sidebar');
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.attributeName === 'class') {
+                        // Reinicializar tooltips cuando cambia el estado del sidebar
+                        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                        tooltipTriggerList.map(function (tooltipTriggerEl) {
+                            return new bootstrap.Tooltip(tooltipTriggerEl);
+                        });
+                    }
+                });
+            });
+            
+            observer.observe(sidebar, {
+                attributes: true,
+                attributeFilter: ['class']
             });
         });
     </script>

@@ -5,6 +5,7 @@
 
 {% block content %}
 <div class="container-fluid py-3">
+
     <!-- BOTÓN VOLVER -->
     <div class="mb-3">
         <a href="{% url 'reportes' %}" class="btn btn-sm btn-outline-secondary">
@@ -12,32 +13,29 @@
         </a>
     </div>
 
-    <!-- ENCABEZADO Y CONTROLES -->
+    <!-- ENCABEZADO -->
     <div class="card mb-4">
-        <div class="card-body">
-            <div class="row align-items-center">
-                <div class="col-md-6">
-                    <h2 class="card-title mb-0 text-primary">
-                        <i class="fas fa-chart-bar me-2"></i>Reporte de Metas por Departamento
-                    </h2>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <a href="?exportar=1{% if departamento_seleccionado %}&departamento={{ departamento_seleccionado }}{% endif %}" 
-                       class="btn btn-success">
-                        <i class="fas fa-file-excel me-1"></i> Exportar a Excel
-                    </a>
-                </div>
-            </div>
+        <div class="card-body d-flex justify-content-between align-items-center">
+            <h2 class="card-title mb-0 text-primary">
+                <i class="fas fa-chart-bar me-2"></i>Reporte de Metas por Departamento
+            </h2>
+            <a href="?exportar=1{% if departamento_seleccionado %}&departamento={{ departamento_seleccionado }}{% endif %}" 
+               class="btn btn-success">
+                <i class="fas fa-file-excel me-1"></i> Exportar a Excel
+            </a>
         </div>
     </div>
 
-    <!-- FILTRO Y RESUMEN -->
+    <!-- FILTRO + RESUMEN -->
     <div class="row mb-4">
+
         <!-- FILTRO -->
         <div class="col-lg-4 mb-3">
             <div class="card">
                 <div class="card-header bg-light">
-                    <h6 class="card-title mb-0"><i class="fas fa-filter me-1"></i>Filtrar por Departamento</h6>
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-filter me-1"></i> Filtrar por Departamento
+                    </h6>
                 </div>
                 <div class="card-body">
                     <form method="get" class="row g-2">
@@ -45,17 +43,20 @@
                             <select name="departamento" class="form-select">
                                 <option value="">Todos los Departamentos</option>
                                 {% for depto in departamentos %}
-                                    <option value="{{ depto.id }}" {% if departamento_seleccionado == depto.id %}selected{% endif %}>
-                                        {{ depto.nombre }}
-                                    </option>
+                                <option value="{{ depto.id }}" 
+                                    {% if departamento_seleccionado == depto.id %}selected{% endif %}>
+                                    {{ depto.nombre }}
+                                </option>
                                 {% endfor %}
                             </select>
                         </div>
+
                         <div class="col-12">
                             <div class="d-grid gap-2">
                                 <button type="submit" class="btn btn-primary">
                                     <i class="fas fa-filter me-1"></i> Aplicar Filtro
                                 </button>
+
                                 {% if departamento_seleccionado %}
                                 <a href="?" class="btn btn-outline-secondary">Limpiar Filtro</a>
                                 {% endif %}
@@ -66,186 +67,208 @@
             </div>
         </div>
 
-        <!-- RESUMEN ESTADÍSTICAS -->
+        <!-- RESUMEN -->
         <div class="col-lg-8">
             <div class="card h-100">
                 <div class="card-header bg-light">
-                    <h6 class="card-title mb-0"><i class="fas fa-chart-pie me-1"></i>Resumen General</h6>
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-chart-pie me-1"></i> Resumen General
+                    </h6>
                 </div>
+
                 <div class="card-body">
-                    <div class="row text-center h-100">
-                        <div class="col-md-4 mb-3 mb-md-0 d-flex flex-column">
-                            <div class="card bg-primary text-white flex-fill d-flex flex-column justify-content-center">
+                    <div class="row text-center">
+
+                        <div class="col-md-4 mb-3">
+                            <div class="card bg-primary text-white">
                                 <div class="card-body py-3">
-                                    <h4 class="card-title">{{ total_metas }}</h4>
-                                    <p class="card-text mb-0 small">Total de Metas</p>
+                                    <h4>{{ total_metas }}</h4>
+                                    <p class="small mb-0">Total de Metas</p>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-4 mb-3 mb-md-0 d-flex flex-column">
-                            <div class="card bg-success text-white flex-fill d-flex flex-column justify-content-center">
+
+                        <div class="col-md-4 mb-3">
+                            <div class="card bg-success text-white">
                                 <div class="card-body py-3">
-                                    <h4 class="card-title">{{ metas_cumplidas }}</h4>
-                                    <p class="card-text mb-0 small">Metas Cumplidas</p>
+                                    <h4>{{ metas_cumplidas }}</h4>
+                                    <p class="small mb-0">Metas Cumplidas</p>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-4 mb-3 mb-md-0 d-flex flex-column">
-                            <div class="card bg-warning text-dark flex-fill d-flex flex-column justify-content-center">
+
+                        <div class="col-md-4 mb-3">
+                            <div class="card bg-warning text-dark">
                                 <div class="card-body py-3">
-                                    <h4 class="card-title">{{ metas_pendientes }}</h4>
-                                    <p class="card-text mb-0 small">En Proceso</p>
+                                    <h4>{{ metas_pendientes }}</h4>
+                                    <p class="small mb-0">En Proceso</p>
                                 </div>
                             </div>
                         </div>
+
                     </div>
                 </div>
             </div>
         </div>
+
     </div>
 
     <!-- LISTADO DE METAS -->
     <div class="card">
         <div class="card-header bg-light d-flex justify-content-between align-items-center">
-            <h6 class="card-title mb-0">
-                <i class="fas fa-list-check me-1"></i>Detalle de Metas 
+            <h6 class="mb-0">
+                <i class="fas fa-list-check me-1"></i> Detalle de Metas 
                 <span class="badge bg-primary ms-2">{{ total_metas }}</span>
             </h6>
-            <small class="text-muted">Total de metas encontradas</small>
         </div>
+
         <div class="card-body p-0">
             {% if metas %}
             <div class="row g-0">
+
                 {% for meta in metas %}
                 <div class="col-12 border-bottom">
                     <div class="p-4">
-                        <!-- HEADER DE LA META -->
+
+                        <!-- HEADER -->
                         <div class="row align-items-center mb-3">
+
                             <div class="col-md-8">
-                                <h5 class="card-title text-primary mb-1">{{ meta.nombre|default:meta.clave }}</h5>
-                                <p class="text-muted mb-0 small">
-                                    <strong>Clave:</strong> {{ meta.clave }} | 
+                                <h5 class="text-primary mb-1">{{ meta.nombre|default:meta.clave }}</h5>
+                                <p class="text-muted small mb-0">
+                                    <strong>Clave:</strong> {{ meta.clave }} |
                                     <strong>Proyecto:</strong> {{ meta.proyecto }} |
                                     <strong>Departamento:</strong> {{ meta.departamento }} |
                                     <strong>Categoría:</strong> {{ meta.categoria }}
                                 </p>
                             </div>
+
                             <div class="col-md-4 text-md-end">
-                                <span class="badge fs-6 
+                                <span class="badge fs-6
                                     {% if meta.estado == 'Cumplida' %}bg-success
                                     {% elif meta.estado == 'En progreso' %}bg-warning text-dark
                                     {% else %}bg-danger{% endif %}">
                                     {{ meta.estado }}
                                 </span>
+
                                 <div class="mt-2">
-                                    <span class="fw-bold text-dark">{{ meta.actividades_cumplidas }}/{{ meta.total_actividades }}</span>
+                                    <strong>{{ meta.actividades_cumplidas }}/{{ meta.total_actividades }}</strong>
                                     <small class="text-muted">actividades cumplidas</small>
                                 </div>
                             </div>
+
                         </div>
 
                         <!-- INFORMACIÓN DETALLADA -->
                         <div class="row">
+
+                            <!-- INFO -->
                             <div class="col-lg-6">
                                 <div class="card bg-light h-100">
-                                    <div class="card-body">
-                                        <h6 class="card-title"><i class="fas fa-info-circle me-1"></i>Información de la Meta</h6>
-                                        <div class="row small">
-                                            <div class="col-6">
+                                    <div class="card-body small">
+
+                                        <h6><i class="fas fa-info-circle me-1"></i>Información de la Meta</h6>
+
+                                        <div class="row">
+                                            <div class="col-6 mt-2">
                                                 <strong>Ciclo:</strong><br>
-                                                {{ meta.ciclo|default:"N/A" }}
+                                                {{ meta.ciclo }}
                                             </div>
-                                            <div class="col-6">
+
+                                            <div class="col-6 mt-2">
                                                 <strong>Indicador:</strong><br>
-                                                <span class="text-muted">{{ meta.indicador|truncatewords:8 }}</span>
+                                                {{ meta.indicador|truncatewords:8 }}
                                             </div>
-                                            <div class="col-6 mt-2">
+
+                                            <div class="col-6 mt-3">
                                                 <strong>Línea Base:</strong><br>
-                                                {{ meta.lineabase|default:"N/A" }}
+                                                {{ meta.lineabase }}
                                             </div>
-                                            <div class="col-6 mt-2">
+
+                                            <div class="col-6 mt-3">
                                                 <strong>Meta a Cumplir:</strong><br>
-                                                {{ meta.metacumplir|default:"N/A" }}
+                                                {{ meta.metacumplir }}
                                             </div>
+
                                         </div>
+
                                     </div>
                                 </div>
                             </div>
-                            
+
+                            <!-- PROGRESOS -->
                             <div class="col-lg-6 mt-3 mt-lg-0">
                                 <div class="card bg-light h-100">
                                     <div class="card-body">
-                                        <h6 class="card-title"><i class="fas fa-chart-bar me-1"></i>Progreso</h6>
-                                        
-                                        <!-- Barra de progreso del avance real -->
+
+                                        <h6><i class="fas fa-chart-bar me-1"></i>Progreso</h6>
+
+                                        <!-- Avance real -->
                                         <div class="mb-3">
                                             <div class="d-flex justify-content-between small mb-1">
-                                                <span>Avances:</span>
+                                                <span>Avance real</span>
                                                 <span class="fw-bold">{{ meta.porcentaje_avance }}%</span>
                                             </div>
-                                            <div class="progress mb-2" style="height: 20px;">
-                                                <div class="progress-bar 
+
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar
                                                     {% if meta.porcentaje_avance >= 110 %}bg-info
                                                     {% elif meta.porcentaje_avance >= 91 %}bg-success
-                                                     {% elif meta.porcentaje_avance >= 71 %}bg-warning
-                                                    {% else %}bg-danger{% endif %}" 
-                                                    role="progressbar" 
-                                                    style="width: {{ meta.porcentaje_avance }}%" 
-                                                    aria-valuenow="{{ meta.porcentaje_avance }}" 
-                                                    aria-valuemin="0">
+                                                    {% elif meta.porcentaje_avance >= 71 %}bg-warning
+                                                    {% else %}bg-danger{% endif %}"
+                                                    style="width: {{ meta.porcentaje_avance }}%">
                                                     {{ meta.porcentaje_avance }}%
                                                 </div>
                                             </div>
-                                            <small class="text-muted">
-                                                Basado en registros de avance
-                                            </small>
                                         </div>
 
-                                        <!-- Barra de progreso de actividades -->
+                                        <!-- Progreso actividades -->
                                         <div>
                                             <div class="d-flex justify-content-between small mb-1">
-                                                <span>Progreso de Actividades:</span>
+                                                <span>Actividades</span>
                                                 <span class="fw-bold">{{ meta.cumplimiento }}%</span>
                                             </div>
-                                            <div class="progress mb-2" style="height: 20px;">
-                                                <div class="progress-bar 
+
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar
                                                     {% if meta.estado == 'Cumplida' %}bg-success
                                                     {% elif meta.estado == 'En progreso' %}bg-warning
-                                                    {% else %}bg-danger{% endif %}" 
-                                                    role="progressbar" 
-                                                    style="width: {{ meta.cumplimiento }}%" 
-                                                    aria-valuenow="{{ meta.cumplimiento }}" 
-                                                    aria-valuemin="0">
+                                                    {% else %}bg-danger{% endif %}"
+                                                    style="width: {{ meta.cumplimiento }}%">
                                                     {{ meta.cumplimiento }}%
                                                 </div>
                                             </div>
+
                                             <small class="text-muted">
-                                                {{ meta.actividades_cumplidas }} de {{ meta.total_actividades }} actividades cumplidas
+                                                {{ meta.actividades_cumplidas }} de {{ meta.total_actividades }} actividades
                                             </small>
                                         </div>
+
                                     </div>
                                 </div>
                             </div>
+
                         </div>
 
                         <!-- ACTIVIDADES -->
                         <div class="mt-3">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="d-flex justify-content-between mb-2">
                                 <h6 class="mb-0">
-                                    <i class="fas fa-tasks me-1"></i>Detalle de Actividades
-                                    <span class="badge bg-secondary ms-1">{{ meta.total_actividades }}</span>
+                                    <i class="fas fa-tasks me-1"></i> Actividades
+                                    <span class="badge bg-secondary">{{ meta.total_actividades }}</span>
                                 </h6>
-                                <button class="btn btn-sm btn-outline-primary" type="button" 
-                                        data-bs-toggle="collapse" data-bs-target="#actividades{{ forloop.counter }}">
-                                    <i class="fas fa-chevron-down me-1"></i>
-                                    <span class="collapse-show">Mostrar</span>
-                                    <span class="collapse-hide">Ocultar</span>
+
+                                <button class="btn btn-sm btn-outline-primary" 
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#collapse{{ forloop.counter }}">
+                                    <i class="fas fa-chevron-down me-1"></i> Ver
                                 </button>
                             </div>
-                            
-                            <div class="collapse" id="actividades{{ forloop.counter }}">
+
+                            <div class="collapse" id="collapse{{ forloop.counter }}">
                                 <div class="card">
                                     <div class="card-body p-0">
+
                                         {% if meta.actividades %}
                                         <div class="table-responsive">
                                             <table class="table table-sm table-hover mb-0">
@@ -259,88 +282,70 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
+
                                                     {% for actividad in meta.actividades %}
                                                     <tr>
                                                         <td class="fw-bold">{{ actividad.nombre|default:"Sin nombre" }}</td>
-                                                        <td class="text-start small">{{ actividad.descripcion|truncatewords:10 }}</td>
+
+                                                        <td class="small text-start">
+                                                            {{ actividad.descripcion|truncatewords:10 }}
+                                                        </td>
+
                                                         <td>
-                                                            <span class="badge 
+                                                            <span class="badge
                                                                 {% if actividad.estado == 'Cumplida' %}bg-success
-                                                                {% elif actividad.estado == 'En Proceso' %}bg-warning text-dark
+                                                                {% elif actividad.estado == 'En Proceso' %}bg-warning
                                                                 {% elif actividad.estado == 'Activa' %}bg-info
-                                                                {% else %}bg-danger{% endif %} small">
+                                                                {% else %}bg-danger{% endif %}">
                                                                 {{ actividad.estado }}
                                                             </span>
                                                         </td>
-                                                        <td class="text-nowrap small">
-                                                            <div>{{ actividad.fecha_inicio|date:"d/m/Y" }}</div>
-                                                            <div class="text-muted">al {{ actividad.fecha_fin|date:"d/m/Y" }}</div>
+
+                                                        <td class="small text-nowrap">
+                                                            {{ actividad.fecha_inicio|date:"d/m/Y" }}<br>
+                                                            <span class="text-muted">
+                                                                al {{ actividad.fecha_fin|date:"d/m/Y" }}
+                                                            </span>
                                                         </td>
+
                                                         <td class="small">{{ actividad.responsable }}</td>
                                                     </tr>
                                                     {% endfor %}
+
                                                 </tbody>
                                             </table>
                                         </div>
+
                                         {% else %}
                                         <div class="text-center py-4 text-muted">
                                             <i class="fas fa-inbox fa-2x mb-2"></i>
-                                            <p class="mb-0">No hay actividades registradas para esta meta</p>
+                                            <p>Sin actividades registradas</p>
                                         </div>
                                         {% endif %}
+
                                     </div>
                                 </div>
                             </div>
                         </div>
+
                     </div>
                 </div>
                 {% endfor %}
+
             </div>
             {% else %}
             <div class="text-center py-5 text-muted">
                 <i class="fas fa-search fa-3x mb-3"></i>
                 <h5>No se encontraron metas</h5>
-                <p class="mb-0">No hay metas registradas para el criterio de búsqueda seleccionado</p>
             </div>
             {% endif %}
+
         </div>
     </div>
+
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    // TOGGLE TEXT PARA BOTONES DE ACTIVIDADES
-    document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(button => {
-        button.addEventListener('click', function() {
-            const collapseShow = this.querySelector('.collapse-show');
-            const collapseHide = this.querySelector('.collapse-hide');
-            
-            if (collapseShow && collapseHide) {
-                if (this.getAttribute('aria-expanded') === 'true') {
-                    collapseShow.style.display = 'inline';
-                    collapseHide.style.display = 'none';
-                } else {
-                    collapseShow.style.display = 'none';
-                    collapseHide.style.display = 'inline';
-                }
-            }
-        });
-    });
-
-    // INICIALIZAR ESTADO DE BOTONES
-    document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(button => {
-        const collapseShow = button.querySelector('.collapse-show');
-        const collapseHide = button.querySelector('.collapse-hide');
-        
-        if (collapseShow && collapseHide) {
-            collapseShow.style.display = 'inline';
-            collapseHide.style.display = 'none';
-        }
-    });
-});
-</script>
-{% endblock %}  
+{% endblock %}

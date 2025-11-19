@@ -14,12 +14,19 @@
                         <div class="col-md-8">
                             <h1 class="h3 mb-1">Dashboard de Gestión</h1>
                             <p class="text-muted mb-0">
-                                {% if es_docente and departamento_usuario %}
+                                {% if es_docente or es_apoyo %}
                                     Departamento: {{ departamento_usuario }}
+                                {% elif es_admin %}
+                                    Vista: Administrador (Global)
                                 {% endif %}
+                                | Ciclo: {{ ciclo_actual.nombre }}
                             </p>
                         </div>
-                       
+                        <div class="col-md-4 text-end">
+                            <span class="badge bg-{% if filtro_aplicado == 'Global' %}success{% else %}primary{% endif %}">
+                                Filtro: {{ filtro_aplicado }}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -40,20 +47,26 @@
                             <div class="row no-gutters align-items-center">
                                 <div class="col-auto">
                                     <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">
-                                        {{ cumplidas }}/{{ total_actividades }}
+                                        {{ actividades_cumplidas }}/{{ total_actividades }}
                                     </div>
                                 </div>
                                 <div class="col">
                                     <div class="progress progress-sm mr-2">
                                         <div class="progress-bar bg-primary" role="progressbar"
-                                            style="width: {{ porcentaje_cumplidas }}%"
-                                            aria-valuenow="{{ porcentaje_cumplidas }}" aria-valuemin="0"
+                                            style="width: {{ porcentaje_actividades }}%"
+                                            aria-valuenow="{{ porcentaje_actividades }}" aria-valuemin="0"
                                             aria-valuemax="100"></div>
                                     </div>
                                 </div>
                             </div>
                             <div class="text-xs font-weight-bold text-gray-500 mt-1">
-                                {{ porcentaje_cumplidas }}% Completado
+                                {{ porcentaje_actividades }}% Completado
+                            </div>
+                            <div class="text-xs text-muted mt-1">
+                                <small>
+                                    {{ actividades_en_progreso }} en progreso • 
+                                    {{ actividades_pendientes }} pendientes
+                                </small>
                             </div>
                         </div>
                         <div class="col-auto">
@@ -82,14 +95,14 @@
                                 <div class="col">
                                     <div class="progress progress-sm mr-2">
                                         <div class="progress-bar bg-success" role="progressbar"
-                                            style="width: {{ porcentaje_metas_cumplidas }}%"
-                                            aria-valuenow="{{ porcentaje_metas_cumplidas }}" aria-valuemin="0"
+                                            style="width: {{ porcentaje_metas }}%"
+                                            aria-valuenow="{{ porcentaje_metas }}" aria-valuemin="0"
                                             aria-valuemax="100"></div>
                                     </div>
                                 </div>
                             </div>
                             <div class="text-xs font-weight-bold text-gray-500 mt-1">
-                                {{ porcentaje_metas_cumplidas }}% Completado
+                                {{ porcentaje_metas }}% Completado
                             </div>
                         </div>
                         <div class="col-auto">
@@ -118,14 +131,14 @@
                                 <div class="col">
                                     <div class="progress progress-sm mr-2">
                                         <div class="progress-bar bg-warning" role="progressbar"
-                                            style="width: {{ porcentaje_proyectos_cumplidos }}%"
-                                            aria-valuenow="{{ porcentaje_proyectos_cumplidos }}" aria-valuemin="0"
+                                            style="width: {{ porcentaje_proyectos }}%"
+                                            aria-valuenow="{{ porcentaje_proyectos }}" aria-valuemin="0"
                                             aria-valuemax="100"></div>
                                     </div>
                                 </div>
                             </div>
                             <div class="text-xs font-weight-bold text-gray-500 mt-1">
-                                {{ porcentaje_proyectos_cumplidos }}% Completado
+                                {{ porcentaje_proyectos }}% Completado
                             </div>
                         </div>
                         <div class="col-auto">
@@ -154,15 +167,20 @@
                                 <div class="col">
                                     <div class="progress progress-sm mr-2">
                                         <div class="progress-bar bg-info" role="progressbar"
-                                            style="width: {{ porcentaje_objetivos_cumplidos }}%"
-                                            aria-valuenow="{{ porcentaje_objetivos_cumplidos }}" aria-valuemin="0"
+                                            style="width: {{ porcentaje_objetivos }}%"
+                                            aria-valuenow="{{ porcentaje_objetivos }}" aria-valuemin="0"
                                             aria-valuemax="100"></div>
                                     </div>
                                 </div>
                             </div>
                             <div class="text-xs font-weight-bold text-gray-500 mt-1">
-                                {{ porcentaje_objetivos_cumplidos }}% Completado
+                                {{ porcentaje_objetivos }}% Completado
                             </div>
+                            <span class="text-xs text-muted mt-1">
+                                <small>
+                                    Los objetivos estratégicos son globales
+                                </small>
+                            </span>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-flag fa-2x text-gray-300"></i>
@@ -173,13 +191,15 @@
         </div>
     </div>
 
-    <!-- Gráficos -->
-    <div class="row">
+    <!-- PRIMERA FILA DE GRÁFICOS: Actividades y Metas -->
+    <div class="row mb-4">
         <!-- Gráfico de Actividades -->
         <div class="col-xl-6 col-lg-6 mb-4">
             <div class="card shadow h-100">
                 <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Estado de las Actividades</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-tasks me-2"></i>Distribución de Actividades
+                    </h6>
                 </div>
                 <div class="card-body">
                     {% if total_actividades > 0 %}
@@ -191,11 +211,14 @@
                         </div>
                     {% endif %}
                     <div class="mt-3 text-center small">
-                        <span class="mr-3">
-                            <i class="fas fa-circle text-success"></i> Cumplidas: {{ cumplidas }}
+                        <span class="badge bg-success me-2">
+                            <i class="fas fa-circle me-1"></i>Cumplidas: {{ actividades_cumplidas }}
                         </span>
-                        <span>
-                            <i class="fas fa-circle text-danger"></i> No Cumplidas: {{ no_cumplidas }}
+                        <span class="badge bg-warning me-2">
+                            <i class="fas fa-circle me-1"></i>En Progreso: {{ actividades_en_progreso }}
+                        </span>
+                        <span class="badge bg-danger me-2">
+                            <i class="fas fa-circle me-1"></i>No Cumplidas: {{ actividades_no_cumplidas }}
                         </span>
                     </div>
                 </div>
@@ -206,57 +229,57 @@
         <div class="col-xl-6 col-lg-6 mb-4">
             <div class="card shadow h-100">
                 <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-success">Cumplimiento de Metas</h6>
+                    <h6 class="m-0 font-weight-bold text-success">
+                        <i class="fas fa-bullseye me-2"></i>Estado de Metas
+                    </h6>
                 </div>
                 <div class="card-body">
                     {% if total_metas > 0 %}
-                        <div class="chart-bar">
-                            <canvas id="metasChart" height="200"></canvas>
-                        </div>
+                        {{ grafico_metas_html|safe }}
                     {% else %}
                         <div class="text-center py-4">
-                            <i class="fas fa-chart-bar fa-3x text-gray-300 mb-3"></i>
-                            <p class="text-muted">No hay metas con actividades disponibles</p>
+                            <i class="fas fa-chart-pie fa-3x text-gray-300 mb-3"></i>
+                            <p class="text-muted">No hay metas disponibles</p>
                         </div>
                     {% endif %}
                     <div class="mt-3 text-center small">
-                        <span class="mr-3">
-                            <i class="fas fa-circle text-success"></i> Cumplidas: {{ metas_cumplidas }}
+                        <span class="badge bg-success me-2">
+                            <i class="fas fa-circle me-1"></i>Cumplidas: {{ metas_cumplidas }}
                         </span>
-                        <span>
-                            <i class="fas fa-circle text-danger"></i> No Cumplidas: {{ metas_no_cumplidas }}
+                        <span class="badge bg-warning">
+                            <i class="fas fa-circle me-1"></i>En Progreso: {{ metas_no_cumplidas }}
                         </span>
                     </div>
                 </div>
-                <div class="card-footer text-center">
-                <p class="text-muted">Solo se cuentan las metas con actividades</p>
-                </div>
             </div>
         </div>
+    </div>
 
+    <!-- SEGUNDA FILA DE GRÁFICOS: Proyectos y Objetivos -->
+    <div class="row mb-4">
         <!-- Gráfico de Proyectos -->
         <div class="col-xl-6 col-lg-6 mb-4">
             <div class="card shadow h-100">
                 <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-warning">Estado de los Proyectos</h6>
+                    <h6 class="m-0 font-weight-bold text-warning">
+                        <i class="fas fa-project-diagram me-2"></i>Progreso de Proyectos
+                    </h6>
                 </div>
                 <div class="card-body">
                     {% if total_proyectos > 0 %}
-                        <div class="chart-pie">
-                            <canvas id="proyectosChart" height="200"></canvas>
-                        </div>
+                        {{ grafico_proyectos_html|safe }}
                     {% else %}
                         <div class="text-center py-4">
-                            <i class="fas fa-chart-pie fa-3x text-gray-300 mb-3"></i>
+                            <i class="fas fa-chart-bar fa-3x text-gray-300 mb-3"></i>
                             <p class="text-muted">No hay proyectos disponibles</p>
                         </div>
                     {% endif %}
                     <div class="mt-3 text-center small">
-                        <span class="mr-3">
-                            <i class="fas fa-circle text-warning"></i> Completados: {{ proyectos_cumplidos }}
+                        <span class="badge bg-success me-2">
+                            Cumplidos: {{ proyectos_cumplidos }}/{{ total_proyectos }}
                         </span>
-                        <span>
-                            <i class="fas fa-circle text-info"></i> En Proceso: {{ proyectos_no_cumplidos }}
+                        <span class="badge bg-warning">
+                            En Progreso: {{ proyectos_no_cumplidos }}
                         </span>
                     </div>
                 </div>
@@ -267,13 +290,13 @@
         <div class="col-xl-6 col-lg-6 mb-4">
             <div class="card shadow h-100">
                 <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-info">Cumplimiento de Objetivos</h6>
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-flag me-2"></i>Progreso de Objetivos
+                    </h6>
                 </div>
                 <div class="card-body">
                     {% if total_objetivos > 0 %}
-                        <div class="chart-bar">
-                            <canvas id="objetivosChart" height="200"></canvas>
-                        </div>
+                        {{ grafico_objetivos_html|safe }}
                     {% else %}
                         <div class="text-center py-4">
                             <i class="fas fa-chart-bar fa-3x text-gray-300 mb-3"></i>
@@ -281,11 +304,49 @@
                         </div>
                     {% endif %}
                     <div class="mt-3 text-center small">
-                        <span class="mr-3">
-                            <i class="fas fa-circle text-info"></i> Cumplidos: {{ objetivos_cumplidos }}
+                        <span class="badge bg-info me-2">
+                            Cumplidos: {{ objetivos_cumplidos }}/{{ total_objetivos }}
+                        </span>
+                        <span class="badge bg-secondary">
+                            En Progreso: {{ objetivos_no_cumplidos }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TERCERA FILA: Progreso General -->
+    <div class="row">
+        <!-- Gráfico de Progreso General -->
+        <div class="col-12 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-dark">
+                        <i class="fas fa-chart-line me-2"></i>Progreso General por Nivel
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if total_metas > 0 or total_proyectos > 0 or total_objetivos > 0 %}
+                        {{ grafico_progreso_html|safe }}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-bar fa-3x text-gray-300 mb-3"></i>
+                            <p class="text-muted">No hay datos de progreso disponibles</p>
+                        </div>
+                    {% endif %}
+                    <div class="mt-3 text-center small">
+                        <span class="me-3">
+                            <i class="fas fa-square text-primary me-1"></i>Actividades: {{ porcentaje_actividades }}%
+                        </span>
+                        <span class="me-3">
+                            <i class="fas fa-square text-success me-1"></i>Metas: {{ porcentaje_metas }}%
+                        </span>
+                        <span class="me-3">
+                            <i class="fas fa-square text-warning me-1"></i>Proyectos: {{ porcentaje_proyectos }}%
                         </span>
                         <span>
-                            <i class="fas fa-circle text-warning"></i> En Proceso: {{ objetivos_no_cumplidos }}
+                            <i class="fas fa-square text-info me-1"></i>Objetivos: {{ porcentaje_objetivos }}%
                         </span>
                     </div>
                 </div>
@@ -299,64 +360,43 @@
         <div class="col-12">
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Resumen General</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">Resumen General - {{ ciclo_actual.nombre }}</h6>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-bordered" width="100%" cellspacing="0">
                             <thead>
-                                <tr>
+                                <tr class="text-nowrap text-center">
                                     <th>Categoría</th>
                                     <th>Total</th>
                                     <th>Cumplidos/Completados</th>
                                     <th>No Cumplidos/En Proceso</th>
-                                    <th>Porcentaje</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody class="text-center">
                                 <tr>
                                     <td><strong>Actividades</strong></td>
                                     <td>{{ total_actividades }}</td>
-                                    <td class="text-success">{{ cumplidas }}</td>
-                                    <td class="text-danger">{{ no_cumplidas }}</td>
-                                    <td>
-                                        <span class="badge bg-{% if porcentaje_cumplidas == 100 %}success{% else %}primary{% endif %}">
-                                            {{ porcentaje_actividades }}%
-                                        </span>
-                                    </td>
+                                    <td>{{ actividades_cumplidas }}</td>
+                                    <td>{{ actividades_no_cumplidas }}</td>
                                 </tr>
                                 <tr>
                                     <td><strong>Metas</strong></td>
                                     <td>{{ total_metas }}</td>
-                                    <td class="text-success">{{ metas_cumplidas }}</td>
-                                    <td class="text-danger">{{ metas_no_cumplidas }}</td>
-                                    <td>
-                                        <span class="badge bg-{% if porcentaje_metas_cumplidas == 100 %}success{% else %}success{% endif %}">
-                                            {{ porcentaje_metas }}%
-                                        </span>
-                                    </td>
+                                    <td>{{ metas_cumplidas }}</td>
+                                    <td>{{ metas_no_cumplidas }}</td>
                                 </tr>
                                 <tr>
                                     <td><strong>Proyectos</strong></td>
                                     <td>{{ total_proyectos }}</td>
-                                    <td class="text-warning">{{ proyectos_cumplidos }}</td>
-                                    <td class="text-info">{{ proyectos_no_cumplidos }}</td>
-                                    <td>
-                                        <span class="badge bg-{% if porcentaje_proyectos_cumplidos == 100 %}success{% else %}warning{% endif %}">
-                                            {{ porcentaje_proyectos }}%
-                                        </span>
-                                    </td>
+                                    <td>{{ proyectos_cumplidos }}</td>
+                                    <td>{{ proyectos_no_cumplidos }}</td>
                                 </tr>
                                 <tr>
                                     <td><strong>Objetivos Estratégicos</strong></td>
                                     <td>{{ total_objetivos }}</td>
-                                    <td class="text-info">{{ objetivos_cumplidos }}</td>
-                                    <td class="text-warning">{{ objetivos_no_cumplidos }}</td>
-                                    <td>
-                                        <span class="badge bg-{% if porcentaje_objetivos_cumplidos == 100 %}success{% else %}info{% endif %}">
-                                            {{ porcentaje_objetivos }}%
-                                        </span>
-                                    </td>
+                                    <td>{{ objetivos_cumplidos }}</td>
+                                    <td>{{ objetivos_no_cumplidos }}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -369,141 +409,18 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<script>
-// Esperar a que el documento esté listo
-document.addEventListener('DOMContentLoaded', function() {
-    // Gráfico de Metas - Bar Chart
-    {% if total_metas > 0 %}
-    var metasCtx = document.getElementById('metasChart').getContext('2d');
-    var metasChart = new Chart(metasCtx, {
-        type: 'bar',
-        data: {
-            labels: ['Cumplidas', 'No Cumplidas'],
-            datasets: [{
-                label: 'Metas',
-                data: [{{ metas_cumplidas }}, {{ metas_no_cumplidas }}],
-                backgroundColor: [
-                    '#1ABC9C',  // Verde para cumplidas
-                    '#E74C3C'   // Rojo para no cumplidas
-                ],
-                borderColor: [
-                    '#16A085',
-                    '#C0392B'
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                title: {
-                    display: true,
-                    text: 'Distribución de Metas'
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 1
-                    }
-                }
-            }
-        }
-    });
-    {% endif %}
-
-    // Gráfico de Proyectos - Pie Chart
-    {% if total_proyectos > 0 %}
-    var proyectosCtx = document.getElementById('proyectosChart').getContext('2d');
-    var proyectosChart = new Chart(proyectosCtx, {
-        type: 'pie',
-        data: {
-            labels: ['Completados', 'En Proceso'],
-            datasets: [{
-                data: [{{ proyectos_cumplidos }}, {{ proyectos_no_cumplidos }}],
-                backgroundColor: [
-                    '#F39C12',  // Naranja para completados
-                    '#3498DB'   // Azul para en proceso
-                ],
-                borderColor: [
-                    '#E67E22',
-                    '#2980B9'
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                },
-                title: {
-                    display: true,
-                    text: 'Estado de Proyectos'
-                }
-            }
-        }
-    });
-    {% endif %}
-
-    // Gráfico de Objetivos - Bar Chart
-    {% if total_objetivos > 0 %}
-    var objetivosCtx = document.getElementById('objetivosChart').getContext('2d');
-    var objetivosChart = new Chart(objetivosCtx, {
-        type: 'bar',
-        data: {
-            labels: ['Cumplidos', 'En Proceso'],
-            datasets: [{
-                label: 'Objetivos',
-                data: [{{ objetivos_cumplidos }}, {{ objetivos_no_cumplidos }}],
-                backgroundColor: [
-                    '#2E86C1',  // Azul para cumplidos
-                    '#F5B041'   // Amarillo para en proceso
-                ],
-                borderColor: [
-                    '#2874A6',
-                    '#E67E22'
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                title: {
-                    display: true,
-                    text: 'Cumplimiento de Objetivos'
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 1
-                    }
-                }
-            }
-        }
-    });
-    {% endif %}
-});
-</script>
-
 <!-- Auto-refresh cada 5 minutos -->
 <script>
 setTimeout(function() {
     window.location.reload();
 }, 300000); // 300000 ms = 5 minutos
+
+// Tooltips de Bootstrap
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
 </script>
 {% endblock %}
