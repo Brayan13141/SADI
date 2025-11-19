@@ -280,6 +280,7 @@ def avance_meta_general_list(request):
     )
 
 
+# ELIMINAR EN UN FUTURO EN BASE A LA NUEVA LOGICA DE METACICLO YA GUARDA AMBOS VALORES
 @role_required("ADMIN", "APOYO")
 def meta_comprometida_general_list(request):
     #  Ciclo activo desde la sesión
@@ -502,6 +503,7 @@ def gestion_meta_avances(request, meta_id):
     )
 
 
+# ELIMINAR EN UN FUTURO EN BASE A LA NUEVA LOGICA DE METACICLO YA GUARDA AMBOS VALORES
 @role_required("ADMIN", "APOYO")
 def gestion_meta_comprometida(request, meta_id):
     meta = get_object_or_404(Meta, id=meta_id)
@@ -766,7 +768,6 @@ def asignar_ciclo_meta(request, meta_id):
         puede_editar = False
 
     if request.method == "POST":
-        print("POST data:", request.POST)
 
         # ============================================================
         #         ELIMINAR CICLO
