@@ -15,7 +15,6 @@ $(document).ready(function () {
         },
     });
 
-    // ===== FUNCIÓN PARA SINCRONIZAR DEPARTAMENTO Y RESPONSABLE =====
     // ===== FUNCIONES EXISTENTES PARA EVIDENCIAS =====
 
     function getFilenameFromPath(path) {
@@ -128,6 +127,9 @@ $(document).ready(function () {
 
             var departamentoInput = $('#id_departamento');
             var responsableInput = $('#id_responsable');
+            // Crear o actualizar el input "editable" (finalizar actividad)
+            var contenedorEditable = $('#contenedorEditable');
+            contenedorEditable.empty(); // Limpiar cualquier input previo
 
             if (departamentoInput.length > 1 && responsableInput.length > 1) {
                 var departamentoActual = departamentoInput.val();
@@ -140,6 +142,16 @@ $(document).ready(function () {
                     responsableInput.val(responsableId);
                 }
             }
+
+            var switchEditable = `
+                <div class="col-12 mb-3">
+                    <div class="form-check form-switch">
+                        <input type="checkbox" name="editable" class="form-check-input" id="id_editable">
+                        <label class="form-check-label" for="id_editable">FINALIZAR ACTIVIDAD</label>
+                    </div>
+                    <small class="text-muted">Atención: al guardar los cambios, esta actividad se marcará como FINALIZADA y ya no podrá editarse.</small>
+                </div>`;
+            contenedorEditable.html(switchEditable);
         } else {
             $('#editarInputs').hide();
             $('#noEditableMsg').show();
@@ -151,6 +163,7 @@ $(document).ready(function () {
         $('#csrf_token').prop('disabled', false);
         $('#actividad_id').prop('disabled', false);
         $('#id_estado').prop('disabled', false);
+
         // Mostrar modal
         $('#modalEditar').modal('show');
     });
@@ -188,22 +201,6 @@ $(document).ready(function () {
         if (!$('[name="departamento"]', this).val()) {
             errores.push('Debe seleccionar un departamento.');
             camposInvalidos.departamento = $('[name="departamento"]', this);
-        }
-
-        // Validar que fecha fin sea posterior a fecha inicio
-        if (
-            $('[name="fecha_inicio"]', this).val() &&
-            $('[name="fecha_fin"]', this).val()
-        ) {
-            var fechaInicio = new Date($('[name="fecha_inicio"]', this).val());
-            var fechaFin = new Date($('[name="fecha_fin"]', this).val());
-
-            if (fechaFin <= fechaInicio) {
-                errores.push(
-                    'La fecha fin debe ser posterior a la fecha inicio.'
-                );
-                camposInvalidos.fecha_fin = $('[name="fecha_fin"]', this);
-            }
         }
 
         if (errores.length > 0) {

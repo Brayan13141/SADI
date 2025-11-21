@@ -20,8 +20,8 @@ function calcularRiesgo() {
 }
 
 function calcularRiesgoEditar() {
-    const probabilidad = parseInt($('#eid_probabilidad_editar').val()) || 0;
-    const impacto = parseInt($('#eid_impacto_editar').val()) || 0;
+    const probabilidad = parseInt($('#eid_probabilidad').val()) || 0;
+    const impacto = parseInt($('#eid_impacto').val()) || 0;
     const riesgo = probabilidad * impacto;
     const riesgoElement = $('#riesgo-calculado-editar');
 
@@ -53,13 +53,15 @@ $(document).ready(function () {
         },
     });
 
-    // Cálculo en tiempo real
+    // Cálculo en tiempo real para modal crear
     $('#id_probabilidad, #id_impacto').on('input change', function () {
         calcularRiesgo();
     });
+
+    // Cálculo en tiempo real para modal editar
     $(document).on(
         'input change',
-        '#eid_probabilidad_editar, #eid_impacto_editar',
+        '#eid_probabilidad, #eid_impacto',
         function () {
             calcularRiesgoEditar();
         }
@@ -68,7 +70,7 @@ $(document).ready(function () {
     // Bloquear valores decimales
     $('body').on(
         'input',
-        '#id_probabilidad, #id_impacto, #eid_probabilidad_editar, #eid_impacto_editar',
+        '#id_probabilidad, #id_impacto, #eid_probabilidad, #eid_impacto',
         function () {
             const valor = $(this).val();
             if (valor.includes('.') || valor.includes(',')) {
@@ -76,18 +78,20 @@ $(document).ready(function () {
             }
         }
     );
+
     $('body').on(
         'keypress',
-        '#id_probabilidad, #id_impacto, #eid_probabilidad_editar, #eid_impacto_editar',
+        '#id_probabilidad, #id_impacto, #eid_probabilidad, #eid_impacto',
         function (e) {
             if (e.key === '.' || e.key === ',') {
                 e.preventDefault();
             }
         }
     );
+
     $('body').on(
         'paste',
-        '#id_probabilidad, #id_impacto, #eid_probabilidad_editar, #eid_impacto_editar',
+        '#id_probabilidad, #id_impacto, #eid_probabilidad, #eid_impacto',
         function (e) {
             const textoPegado = e.originalEvent.clipboardData.getData('text');
             if (textoPegado.includes('.') || textoPegado.includes(',')) {
@@ -95,17 +99,47 @@ $(document).ready(function () {
             }
         }
     );
-
-    // Llenar modal de edición
+    // Debugging adicional
     $(document).on('click', '.btn-editar', function () {
-        $('#riesgo_id').val($(this).data('id'));
-        $('#eid_enunciado').val($(this).data('enunciado'));
-        $('#eid_probabilidad_editar').val($(this).data('probabilidad'));
-        $('#eid_impacto_editar').val($(this).data('impacto'));
-        $('#eid_actividad').val($(this).data('actividad'));
+        console.log('Botón editar clickeado');
+        console.log('Datos:', {
+            id: $(this).data('id'),
+            probabilidad: $(this).data('probabilidad'),
+            impacto: $(this).data('impacto'),
+        });
+    });
+    // Llenar modal de edición - CORREGIDO
+    $(document).on('click', '.btn-editar', function () {
+        const $btn = $(this);
+        const id = $btn.data('id');
+        const enunciado = $btn.data('enunciado');
+        const probabilidad = $btn.data('probabilidad');
+        const impacto = $btn.data('impacto');
+        const actividad = $btn.data('actividad');
+
+        console.log('Datos del riesgo:', {
+            id,
+            enunciado,
+            probabilidad,
+            impacto,
+            actividad,
+        });
+
+        // Llenar los campos del formulario
+        $('#riesgo_id').val(id);
+        $('#eid_enunciado').val(enunciado);
+        $('#eid_probabilidad').val(probabilidad);
+        $('#eid_impacto').val(impacto);
+        $('#eid_actividad').val(actividad);
+
+        // Calcular y mostrar el nivel de riesgo
         calcularRiesgoEditar();
+
+        // Limpiar errores previos
         $('#erroresEditar').addClass('d-none').empty();
         $('#formEditar input, #formEditar select').removeClass('is-invalid');
+
+        // Mostrar el modal
         $('#modalEditar').modal('show');
     });
 
@@ -116,23 +150,27 @@ $(document).ready(function () {
         let errores = [];
         let camposInvalidos = {};
 
+        // Validar enunciado
         if (!$('#id_enunciado').val().trim()) {
             errores.push('El campo Enunciado es obligatorio.');
             camposInvalidos.enunciado = $('#id_enunciado');
         }
 
-        const probabilidad = parseInt($('#id_probabilidad').val()) || 0;
-        if (probabilidad < 1 || probabilidad > 10) {
-            errores.push('La probabilidad debe estar entre 1 y 10.');
+        // Validar probabilidad
+        const probabilidad = parseInt($('#id_probabilidad').val());
+        if (isNaN(probabilidad) || probabilidad < 1 || probabilidad > 10) {
+            errores.push('La probabilidad debe ser un número entre 1 y 10.');
             camposInvalidos.probabilidad = $('#id_probabilidad');
         }
 
-        const impacto = parseInt($('#id_impacto').val()) || 0;
-        if (impacto < 1 || impacto > 10) {
-            errores.push('El impacto debe estar entre 1 y 10.');
+        // Validar impacto
+        const impacto = parseInt($('#id_impacto').val());
+        if (isNaN(impacto) || impacto < 1 || impacto > 10) {
+            errores.push('El impacto debe ser un número entre 1 y 10.');
             camposInvalidos.impacto = $('#id_impacto');
         }
 
+        // Validar actividad
         if (!$('#id_actividad').val()) {
             errores.push('Debe seleccionar una actividad.');
             camposInvalidos.actividad = $('#id_actividad');
@@ -149,30 +187,34 @@ $(document).ready(function () {
         }
     });
 
-    // Validar formulario editar
+    // Validar formulario editar - CORREGIDO
     $('#formEditar').on('submit', function (e) {
         $('#erroresEditar').addClass('d-none').empty();
         $('#formEditar input, #formEditar select').removeClass('is-invalid');
         let errores = [];
         let camposInvalidos = {};
 
+        // Validar enunciado
         if (!$('#eid_enunciado').val().trim()) {
             errores.push('El campo Enunciado es obligatorio.');
             camposInvalidos.enunciado = $('#eid_enunciado');
         }
 
-        const probabilidad = parseInt($('#eid_probabilidad_editar').val()) || 0;
-        if (probabilidad < 1 || probabilidad > 10) {
-            errores.push('La probabilidad debe estar entre 1 y 10.');
-            camposInvalidos.probabilidad = $('#eid_probabilidad_editar');
+        // Validar probabilidad
+        const probabilidad = parseInt($('#eid_probabilidad').val());
+        if (isNaN(probabilidad) || probabilidad < 1 || probabilidad > 10) {
+            errores.push('La probabilidad debe ser un número entre 1 y 10.');
+            camposInvalidos.probabilidad = $('#eid_probabilidad');
         }
 
-        const impacto = parseInt($('#eid_impacto_editar').val()) || 0;
-        if (impacto < 1 || impacto > 10) {
-            errores.push('El impacto debe estar entre 1 y 10.');
-            camposInvalidos.impacto = $('#eid_impacto_editar');
+        // Validar impacto
+        const impacto = parseInt($('#eid_impacto').val());
+        if (isNaN(impacto) || impacto < 1 || impacto > 10) {
+            errores.push('El impacto debe ser un número entre 1 y 10.');
+            camposInvalidos.impacto = $('#eid_impacto');
         }
 
+        // Validar actividad
         if (!$('#eid_actividad').val()) {
             errores.push('Debe seleccionar una actividad.');
             camposInvalidos.actividad = $('#eid_actividad');
@@ -198,5 +240,6 @@ $(document).ready(function () {
         }
     );
 
+    // Inicializar cálculo
     calcularRiesgo();
 });
