@@ -22,7 +22,6 @@ def gestion_riesgos(request):
     else:
         actividades = Actividad.objects.filter(ciclo_id=ciclo_id)
 
-    print("Actividades filtradas para el usuario:", actividades)
     # Base del queryset: riesgos con su actividad y ciclo relacionados
     riesgos = Riesgo.objects.select_related(
         "actividad", "actividad__ciclo", "actividad__departamento"
