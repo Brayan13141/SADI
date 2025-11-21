@@ -354,57 +354,6 @@
         </div>
     </div>
 
-    <!-- Tablas Detalladas -->
-    <div class="row">
-        <!-- Resumen General -->
-        <div class="col-12">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Resumen General - {{ ciclo_actual.nombre }}</h6>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered" width="100%" cellspacing="0">
-                            <thead>
-                                <tr class="text-nowrap text-center">
-                                    <th>Categoría</th>
-                                    <th>Total</th>
-                                    <th>Cumplidos/Completados</th>
-                                    <th>No Cumplidos/En Proceso</th>
-                                </tr>
-                            </thead>
-                            <tbody class="text-center">
-                                <tr>
-                                    <td><strong>Actividades</strong></td>
-                                    <td>{{ total_actividades }}</td>
-                                    <td>{{ actividades_cumplidas }}</td>
-                                    <td>{{ actividades_no_cumplidas }}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Metas</strong></td>
-                                    <td>{{ total_metas }}</td>
-                                    <td>{{ metas_cumplidas }}</td>
-                                    <td>{{ metas_no_cumplidas }}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Proyectos</strong></td>
-                                    <td>{{ total_proyectos }}</td>
-                                    <td>{{ proyectos_cumplidos }}</td>
-                                    <td>{{ proyectos_no_cumplidos }}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Objetivos Estratégicos</strong></td>
-                                    <td>{{ total_objetivos }}</td>
-                                    <td>{{ objetivos_cumplidos }}</td>
-                                    <td>{{ objetivos_no_cumplidos }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 {% endblock %}
 
