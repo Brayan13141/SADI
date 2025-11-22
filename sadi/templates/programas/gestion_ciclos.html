@@ -65,7 +65,7 @@
                             <td>
                                 <button class="btn btn-sm btn-outline-primary btn-editar" 
                                         data-id="{{ ciclo.id }}"
-                                        data-activo="{{ ciclo.activo|yesno:'True,False' }}"
+                                        data-activo="{{ ciclo.estado }}"
                                         data-fecha_inicio="{{ ciclo.fecha_inicio|date:'Y-m-d' }}"
                                         data-fecha_fin="{{ ciclo.fecha_fin|date:'Y-m-d' }}"
                                         data-duracion="{{ ciclo.duracion }}"
