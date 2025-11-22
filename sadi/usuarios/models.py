@@ -11,12 +11,18 @@ class Usuario(AbstractUser):
         ("DOCENTE", "Docente"),
         ("INVITADO", "Invitado"),
     ]
-
+    email = models.EmailField(unique=True)
     role = models.CharField(max_length=15, choices=ROLE_CHOICES)
     departamento = models.OneToOneField(
         Departamento, on_delete=models.RESTRICT, null=True, unique=True, blank=True
     )
     history = HistoricalRecords()
+
+    def save(self, *args, **kwargs):
+        # Si es superuser y no tiene rol asignado → poner ADMIN
+        if self.is_superuser and not self.role:
+            self.role = "ADMIN"
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.username
