@@ -96,15 +96,17 @@
                                         data-username="{{ usuario.username }}"
                                         data-first_name="{{ usuario.first_name }}"
                                         data-last_name="{{ usuario.last_name }}"
-                                        data-email="{{ usuario.email }}"
                                         data-role="{{ usuario.role }}"
+                                        data-email="{{ usuario.email }}"
                                         data-departamento="{{ usuario.departamento_id}}">
                                     Editar
                                 </button>
+                                {% if usuario.is_active %}
                                 <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" 
                                         data-bs-target="#modalEliminar{{ usuario.id }}">
-                                    Eliminar
+                                    Desactivar
                                 </button>
+                                {% endif %}
                             </td>
                         </tr>
 
@@ -115,16 +117,18 @@
                               <form method="post" novalidate>
                                 {% csrf_token %}
                                 <input type="hidden" name="usuario_id" value="{{ usuario.id }}">
-                                <input type="hidden" name="eliminar_usuario" value="1">
+                                <input type="hidden" name="desactivar_user" value="1">
                                 <div class="modal-header">
-                                  <h5 class="modal-title">Eliminar Usuario</h5>
+                                  <h5 class="modal-title">Desactivar Usuario</h5>
                                   <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                 </div>
                                 <div class="modal-body">
-                                  ¿Seguro que deseas eliminar el usuario <strong>{{ usuario.username }}</strong>?
+                                  ¿Seguro que deseas desactivar el usuario <strong>{{ usuario.username }}</strong>?
+                                  <label class="form-text">El usuario no podrá iniciar sesión, pero sus datos se conservarán.</label>
+                                  <label class="form-text">Recuetda que los usuarios no se pueden borrar.</label>
                                 </div>
                                 <div class="modal-footer">
-                                  <button type="submit" class="btn btn-danger">Eliminar</button>
+                                  <button type="submit" class="btn btn-danger">Desactivar</button>
                                   <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                                 </div>
                               </form>

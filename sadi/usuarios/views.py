@@ -44,6 +44,13 @@ def gestion_usuarios(request):
                     request,
                     form.errors,
                 )
+        elif "desactivar_user" in request.POST:
+            usuario_id = request.POST.get("usuario_id")
+            usuario = get_object_or_404(Usuario, id=usuario_id)
+            usuario.is_active = False
+            usuario.save()
+            messages.success(request, "Usuario desactivado correctamente.")
+            return redirect("gestion_usuarios")
 
     return render(
         request,
