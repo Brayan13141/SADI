@@ -15,6 +15,7 @@ from django.db import transaction
 from core.models import ConfiguracionGlobal
 from django.utils import timezone
 from django.contrib import messages
+from django.db.models import ProtectedError, RestrictedError
 from .serializers import (
     MetaDetailSerializer,
     AvanceMetaSerializer,
@@ -144,8 +145,15 @@ def gestion_metas(request):
                 meta.delete()
                 messages.success(request, "Meta eliminada correctamente.")
                 return redirect("gestion_metas")
+
+            except (ProtectedError, RestrictedError):
+                messages.error(
+                    request,
+                    "No es posible eliminar esta meta porque tiene actividades o avances relacionados.",
+                )
+
             except Exception as e:
-                messages.error(request, f"Error al eliminar: {e}")
+                messages.error(request, f"Error inesperado al eliminar: {e}")
 
     # --- 3. Form por rol ---
     form = MetaFormAdmin() if usuario.role in ["ADMIN", "APOYO"] else MetaFormDocente()
