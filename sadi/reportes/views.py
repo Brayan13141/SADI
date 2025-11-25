@@ -269,15 +269,12 @@ def reporte_proyectos(request):
     ciclo_id = request.session.get("ciclo_id")
     ciclo = Ciclo.objects.filter(id=ciclo_id).first()
 
-    # Traemos todos los proyectos sin filtrar
     proyectos = Proyecto.objects.all().order_by("nombre")
 
     data = []
     total_cumplidas = total_en_progreso = total_rezagadas = 0
 
     for proyecto in proyectos:
-
-        # Todas las metas del proyecto
         metas = Meta.objects.filter(proyecto=proyecto)
 
         metas_cumplidas = metas_en_progreso = metas_rezagadas = 0
@@ -285,21 +282,17 @@ def reporte_proyectos(request):
         total_metas_validas = 0
 
         for meta in metas:
-
-            # MetaCiclo del ciclo actual (si NO existe, esta meta NO cuenta)
             mc = MetaCiclo.objects.filter(meta=meta, ciclo=ciclo).first()
             if not mc:
-                continue  # esta meta no participa en el ciclo actual
+                continue
 
             total_metas_validas += 1
             meta_target = mc.metaCumplir or Decimal("0")
 
-            # Avances del ciclo (metaCumplir == meta)
             avances = AvanceMeta.objects.filter(metaCumplir=meta, ciclo=ciclo).order_by(
                 "fecha_registro"
             )
 
-            # Calcular avance real
             if meta.acumulable:
                 ultimo = avances.last()
                 avance_real = (
@@ -310,14 +303,12 @@ def reporte_proyectos(request):
                     "0"
                 )
 
-            # Porcentaje respecto al MetaCiclo
             if meta_target == 0:
                 porcentaje_real = 0.0
             else:
                 porcentaje_real = float((avance_real / meta_target) * 100)
                 porcentaje_real = round(porcentaje_real, 2)
 
-            # Estado de la meta
             if porcentaje_real >= 100:
                 estado_meta = "Cumplida"
                 metas_cumplidas += 1
@@ -325,7 +316,7 @@ def reporte_proyectos(request):
                 estado_meta = "En progreso"
                 metas_en_progreso += 1
             else:
-                estado_meta = "Rezago"
+                estado_meta = "Rezagada"
                 metas_rezagadas += 1
 
             metas_data.append(
@@ -339,7 +330,6 @@ def reporte_proyectos(request):
                 }
             )
 
-        # Estado del proyecto
         if total_metas_validas == 0:
             estado_proyecto = "Sin metas en este ciclo"
         elif metas_cumplidas == total_metas_validas:
@@ -356,12 +346,6 @@ def reporte_proyectos(request):
         total_en_progreso += metas_en_progreso
         total_rezagadas += metas_rezagadas
 
-        proyectos_por_estado = {
-            "Cumplido": proyectos_cumplidos,
-            "En progreso": proyectos_en_progreso,
-            "Rezago": proyectos_rezagados,
-        }
-
         data.append(
             {
                 "proyecto": proyecto.nombre,
@@ -374,6 +358,48 @@ def reporte_proyectos(request):
             }
         )
 
+    proyectos_por_estado = {
+        "Cumplido": proyectos_cumplidos,
+        "En progreso": proyectos_en_progreso,
+        "Rezago": proyectos_rezagados,
+    }
+
+    if "exportar" in request.GET:
+
+        excel_rows = []
+
+        for d in data:
+            for m in d["metas"]:
+                excel_rows.append(
+                    {
+                        "Proyecto": d["proyecto"],
+                        "Estado Proyecto": d["estado"],
+                        "Clave Meta": m["clave"],
+                        "Nombre Meta": m["nombre"],
+                        "Meta a Cumplir": m["meta_target"],
+                        "Avance Real": m["avance_real"],
+                        "Porcentaje (%)": m["porcentaje_real"],
+                        "Estado Meta": m["estado"],
+                    }
+                )
+
+        df = pd.DataFrame(excel_rows)
+
+        buffer = io.BytesIO()
+        with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
+            df.to_excel(writer, index=False, sheet_name="Proyectos")
+            worksheet = writer.sheets["Proyectos"]
+            worksheet.set_column("A:H", 25)
+
+        buffer.seek(0)
+        response = HttpResponse(
+            buffer.read(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = (
+            'attachment; filename="reporte_proyectos.xlsx"'
+        )
+        return response
     context = {
         "data": data,
         "nombres_proyectos": [d["proyecto"] for d in data],
