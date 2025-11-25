@@ -26,11 +26,6 @@
 <div class="card shadow-sm mb-3">
   <div class="card-header bg-success text-white d-flex justify-content-between">
     <h6 class="mb-0">Meta comprometida seleccionada</h6>
-    {% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
-    <a id="btnVerComprometida" href="#" class="btn btn-sm btn-light d-none">
-      Ver detalles
-    </a>
-    {% endif %}
   </div>
   <div class="card-body">
     <div id="infoComprometida" class="text-muted">
