@@ -15,6 +15,7 @@ from django.db import transaction
 from core.models import ConfiguracionGlobal
 from django.utils import timezone
 from django.contrib import messages
+from django.db.models import ProtectedError, RestrictedError
 from .serializers import (
     MetaDetailSerializer,
     AvanceMetaSerializer,
@@ -144,8 +145,15 @@ def gestion_metas(request):
                 meta.delete()
                 messages.success(request, "Meta eliminada correctamente.")
                 return redirect("gestion_metas")
+
+            except (ProtectedError, RestrictedError):
+                messages.error(
+                    request,
+                    "No es posible eliminar esta meta porque tiene actividades o avances relacionados.",
+                )
+
             except Exception as e:
-                messages.error(request, f"Error al eliminar: {e}")
+                messages.error(request, f"Error inesperado al eliminar: {e}")
 
     # --- 3. Form por rol ---
     form = MetaFormAdmin() if usuario.role in ["ADMIN", "APOYO"] else MetaFormDocente()
@@ -883,7 +891,6 @@ def asignar_ciclo_meta(request, meta_id):
 def asignacion_metas(request):
     """
     Vista para asignar metas a departamentos.
-    El carrito se maneja en el frontend y se envía como lista de IDs.
     """
     metas = Meta.objects.filter(activa=True).order_by("clave")
     departamentos = Departamento.objects.all()
@@ -902,39 +909,53 @@ def asignacion_metas(request):
             departamento_id = data.get("departamento")
             meta_ids = data.get("metas", [])
 
-            departamento = (
-                Departamento.objects.filter(id=departamento_id).first()
-                if departamento_id
-                else None
-            )
+            departamento = None
+            if departamento_id:
+                try:
+                    departamento = Departamento.objects.get(id=departamento_id)
+                except Departamento.DoesNotExist:
+                    return JsonResponse(
+                        {"status": "error", "message": "Departamento no encontrado"}
+                    )
 
             updated_count = 0
             errores = []
 
-            for meta_id in meta_ids:
-                try:
-                    meta = Meta.objects.get(id=meta_id)
-                    if meta.porcentages:
-                        meta.lineabase = meta.lineabase * 100
-                        meta.metacumplir = meta.metacumplir * 100
+            # Usar transacción para asegurar consistencia
+            from django.db import transaction
 
-                    if departamento:
-                        meta.departamento = departamento
-                    meta.save()
-                    updated_count += 1
+            try:
+                with transaction.atomic():
+                    for meta_id in meta_ids:
+                        try:
+                            meta = Meta.objects.get(id=meta_id, activa=True)
 
-                except Meta.DoesNotExist:
-                    errores.append(f"Meta {meta_id} no encontrada")
-                except Exception as e:
-                    errores.append(f"Meta {meta_id}: {e}")
+                            meta.departamento = departamento
+                            meta.save()
 
-            return JsonResponse(
-                {
-                    "status": "success" if updated_count > 0 else "error",
-                    "message": f"Se actualizaron {updated_count} metas correctamente",
-                    "errores": errores,
-                }
-            )
+                            updated_count += 1
+
+                        except Meta.DoesNotExist:
+                            errores.append(f"Meta {meta_id} no encontrada o inactiva")
+                        except Exception as e:
+                            errores.append(f"Error en meta {meta_id}: {str(e)}")
+
+                return JsonResponse(
+                    {
+                        "status": "success",
+                        "message": f"Se actualizaron {updated_count} metas correctamente",
+                        "updated_count": updated_count,
+                        "errores": errores,
+                        "departamento_asignado": (
+                            departamento.nombre if departamento else "Ninguno"
+                        ),
+                    }
+                )
+
+            except Exception as e:
+                return JsonResponse(
+                    {"status": "error", "message": f"Error en la transacción: {str(e)}"}
+                )
 
         return JsonResponse(
             {

@@ -149,7 +149,6 @@ $(document).ready(function () {
                         <input type="checkbox" name="editable" class="form-check-input" id="id_editable">
                         <label class="form-check-label" for="id_editable">FINALIZAR ACTIVIDAD</label>
                     </div>
-                    <small class="text-muted">Atención: al guardar los cambios, esta actividad se marcará como FINALIZADA y ya no podrá editarse.</small>
                 </div>`;
             contenedorEditable.html(switchEditable);
         } else {

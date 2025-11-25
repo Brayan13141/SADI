@@ -118,7 +118,7 @@ class AvanceMeta(models.Model):
         if self.metaCumplir and self.metaCumplir.porcentages:
             valor = self.avance * Decimal("100")
             valor = valor.quantize(Decimal("0.00"))
-            return f"{valor} %"
+            return f"{valor}"
         else:
             valor = self.avance.quantize(Decimal("0.00"))
             return f"{valor}"
