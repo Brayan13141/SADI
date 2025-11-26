@@ -426,6 +426,10 @@ def gestion_meta_avances(request, meta_id):
     avances = AvanceMeta.objects.filter(metaCumplir=meta, ciclo=ciclo_activo).order_by(
         "-fecha_registro"
     )
+    user = request.user
+    if user.role == "DOCENTE":
+        # El docente solo puede ver avances de su propio departamento
+        avances = avances.filter(departamento=user.departamento)
 
     avance_form = AvanceMetaForm(meta=meta, user=request.user)
     comprometida_form = MetaComprometidaForm()
@@ -464,20 +468,34 @@ def gestion_meta_avances(request, meta_id):
             )
 
         elif "editar_avance" in request.POST and puede_editar:
+            print("ENTRA A EDITAR")
+            print(request.POST)
+
             avance_id = request.POST.get("avance_id")
-            try:
-                avance = get_object_or_404(AvanceMeta, id=avance_id, metaCumplir=meta)
-                avance_form = AvanceMetaForm(request.POST, instance=avance, meta=meta)
-                if avance_form.is_valid():
-                    avance_form.save()
-                    messages.success(request, "Avance actualizado correctamente.")
-                    return redirect("gestion_meta_avances", meta_id=meta.id)
-                abrir_modal_avance = True
-                messages.error(
-                    request, "Error al editar el avance. Verifique los datos."
-                )
-            except Exception as e:
-                messages.error(request, "Error al editar el avance.")
+
+            avance = get_object_or_404(AvanceMeta, id=avance_id, metaCumplir=meta)
+
+            avance_form = AvanceMetaForm(
+                request.POST,
+                instance=avance,
+                meta=meta,
+                user=request.user,
+            )
+
+            if avance_form.is_valid():
+                avance = avance_form.save(commit=False)
+
+                avance.metaCumplir = meta
+                avance.ciclo = ciclo_activo
+                avance.departamento = meta.departamento
+
+                avance.save()
+
+                messages.success(request, "Avance actualizado correctamente.")
+                return redirect("gestion_meta_avances", meta_id=meta.id)
+
+            abrir_modal_avance = True
+            messages.error(request, "Error al editar el avance. Verifique los datos.")
 
         elif "eliminar_avance" in request.POST and puede_eliminar:
             avance_id = request.POST.get("avance_id")

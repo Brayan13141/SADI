@@ -373,7 +373,7 @@ def obtener_contexto_programa_trabajo(request, departamento_seleccionado):
 
             for meta in metas:
                 # Filtramos las actividades por ciclo
-                actividades = meta.actividad_set.all()
+                actividades = meta.actividad_set.filter(departamento=depto)
                 if ciclo_seleccionado:
                     actividades = actividades.filter(ciclo_id=ciclo_seleccionado)
 
@@ -404,8 +404,7 @@ def obtener_contexto_programa_trabajo(request, departamento_seleccionado):
             "ciclo_seleccionado": ciclo_seleccionado,
         }
 
-    # DOCENTE
-    # DOCENTE
+    # USUARIO
     else:
         actividades_por_meta = {}
 
@@ -488,23 +487,35 @@ class ActividadViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         ciclo_id = self.request.query_params.get("ciclo")
+        meta_id = self.request.query_params.get("meta")  # <<--- NUEVO
 
         queryset = Actividad.objects.select_related(
             "meta", "ciclo", "departamento", "responsable"
         ).prefetch_related("evidencias", "riesgo_set")
 
+        # ---------------------------
+        # FILTROS POR CICLO Y META
+        # ---------------------------
         if ciclo_id:
             queryset = queryset.filter(ciclo_id=ciclo_id)
 
+        if meta_id:
+            queryset = queryset.filter(meta_id=meta_id)
+
+        # ---------------------------
+        # FILTRO POR ROL DEL USUARIO
+        # ---------------------------
         if user.role in ["ADMIN", "APOYO", "INVITADO"]:
             return queryset
-        elif user.role == "DOCENTE":
+
+        if user.role == "DOCENTE":
             return queryset.filter(departamento=user.departamento)
 
         return Actividad.objects.none()
 
     def get_permissions(self):
         role = getattr(self.request.user, "role", None)
+
         if role == "ADMIN":
             return [IsAdmin()]
         elif role == "APOYO":
@@ -513,6 +524,7 @@ class ActividadViewSet(viewsets.ModelViewSet):
             return [IsDocente()]
         elif role == "INVITADO":
             return [IsInvitado()]
+
         return [permissions.IsAuthenticated()]
 
 
