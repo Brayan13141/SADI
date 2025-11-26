@@ -407,7 +407,7 @@
                                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small ms-4">
                                             <li><a href="{% if estado_sistema.hay_metas and estado_sistema.ciclo_activo %}{% url 'gestion_actividades' %}{% else %}#{% endif %}" 
                                                    class="nav-link text-dark {% if request.resolver_match.url_name == 'gestion_actividades' %}active{% endif %} {% if not estado_sistema.hay_metas or not estado_sistema.ciclo_activo %}disabled{% endif %}">
-                                                <i class="bi bi-list-check me-2"></i> Gestión
+                                                <i class="bi bi-list-check me-2"></i> Gestión de Actividades
                                             </a></li>
                                             {% if request.user.role == "ADMIN" %}
                                             <li><a href="{% if estado_sistema.hay_metas and estado_sistema.ciclo_activo %}{% url 'solicitudes_reapertura' %}{% else %}#{% endif %}" 

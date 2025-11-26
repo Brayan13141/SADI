@@ -58,7 +58,7 @@
               {% endfor %}
               <th>Total / Categoría</th>
               <th>Completado</th>
-              <th>Acciones</th>
+              <th>Actividades</th>
             </tr>
           </thead>
           <tbody>
@@ -110,12 +110,9 @@
                 </div>
               </td>
 
-              <!-- Acciones -->
+              <!-- Actividades -->
               <td class="text-center">
-                <a href="{% url 'ver_actividades' fila.id %}" class="btn btn-sm btn-outline-primary">Ver</a>
-                {% if request.user.role == "ADMIN" or request.user.role == "APOYO" %}
-                  <a href="{% url 'agregar_actividad' fila.id %}" class="btn btn-sm btn-outline-success">Agregar</a>
-                {% endif %}
+                <a href="{% url 'ver_actividades' fila.id %}" class="btn btn-sm btn-outline-primary">Ver</a>  
               </td>
             </tr>
             {% endfor %}
