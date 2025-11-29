@@ -21,13 +21,3 @@ def set_default_ciclo(sender, user, request, **kwargs):
         else:
             request.session["ciclo_id"] = None
             request.session["ciclo_nombre"] = "Sin ciclo activo"
-
-
-# Signal adicional para asegurar que solo haya un ciclo activo
-@receiver(pre_save, sender=Ciclo)
-def ensure_single_active_ciclo(sender, instance, **kwargs):
-    if instance.estado == "Activo":
-        # Desactivar otros ciclos activos del mismo programa
-        Ciclo.objects.filter(programa=instance.programa, estado="Activo").exclude(
-            pk=instance.pk
-        ).update(estado="Inactivo")
