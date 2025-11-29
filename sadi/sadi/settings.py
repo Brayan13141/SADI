@@ -220,6 +220,8 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 SITE_ID = 1
 ACCOUNT_LOGIN_METHODS = {"username", "email"}  # Permite usuario o email
 ACCOUNT_UNIQUE_EMAIL = True  # Evita correos duplicados
+ACCOUNT_EMAIL_SUBJECT_PREFIX = ""
+
 ACCOUNT_SIGNUP_FIELDS = [
     "username*",
     "email*",
