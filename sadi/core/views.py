@@ -500,7 +500,7 @@ def index(request):
 def cambiar_ciclo_flecha(request):
     if request.method == "POST":
         accion = request.POST.get("accion")
-        ciclos = list(Ciclo.objects.all().order_by("nombre"))
+        ciclos = list(Ciclo.objects.all().filter(estado="Activo").order_by("nombre"))
 
         ciclo_id = request.session.get("ciclo_id")
 
